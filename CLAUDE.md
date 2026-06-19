@@ -18,6 +18,6 @@ This repo's own `.claude/settings.json` carries a `SessionStart` hook that shoul
 
 Yggdrasil is **connective tissue** — `Norse.Hosting`: the web, worker, and migration service chassis (`Norse.Hosting.Web.Server`/`.Web.Client`/`.App`/`.Worker`/`.Migrations.Service`) and the deployables built on it. It hosts the runtime endpoints that Bifrost composes but never provides itself. In the dependency chain it rides on Midgard and everything below; Himinbjorg and Heimdall ride above it.
 
-This repo is currently a bare shell (LICENSE only) — no specs have converged here yet. Before writing any code: brainstorm → spec → plan, recorded in `../Glitnir/docs/superpowers/`, per the org's spec-first discipline. Do not scaffold a project structure ahead of a converged spec.
+This repo is currently a bare shell (LICENSE only) — no specs have converged here yet. Before writing any code: brainstorm → spec → plan, recorded in `../Glitnir/docs/Yggdrasil/`, per the org's spec-first discipline. Do not scaffold a project structure ahead of a converged spec.
 
 See `../Bifrost/CLAUDE.md` (§2 The Naming Model) and `../Glitnir/CLAUDE.md` (§1 Bounded Context Map) for the full realm table and how Yggdrasil fits the rest of the cosmos.
