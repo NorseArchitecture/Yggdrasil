@@ -1,0 +1,22 @@
+<Project>
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<SvartalfheimVersion>0.0.0</SvartalfheimVersion>
+		<AsgardVersion>0.0.0</AsgardVersion>
+		<MidgardVersion>0.0.0</MidgardVersion>
+		<UrdarbrunnrVersion>0.0.0</UrdarbrunnrVersion>
+		<RatatoskrVersion>0.0.0</RatatoskrVersion>
+		<HiminbjorgVersion>0.0.0</HiminbjorgVersion>
+		<HeimdallVersion>0.0.0</HeimdallVersion>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
+
+		<PackageVersion Include="Norse.Abstractions.Backend"    Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.Abstractions.Components" Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.Abstractions.Contracts"  Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.Abstractions.Migrations" Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.Abstractions.Web.Server" Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.Abstractions.Worker"     Version="$(AsgardVersion)" />
+	</ItemGroup>
+</Project>
