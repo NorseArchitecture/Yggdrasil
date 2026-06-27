@@ -1,8 +1,5 @@
 <Project>
 	<PropertyGroup>
-		<OutputType>Library</OutputType>
-	</PropertyGroup>
-	<PropertyGroup>
 		<_BifrostTargets>
 			$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../../'))
 		</_BifrostTargets>

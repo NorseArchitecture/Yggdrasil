@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Hosting.Worker\Hosting.Worker.csproj" />
+	</ItemGroup>
+</Project>

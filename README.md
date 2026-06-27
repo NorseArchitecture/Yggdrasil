@@ -6,7 +6,7 @@ Connective tissue for the Norse Architecture — **`Norse.Hosting`**: the web, w
 
 ## Status
 
-This realm is currently a bare shell — no code, no specs converged yet. Design happens first: brainstorm → spec → plan, recorded in Glitnir's `docs/Yggdrasil/`, before any project is scaffolded here.
+Scaffolded — `Hosting.Web.Server`, `Hosting.Worker`, and `Hosting.Migrations.Service` exist as minimal deployable stubs: placeholder code, passing tests, and container-publishable via `dotnet publish /t:PublishContainer`. Real hosting abstractions land once Asgard and Midgard have shipped their foundations. Each subsequent type surface follows the spec-first discipline: brainstorm → spec → plan in [Glitnir](https://github.com/NorseArchitecture/Glitnir)'s `docs/Yggdrasil/`, greenlit by the human, then code.
 
 ## The cosmos
 

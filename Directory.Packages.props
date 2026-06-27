@@ -1,6 +1,8 @@
 <Project>
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<DotNetVersion>11.0.0-preview.5.26302.115</DotNetVersion>
+		<ContainerDotNetVersion>11.0.0-preview.5</ContainerDotNetVersion>
 		<SvartalfheimVersion>0.0.4</SvartalfheimVersion>
 		<AsgardVersion>0.0.0</AsgardVersion>
 		<MidgardVersion>0.0.0</MidgardVersion>
@@ -10,6 +12,8 @@
 		<HeimdallVersion>0.0.0</HeimdallVersion>
 	</PropertyGroup>
 	<ItemGroup>
+		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(DotNetVersion)" />
+
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
 
 		<PackageVersion Include="Norse.Abstractions.Backend"    Version="$(AsgardVersion)" />

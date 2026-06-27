@@ -1,0 +1,8 @@
+<Solution>
+	<Project Path="src/Hosting.Migrations.Service/Hosting.Migrations.Service.csproj" />
+	<Project Path="src/Hosting.Web.Server/Hosting.Web.Server.csproj" />
+	<Project Path="src/Hosting.Worker/Hosting.Worker.csproj" />
+	<Project Path="tests/Hosting.Migrations.Service.Tests/Hosting.Migrations.Service.Tests.csproj" />
+	<Project Path="tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj" />
+	<Project Path="tests/Hosting.Worker.Tests/Hosting.Worker.Tests.csproj" />
+</Solution>
