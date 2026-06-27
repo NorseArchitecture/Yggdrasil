@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-		<SvartalfheimVersion>0.0.0</SvartalfheimVersion>
+		<SvartalfheimVersion>0.0.4</SvartalfheimVersion>
 		<AsgardVersion>0.0.0</AsgardVersion>
 		<MidgardVersion>0.0.0</MidgardVersion>
 		<UrdarbrunnrVersion>0.0.0</UrdarbrunnrVersion>
