@@ -2,6 +2,10 @@
 
 > The world tree, whose branches and roots bind all nine realms together.
 
+<img width="1024" height="1280" alt="Yggdrasil — the immense world tree whose roots reach into the underworld and whose branches cradle the nine realms" src="https://github.com/user-attachments/assets/49b591e9-87c8-4d2a-a5ba-3d33dc3a15c2" />
+
+*Image credit: [@norsemythologyclips](https://www.instagram.com/norsemythologyclips/) — go follow them.*
+
 Connective tissue for the Norse Architecture — **`Norse.Hosting`**: the web, worker, and migration service chassis (`Norse.Hosting.Web.Server`/`.Web.Client`/`.App`/`.Worker`/`.Migrations.Service`) and the deployables built on it. It hosts the runtime endpoints that Bifrost composes but never provides itself. In the dependency chain it rides on Midgard and everything below; Himinbjorg and Heimdall ride above it.
 
 ## Status
