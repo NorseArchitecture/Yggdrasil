@@ -1,0 +1,15 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  packages: write
+  security-events: write
+
+jobs:
+  release:
+    uses: NorseArchitecture/.github/.github/workflows/release-container.yml@master
