@@ -14,3 +14,4 @@ permissions:
 jobs:
   release:
     uses: NorseArchitecture/.github/.github/workflows/release-container.yml@master
+    secrets: inherit
