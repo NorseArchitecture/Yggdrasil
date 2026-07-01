@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/Passkeys"
+@page "/Account/Manage/Passkeys"
 
 @using Norse.Hosting.Web.Server.Identity
 @using Microsoft.AspNetCore.Identity
@@ -76,23 +76,24 @@
 </FluentGrid>
 
 @code {
-    private const int MaxPasskeyCount = 100;
+    const int MaxPasskeyCount = 100;
 
-    private ApplicationUser? user;
-    private IList<UserPasskeyInfo>? currentPasskeys;
+    ApplicationUser? user;
+    IList<UserPasskeyInfo>? currentPasskeys;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
-    private string? Action { get; set; }
+    string? Action { get; set; }
 
     [SupplyParameterFromForm]
-    private string? CredentialId { get; set; }
+    string? CredentialId { get; set; }
 
     [SupplyParameterFromForm(FormName = "add-passkey")]
-    private PasskeyInputModel Input { get; set; } = default!;
+    PasskeyInputModel Input { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -106,7 +107,7 @@
         currentPasskeys = await UserManager.GetPasskeysAsync(user);
     }
 
-    private async Task AddPasskey()
+    async Task AddPasskey()
     {
         if (user is null)
         {
@@ -151,7 +152,7 @@
         RedirectManager.RedirectTo($"Account/Manage/RenamePasskey/{credentialIdBase64Url}");
     }
 
-    private async Task UpdatePasskey()
+    async Task UpdatePasskey()
     {
         switch (Action)
         {
@@ -167,7 +168,7 @@
         }
     }
 
-    private async Task DeletePasskey()
+    async Task DeletePasskey()
     {
         if (user is null)
         {

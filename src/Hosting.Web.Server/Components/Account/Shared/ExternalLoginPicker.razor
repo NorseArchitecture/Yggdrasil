@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using Norse.Hosting.Web.Server.Identity
 
@@ -32,11 +32,12 @@ else
 }
 
 @code {
-    private AuthenticationScheme[] externalLogins = [];
+    AuthenticationScheme[] externalLogins = [];
 
     [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
+    string? ReturnUrl { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToArray();

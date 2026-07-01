@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using Norse.Hosting.Web.Server.Identity
 
 @inject SignInManager<ApplicationUser> SignInManager
@@ -17,10 +17,10 @@
 
 </FluentNavMenu>
 
-
 @code {
-    private bool hasExternalLogins;
+    bool hasExternalLogins;
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();

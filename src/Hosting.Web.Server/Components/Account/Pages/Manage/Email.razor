@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/Email"
+@page "/Account/Manage/Email"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -46,17 +46,18 @@
 </FluentGrid>
 
 @code {
-    private string? message;
-    private ApplicationUser? user;
-    private string? email;
-    private bool isEmailConfirmed;
+    string? message;
+    ApplicationUser? user;
+    string? email;
+    bool isEmailConfirmed;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm(FormName = "change-email")]
-    private InputModel Input { get; set; } = default!;
+    InputModel Input { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -74,7 +75,7 @@
         Input.NewEmail ??= email;
     }
 
-    private async Task OnValidSubmitAsync()
+    async Task OnValidSubmitAsync()
     {
         if (Input.NewEmail is null || Input.NewEmail == email)
         {
@@ -100,7 +101,7 @@
         message = "Confirmation link to change email sent. Please check your email.";
     }
 
-    private async Task OnSendEmailVerificationAsync()
+    async Task OnSendEmailVerificationAsync()
     {
         if (email is null)
         {
@@ -125,7 +126,7 @@
         message = "Verification email sent. Please check your email.";
     }
 
-    private sealed class InputModel
+    sealed class InputModel
     {
         [Required]
         [EmailAddress]

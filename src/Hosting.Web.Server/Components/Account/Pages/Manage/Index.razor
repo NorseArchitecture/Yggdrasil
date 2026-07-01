@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage"
+@page "/Account/Manage"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
@@ -29,16 +29,17 @@
 </FluentGrid>
 
 @code {
-    private ApplicationUser? user;
-    private string? username;
-    private string? phoneNumber;
+    ApplicationUser? user;
+    string? username;
+    string? phoneNumber;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = default!;
+    InputModel Input { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -56,7 +57,7 @@
         Input.PhoneNumber ??= phoneNumber;
     }
 
-    private async Task OnValidSubmitAsync()
+    async Task OnValidSubmitAsync()
     {
         if (user is null)
         {
@@ -78,7 +79,7 @@
         RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
     }
 
-    private sealed class InputModel
+    sealed class InputModel
     {
         [Phone]
         [Display(Name = "Phone number")]
