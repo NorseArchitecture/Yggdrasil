@@ -9,6 +9,7 @@
 	<ItemGroup>
 		<NorseRef Include="EntityFramework.Migrations.PostgreSQL">
 			<Repo>Urdarbrunnr</Repo>
+			<Generator>true</Generator>
 		</NorseRef>
 		<NorseRef Include="Infrastructure.Migrations">
 			<Repo>Midgard</Repo>
@@ -16,8 +17,5 @@
 		<NorseRef Include="Identity.Migrations">
 			<Repo>Himinbjorg</Repo>
 		</NorseRef>
-	</ItemGroup>
-	<ItemGroup Condition="'$(UseProjectReferences)' == 'true'">
-		<ProjectReference Include="../../../Urdarbrunnr/src/EntityFramework.Migrations.PostgreSQL.Generator/EntityFramework.Migrations.PostgreSQL.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 </Project>
