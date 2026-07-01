@@ -1,0 +1,18 @@
+@using System.Reflection
+
+<Router AppAssembly="@typeof(Routes).Assembly" AdditionalAssemblies="@AdditionalAssemblies" NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <NotAuthorized>
+                <RedirectToLogin />
+            </NotAuthorized>
+        </AuthorizeRouteView>
+    </Found>
+</Router>
+
+@code {
+    // Supplied by whoever hosts this component (Hosting.Web.Server today, MAUI later) so that
+    // this project never takes a compile-time dependency on host-specific assemblies.
+    [Parameter]
+    public IReadOnlyList<Assembly>? AdditionalAssemblies { get; set; }
+}
