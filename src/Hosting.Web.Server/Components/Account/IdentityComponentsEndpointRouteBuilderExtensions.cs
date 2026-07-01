@@ -1,4 +1,3 @@
-#nullable enable
 using Norse.Hosting.Web.Server.Components.Account.Pages;
 using Norse.Hosting.Web.Server.Components.Account.Pages.Manage;
 using Norse.Hosting.Web.Server.Identity;
@@ -9,12 +8,13 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
-using System.Security.Claims;
 using System.Text.Json;
 
+#pragma warning disable IDE0130
 namespace Microsoft.AspNetCore.Routing;
+#pragma warning restore IDE0130
 
-static class IdentityComponentsEndpointRouteBuilderExtensions
+static partial class IdentityComponentsEndpointRouteBuilderExtensions
 {
 	// These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
 	/// <summary>
@@ -51,11 +51,10 @@ static class IdentityComponentsEndpointRouteBuilderExtensions
 		});
 
 		accountGroup.MapPost("/Logout", async (
-			ClaimsPrincipal user,
 			[FromServices] SignInManager<ApplicationUser> signInManager,
 			[FromForm] string returnUrl) =>
 		{
-			await signInManager.SignOutAsync();
+			await signInManager.SignOutAsync().ConfigureAwait(false);
 			return TypedResults.LocalRedirect($"~/{returnUrl}");
 		});
 
@@ -65,22 +64,22 @@ static class IdentityComponentsEndpointRouteBuilderExtensions
 			[FromServices] SignInManager<ApplicationUser> signInManager,
 			[FromServices] IAntiforgery antiforgery) =>
 		{
-			await antiforgery.ValidateRequestAsync(context);
+			await antiforgery.ValidateRequestAsync(context).ConfigureAwait(false);
 
-			var user = await userManager.GetUserAsync(context.User);
+			var user = await userManager.GetUserAsync(context.User).ConfigureAwait(false);
 			if (user is null)
 			{
 				return Results.NotFound($"Unable to load user with ID '{userManager.GetUserId(context.User)}'.");
 			}
 
-			var userId = await userManager.GetUserIdAsync(user);
-			var userName = await userManager.GetUserNameAsync(user) ?? "User";
+			var userId = await userManager.GetUserIdAsync(user).ConfigureAwait(false);
+			var userName = await userManager.GetUserNameAsync(user).ConfigureAwait(false) ?? "User";
 			var optionsJson = await signInManager.MakePasskeyCreationOptionsAsync(new()
 			{
 				Id = userId,
 				Name = userName,
 				DisplayName = userName
-			});
+			}).ConfigureAwait(false);
 			return TypedResults.Content(optionsJson, contentType: "application/json");
 		});
 
@@ -91,10 +90,10 @@ static class IdentityComponentsEndpointRouteBuilderExtensions
 			[FromServices] IAntiforgery antiforgery,
 			[FromQuery] string? username) =>
 		{
-			await antiforgery.ValidateRequestAsync(context);
+			await antiforgery.ValidateRequestAsync(context).ConfigureAwait(false);
 
-			var user = string.IsNullOrEmpty(username) ? null : await userManager.FindByNameAsync(username);
-			var optionsJson = await signInManager.MakePasskeyRequestOptionsAsync(user);
+			var user = string.IsNullOrEmpty(username) ? null : await userManager.FindByNameAsync(username).ConfigureAwait(false);
+			var optionsJson = await signInManager.MakePasskeyRequestOptionsAsync(user).ConfigureAwait(false);
 			return TypedResults.Content(optionsJson, contentType: "application/json");
 		});
 
@@ -106,7 +105,7 @@ static class IdentityComponentsEndpointRouteBuilderExtensions
 			[FromForm] string provider) =>
 		{
 			// Clear the existing external cookie to ensure a clean login process
-			await context.SignOutAsync(IdentityConstants.ExternalScheme);
+			await context.SignOutAsync(IdentityConstants.ExternalScheme).ConfigureAwait(false);
 
 			var redirectUrl = UriHelper.BuildRelative(
 				context.Request.PathBase,
@@ -127,14 +126,14 @@ static class IdentityComponentsEndpointRouteBuilderExtensions
 			[FromServices] UserManager<ApplicationUser> userManager,
 			[FromServices] AuthenticationStateProvider authenticationStateProvider) =>
 		{
-			var user = await userManager.GetUserAsync(context.User);
+			var user = await userManager.GetUserAsync(context.User).ConfigureAwait(false);
 			if (user is null)
 			{
 				return Results.NotFound($"Unable to load user with ID '{userManager.GetUserId(context.User)}'.");
 			}
 
-			var userId = await userManager.GetUserIdAsync(user);
-			downloadLogger.LogInformation("User with ID '{UserId}' asked for their personal data.", userId);
+			var userId = await userManager.GetUserIdAsync(user).ConfigureAwait(false);
+			downloadLogger.LogUserPersonalDataRequested(userId);
 
 			// Only include personal data for download
 			var personalData = new Dictionary<string, string>();
@@ -145,13 +144,13 @@ static class IdentityComponentsEndpointRouteBuilderExtensions
 				personalData.Add(p.Name, p.GetValue(user)?.ToString() ?? "null");
 			}
 
-			var logins = await userManager.GetLoginsAsync(user);
+			var logins = await userManager.GetLoginsAsync(user).ConfigureAwait(false);
 			foreach (var l in logins)
 			{
 				personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
 			}
 
-			personalData.Add("Authenticator Key", (await userManager.GetAuthenticatorKeyAsync(user))!);
+			personalData.Add("Authenticator Key", (await userManager.GetAuthenticatorKeyAsync(user).ConfigureAwait(false))!);
 			var fileBytes = JsonSerializer.SerializeToUtf8Bytes(personalData);
 
 			context.Response.Headers.TryAdd("Content-Disposition", "attachment; filename=PersonalData.json");
@@ -174,4 +173,7 @@ static class IdentityComponentsEndpointRouteBuilderExtensions
 							.First();
 		return provider;
 	}
+
+	[LoggerMessage(LogLevel.Information, "User with ID '{UserId}' asked for their personal data.")]
+	static partial void LogUserPersonalDataRequested(this ILogger logger, string userId);
 }

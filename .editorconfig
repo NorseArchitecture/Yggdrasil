@@ -375,14 +375,3 @@ dotnet_naming_rule.locals_are_camel_case.severity = error
 generated_code = true
 indent_style = space
 indent_size = 4
-
-# The ASP.NET Core "Blazor Web App + Individual Accounts" scaffolder owns everything under
-# Components/Account — same rationale as the Migrations carve-out above. This folder is
-# transitional: it gets lifted out piece by piece as Heimdall's IAuthService lands, so it's
-# not worth hand-fixing house-style violations (ConfigureAwait, XML docs, naming, ...) in
-# code with a known expiration date.
-[src/Hosting.Web.Server/Components/Account/**]
-generated_code = true
-# generated_code suppresses IDE/analyzer diagnostics but not compiler warnings — CS1591
-# (missing XML doc) needs its own override here.
-dotnet_diagnostic.CS1591.severity = none

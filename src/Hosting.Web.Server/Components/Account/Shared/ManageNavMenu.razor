@@ -7,7 +7,7 @@
     <FluentNavLink Href="Account/Manage" Match="NavLinkMatch.All">Profile</FluentNavLink>
     <FluentNavLink Href="Account/Manage/Email">Email</FluentNavLink>
     <FluentNavLink Href="Account/Manage/ChangePassword">Password</FluentNavLink>
-    @if (hasExternalLogins)
+    @if (_hasExternalLogins)
     {
         <FluentNavLink Href="Account/Manage/ExternalLogins">External logins</FluentNavLink>
     }
@@ -18,11 +18,11 @@
 </FluentNavMenu>
 
 @code {
-    bool hasExternalLogins;
+    bool _hasExternalLogins;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+        _hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
     }
 }

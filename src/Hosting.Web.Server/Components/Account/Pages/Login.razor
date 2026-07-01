@@ -16,7 +16,7 @@
 <h1>Log in</h1>
 <FluentGrid>
     <FluentGridItem xs="8" sm="4">
-        <StatusMessage Message="@errorMessage" />
+        <StatusMessage Message="@_errorMessage" />
         <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
             <DataAnnotationsValidator />
             <h2>Use a local account to log in.</h2>
@@ -51,8 +51,8 @@
 </FluentGrid>
 
 @code {
-    string? errorMessage;
-    EditContext editContext = default!;
+    string? _errorMessage;
+    EditContext _editContext = default!;
 
     [CascadingParameter]
     HttpContext HttpContext { get; set; } = default!;
@@ -68,7 +68,7 @@
     {
         Input ??= new();
 
-        editContext = new EditContext(Input);
+        _editContext = new EditContext(Input);
 
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
@@ -85,7 +85,7 @@
     {
         if (!string.IsNullOrEmpty(Input.Passkey?.Error))
         {
-            errorMessage = $"Error: {Input.Passkey.Error}";
+            _errorMessage = $"Error: {Input.Passkey.Error}";
             return;
         }
 
@@ -98,7 +98,7 @@
         else
         {
             // If doing a password sign-in, validate the form.
-            if (!editContext.Validate())
+            if (!_editContext.Validate())
             {
                 return;
             }
@@ -126,7 +126,7 @@
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            _errorMessage = "Error: Invalid login attempt.";
         }
     }
 

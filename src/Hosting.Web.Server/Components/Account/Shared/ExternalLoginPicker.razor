@@ -5,7 +5,7 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-@if (externalLogins.Length == 0)
+@if (_externalLogins.Length == 0)
 {
     <div>
         <p>
@@ -21,7 +21,7 @@ else
             <AntiforgeryToken />
             <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
             <p>
-                @foreach (var provider in externalLogins)
+                @foreach (var provider in _externalLogins)
                 {
                     <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Name="provider" Value="@provider.Name" Title="@($"Log in using your {provider.DisplayName} account")">@provider.DisplayName</FluentButton>
                     <text>&nbsp;</text>
@@ -32,7 +32,7 @@ else
 }
 
 @code {
-    AuthenticationScheme[] externalLogins = [];
+    AuthenticationScheme[] _externalLogins = [];
 
     [SupplyParameterFromQuery]
     string? ReturnUrl { get; set; }
@@ -40,6 +40,6 @@ else
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToArray();
+        _externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToArray();
     }
 }

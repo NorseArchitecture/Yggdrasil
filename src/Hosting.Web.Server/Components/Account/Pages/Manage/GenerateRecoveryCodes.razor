@@ -9,9 +9,9 @@
 
 <PageTitle>Generate two-factor authentication (2FA) recovery codes</PageTitle>
 
-@if (recoveryCodes is not null)
+@if (_recoveryCodes is not null)
 {
-    <ShowRecoveryCodes RecoveryCodes="recoveryCodes.ToArray()" StatusMessage="@message" />
+    <ShowRecoveryCodes RecoveryCodes="_recoveryCodes.ToArray()" StatusMessage="@_message" />
 }
 else
 {
@@ -40,9 +40,9 @@ else
 }
 
 @code {
-    string? message;
-    ApplicationUser? user;
-    IEnumerable<string>? recoveryCodes;
+    string? _message;
+    ApplicationUser? _user;
+    IEnumerable<string>? _recoveryCodes;
 
     [CascadingParameter]
     HttpContext HttpContext { get; set; } = default!;
@@ -50,14 +50,14 @@ else
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        user = await UserManager.GetUserAsync(HttpContext.User);
-        if (user is null)
+        _user = await UserManager.GetUserAsync(HttpContext.User);
+        if (_user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
         }
 
-        var isTwoFactorEnabled = await UserManager.GetTwoFactorEnabledAsync(user);
+        var isTwoFactorEnabled = await UserManager.GetTwoFactorEnabledAsync(_user);
         if (!isTwoFactorEnabled)
         {
             throw new InvalidOperationException("Cannot generate recovery codes for user because they do not have 2FA enabled.");
@@ -66,15 +66,15 @@ else
 
     async Task OnSubmitAsync()
     {
-        if (user is null)
+        if (_user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
         }
 
-        var userId = await UserManager.GetUserIdAsync(user);
-        recoveryCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
-        message = "You have generated new recovery codes.";
+        var userId = await UserManager.GetUserIdAsync(_user);
+        _recoveryCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(_user, 10);
+        _message = "You have generated new recovery codes.";
 
         Logger.LogInformation("User with ID '{UserId}' has generated new 2FA recovery codes.", userId);
     }

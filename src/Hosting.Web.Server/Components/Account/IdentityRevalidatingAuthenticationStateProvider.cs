@@ -23,14 +23,15 @@ sealed class IdentityRevalidatingAuthenticationStateProvider(
 		AuthenticationState authenticationState, CancellationToken cancellationToken)
 	{
 		// Get the user manager from a new scope to ensure it fetches fresh data
-		await using var scope = scopeFactory.CreateAsyncScope();
+		var scope = scopeFactory.CreateAsyncScope();
+		await using var _ = scope.ConfigureAwait(false);
 		var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-		return await ValidateSecurityStampAsync(userManager, authenticationState.User);
+		return await ValidateSecurityStampAsync(userManager, authenticationState.User).ConfigureAwait(false);
 	}
 
 	async Task<bool> ValidateSecurityStampAsync(UserManager<ApplicationUser> userManager, ClaimsPrincipal principal)
 	{
-		var user = await userManager.GetUserAsync(principal);
+		var user = await userManager.GetUserAsync(principal).ConfigureAwait(false);
 		if (user is null)
 		{
 			return false;
@@ -42,7 +43,7 @@ sealed class IdentityRevalidatingAuthenticationStateProvider(
 		else
 		{
 			var principalStamp = principal.FindFirstValue(options.Value.ClaimsIdentity.SecurityStampClaimType);
-			var userStamp = await userManager.GetSecurityStampAsync(user);
+			var userStamp = await userManager.GetSecurityStampAsync(user).ConfigureAwait(false);
 			return principalStamp == userStamp;
 		}
 	}

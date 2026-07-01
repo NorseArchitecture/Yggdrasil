@@ -18,7 +18,7 @@
 
 <PageTitle>Register</PageTitle>
 
-<StatusMessage Message="@message" />
+<StatusMessage Message="@_message" />
 <h1>Register</h1>
 <h2>Associate your @ProviderDisplayName account.</h2>
 <hr />
@@ -44,8 +44,8 @@
 @code {
     public const string LoginCallbackAction = "LoginCallback";
 
-    string? message;
-    ExternalLoginInfo? externalLoginInfo;
+    string? _message;
+    ExternalLoginInfo? _externalLoginInfo;
 
     [CascadingParameter]
     HttpContext HttpContext { get; set; } = default!;
@@ -63,7 +63,7 @@
     string? Action { get; set; }
 
     string? ProviderDisplayName =>
-        externalLoginInfo?.ProviderDisplayName;
+        _externalLoginInfo?.ProviderDisplayName;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -83,7 +83,7 @@
             return;
         }
 
-        externalLoginInfo = info;
+        _externalLoginInfo = info;
 
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
@@ -101,7 +101,7 @@
 
     async Task OnLoginCallbackAsync()
     {
-        if (externalLoginInfo is null)
+        if (_externalLoginInfo is null)
         {
             RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information.", HttpContext);
             return;
@@ -109,8 +109,8 @@
 
         // Sign in the user with this external login provider if the user already has a login.
         var result = await SignInManager.ExternalLoginSignInAsync(
-            externalLoginInfo.LoginProvider,
-            externalLoginInfo.ProviderKey,
+            _externalLoginInfo.LoginProvider,
+            _externalLoginInfo.ProviderKey,
             isPersistent: false,
             bypassTwoFactor: true);
 
@@ -118,8 +118,8 @@
         {
             Logger.LogInformation(
                 "{Name} logged in with {LoginProvider} provider.",
-                externalLoginInfo.Principal.Identity?.Name,
-                externalLoginInfo.LoginProvider);
+                _externalLoginInfo.Principal.Identity?.Name,
+                _externalLoginInfo.LoginProvider);
             RedirectManager.RedirectTo(ReturnUrl);
             return;
         }
@@ -130,15 +130,15 @@
         }
 
         // If the user does not have an account, then ask the user to create an account.
-        if (externalLoginInfo.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
+        if (_externalLoginInfo.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
         {
-            Input.Email = externalLoginInfo.Principal.FindFirstValue(ClaimTypes.Email) ?? "";
+            Input.Email = _externalLoginInfo.Principal.FindFirstValue(ClaimTypes.Email) ?? "";
         }
     }
 
     async Task OnValidSubmitAsync()
     {
-        if (externalLoginInfo is null)
+        if (_externalLoginInfo is null)
         {
             RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information during confirmation.", HttpContext);
             return;
@@ -153,10 +153,10 @@
         var result = await UserManager.CreateAsync(user);
         if (result.Succeeded)
         {
-            result = await UserManager.AddLoginAsync(user, externalLoginInfo);
+            result = await UserManager.AddLoginAsync(user, _externalLoginInfo);
             if (result.Succeeded)
             {
-                Logger.LogInformation("User created an account using {Name} provider.", externalLoginInfo.LoginProvider);
+                Logger.LogInformation("User created an account using {Name} provider.", _externalLoginInfo.LoginProvider);
 
                 var userId = await UserManager.GetUserIdAsync(user);
                 var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
@@ -174,14 +174,14 @@
                 }
                 else
                 {
-                    await SignInManager.SignInAsync(user, isPersistent: false, externalLoginInfo.LoginProvider);
+                    await SignInManager.SignInAsync(user, isPersistent: false, _externalLoginInfo.LoginProvider);
                     RedirectManager.RedirectTo(ReturnUrl);
                 }
             }
         }
         else
         {
-            message = $"Error: {string.Join(",", result.Errors.Select(error => error.Description))}";
+            _message = $"Error: {string.Join(",", result.Errors.Select(error => error.Description))}";
         }
     }
 

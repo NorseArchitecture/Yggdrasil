@@ -7,17 +7,19 @@ namespace Norse.Hosting.Web.Server.Components.Account;
 // Remove the "else if (EmailSender is IdentityNoOpEmailSender)" block from RegisterConfirmation.razor after updating with a real implementation.
 sealed class IdentityNoOpEmailSender : IEmailSender<ApplicationUser>
 {
-	readonly IEmailSender emailSender = new NoOpEmailSender();
+#pragma warning disable CA1859
+	readonly IEmailSender _emailSender = new NoOpEmailSender();
+#pragma warning restore CA1859
 
 	/// <inheritdoc />
 	public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink) =>
-		emailSender.SendEmailAsync(email, "Confirm your email", $"Please confirm your account by <a href='{confirmationLink}'>clicking here</a>.");
+		_emailSender.SendEmailAsync(email, "Confirm your email", $"Please confirm your account by <a href='{confirmationLink}'>clicking here</a>.");
 
 	/// <inheritdoc />
 	public Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink) =>
-		emailSender.SendEmailAsync(email, "Reset your password", $"Please reset your password by <a href='{resetLink}'>clicking here</a>.");
+		_emailSender.SendEmailAsync(email, "Reset your password", $"Please reset your password by <a href='{resetLink}'>clicking here</a>.");
 
 	/// <inheritdoc />
 	public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode) =>
-		emailSender.SendEmailAsync(email, "Reset your password", $"Please reset your password using the following code: {resetCode}");
+		_emailSender.SendEmailAsync(email, "Reset your password", $"Please reset your password using the following code: {resetCode}");
 }
