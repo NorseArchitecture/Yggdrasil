@@ -1,8 +1,7 @@
-namespace Norse.Hosting.Web.Server.Components.Account
+namespace Norse.Hosting.Web.Server.Components.Account;
+
+public enum PasskeyOperation
 {
-	public enum PasskeyOperation
-	{
-		Create = 0,
-		Request = 1,
-	}
+	Create = 0,
+	Request = 1,
 }

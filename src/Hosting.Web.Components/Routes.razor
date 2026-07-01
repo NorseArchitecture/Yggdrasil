@@ -19,8 +19,9 @@
     /// render-mode boundary.
     /// </summary>
     [Inject]
-    private RoutesAdditionalAssemblies AdditionalAssembliesSource { get; set; } = default!;
+    RoutesAdditionalAssemblies AdditionalAssembliesSource { get; set; } = null!;
 
-    private IEnumerable<Assembly> AdditionalAssemblies => AdditionalAssembliesSource.Assemblies;
+    IEnumerable<Assembly> AdditionalAssemblies =>
+        AdditionalAssembliesSource.Assemblies;
 
 }

@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/ResetAuthenticator"
+@page "/Account/Manage/ResetAuthenticator"
 
 @using Microsoft.AspNetCore.Identity
 @using Norse.Hosting.Web.Server.Identity
@@ -33,9 +33,9 @@
 
 @code {
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
-    private async Task OnSubmitAsync()
+    async Task OnSubmitAsync()
     {
         var user = await UserManager.GetUserAsync(HttpContext.User);
         if (user is null)

@@ -1,4 +1,4 @@
-﻿@page "/Account/Login"
+@page "/Account/Login"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
@@ -51,18 +51,19 @@
 </FluentGrid>
 
 @code {
-    private string? errorMessage;
-    private EditContext editContext = default!;
+    string? errorMessage;
+    EditContext editContext = default!;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = default!;
+    InputModel Input { get; set; } = default!;
 
     [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
+    string? ReturnUrl { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -76,6 +77,10 @@
         }
     }
 
+    /// <summary>
+    /// Handles the login form submission: attempts passkey or password sign-in and redirects
+    /// based on the result (success, two-factor required, or lockout).
+    /// </summary>
     public async Task LoginUser()
     {
         if (!string.IsNullOrEmpty(Input.Passkey?.Error))
@@ -125,7 +130,7 @@
         }
     }
 
-    private sealed class InputModel
+    sealed class InputModel
     {
         [Required]
         [EmailAddress]

@@ -1,4 +1,4 @@
-﻿@page "/Account/LoginWith2fa"
+@page "/Account/LoginWith2fa"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
@@ -35,18 +35,19 @@
 </p>
 
 @code {
-    private string? message;
-    private ApplicationUser user = default!;
+    string? message;
+    ApplicationUser user = default!;
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = default!;
+    InputModel Input { get; set; } = default!;
 
     [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
+    string? ReturnUrl { get; set; }
 
     [SupplyParameterFromQuery]
-    private bool RememberMe { get; set; }
+    bool RememberMe { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -56,7 +57,7 @@
             throw new InvalidOperationException("Unable to load two-factor authentication user.");
     }
 
-    private async Task OnValidSubmitAsync()
+    async Task OnValidSubmitAsync()
     {
         var authenticatorCode = Input.TwoFactorCode!.Replace(" ", string.Empty).Replace("-", string.Empty);
         var result = await SignInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, RememberMe, Input.RememberMachine);
@@ -79,7 +80,7 @@
         }
     }
 
-    private sealed class InputModel
+    sealed class InputModel
     {
         [Required]
         [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]

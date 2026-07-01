@@ -1,4 +1,4 @@
-﻿@page "/Account/RegisterConfirmation"
+@page "/Account/RegisterConfirmation"
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -29,18 +29,19 @@ else
 }
 
 @code {
-    private string? emailConfirmationLink;
-    private string? statusMessage;
+    string? emailConfirmationLink;
+    string? statusMessage;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromQuery]
-    private string? Email { get; set; }
+    string? Email { get; set; }
 
     [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
+    string? ReturnUrl { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         if (Email is null)
