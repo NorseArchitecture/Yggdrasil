@@ -5,10 +5,32 @@
 		</_BifrostTargets>
 	</PropertyGroup>
 	<Import Project="$(_BifrostTargets)" Condition="Exists('$(_BifrostTargets)')" />
+	<!-- No Version attribute here: Yggdrasil has ManagePackageVersionsCentrally=true (Directory.Packages.props), and CPM (NU1008) forbids a Version on PackageReference — the template's Version="*" is only correct for non-CPM realms. -->
 	<ItemGroup Condition="!Exists('$(_BifrostTargets)')">
 		<PackageReference Include="@(NorseRef->'Norse.%(Identity)')" />
 		<PackageReference Include="@(NorseDesignRef->'Norse.%(Identity)')">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 	</ItemGroup>
+	<!--
+		Applies whether or not Bifrost is present — a generator forwarded transitively (NuGet's
+		package-analyzer propagation reaches through any ProjectReference to a project that opted
+		in via NorseRef Generator="true") also sees THIS project's own compilation and regenerates
+		its own copy of whatever it emits, colliding (CS0121) with the copy already compiled into
+		the project it was meant for. Only a project that itself declares the matching NorseRef
+		with Generator="true" should actually run that generator; everyone else strips it. Full
+		design: ../Glitnir/docs/Platform/specs/2026-07-01-norseref-generator-forwarding-design.md
+	-->
+	<Target Name="_NorseRemoveUnwantedGeneratorAnalyzers" BeforeTargets="CoreCompile" Condition="'@(Analyzer)' != ''">
+		<ItemGroup>
+			<_NorseWantedGeneratorAnalyzer Include="@(NorseRef->WithMetadataValue('Generator', 'true')->'Norse.%(Identity).Generator')" />
+		</ItemGroup>
+		<PropertyGroup>
+			<!-- Semicolon-joined so a per-Analyzer-item Condition can do a plain substring Contains check below. -->
+			<_NorseWantedGeneratorAnalyzerNames>;@(_NorseWantedGeneratorAnalyzer);</_NorseWantedGeneratorAnalyzerNames>
+		</PropertyGroup>
+		<ItemGroup>
+			<Analyzer Remove="@(Analyzer)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Analyzer.Filename)', '^Norse\..+\.Generator$')) and !$(_NorseWantedGeneratorAnalyzerNames.Contains(';%(Analyzer.Filename);'))" />
+		</ItemGroup>
+	</Target>
 </Project>
