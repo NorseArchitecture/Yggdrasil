@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/TwoFactorAuthentication"
+@page "/Account/Manage/TwoFactorAuthentication"
 
 @using Microsoft.AspNetCore.Http.Features
 @using Microsoft.AspNetCore.Identity
@@ -70,14 +70,14 @@ else
 }
 
 @code {
-    private bool canTrack;
-    private bool hasAuthenticator;
-    private int recoveryCodesLeft;
-    private bool is2faEnabled;
-    private bool isMachineRemembered;
+    bool canTrack;
+    bool hasAuthenticator;
+    int recoveryCodesLeft;
+    bool is2faEnabled;
+    bool isMachineRemembered;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,7 +95,7 @@ else
         recoveryCodesLeft = await UserManager.CountRecoveryCodesAsync(user);
     }
 
-    private async Task OnSubmitForgetBrowserAsync()
+    async Task OnSubmitForgetBrowserAsync()
     {
         await SignInManager.ForgetTwoFactorClientAsync();
 

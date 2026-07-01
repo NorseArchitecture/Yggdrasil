@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/RenamePasskey/{Id}"
+@page "/Account/Manage/RenamePasskey/{Id}"
 
 @using Norse.Hosting.Web.Server.Identity
 @using System.ComponentModel.DataAnnotations
@@ -34,17 +34,17 @@
 </FluentGrid>
 
 @code {
-    private ApplicationUser? user;
-    private UserPasskeyInfo? passkey;
+    ApplicationUser? user;
+    UserPasskeyInfo? passkey;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [Parameter]
     public string? Id { get; set; }
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = default!;
+    InputModel Input { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,7 +76,7 @@
         }
     }
 
-    private async Task Rename()
+    async Task Rename()
     {
         passkey!.Name = Input.Name;
         var result = await UserManager.AddOrUpdatePasskeyAsync(user!, passkey);
@@ -89,7 +89,7 @@
         RedirectManager.RedirectToWithStatus("Account/Manage/Passkeys", "Passkey updated successfully.", HttpContext);
     }
 
-    private sealed class InputModel
+    sealed class InputModel
     {
         [Required]
         [StringLength(200, ErrorMessage = "Passkey names must be no longer than {1} characters.")]

@@ -1,4 +1,4 @@
-﻿@page "/Account/Login"
+@page "/Account/Login"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
@@ -51,17 +51,17 @@
 </FluentGrid>
 
 @code {
-    private string? errorMessage;
-    private EditContext editContext = default!;
+    string? errorMessage;
+    EditContext editContext = default!;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = default!;
+    InputModel Input { get; set; } = default!;
 
     [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
+    string? ReturnUrl { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,7 +125,7 @@
         }
     }
 
-    private sealed class InputModel
+    sealed class InputModel
     {
         [Required]
         [EmailAddress]

@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using Norse.Hosting.Web.Server.Identity
 
 @inject SignInManager<ApplicationUser> SignInManager
@@ -17,9 +17,8 @@
 
 </FluentNavMenu>
 
-
 @code {
-    private bool hasExternalLogins;
+    bool hasExternalLogins;
 
     protected override async Task OnInitializedAsync()
     {

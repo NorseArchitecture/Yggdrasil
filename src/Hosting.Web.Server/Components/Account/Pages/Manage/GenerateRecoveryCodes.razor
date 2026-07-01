@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/GenerateRecoveryCodes"
+@page "/Account/Manage/GenerateRecoveryCodes"
 
 @using Microsoft.AspNetCore.Identity
 @using Norse.Hosting.Web.Server.Identity
@@ -40,12 +40,12 @@ else
 }
 
 @code {
-    private string? message;
-    private ApplicationUser? user;
-    private IEnumerable<string>? recoveryCodes;
+    string? message;
+    ApplicationUser? user;
+    IEnumerable<string>? recoveryCodes;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,7 +63,7 @@ else
         }
     }
 
-    private async Task OnSubmitAsync()
+    async Task OnSubmitAsync()
     {
         if (user is null)
         {

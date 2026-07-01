@@ -1,4 +1,4 @@
-﻿@page "/Account/ConfirmEmail"
+@page "/Account/ConfirmEmail"
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -14,16 +14,16 @@
 <StatusMessage Message="@statusMessage" />
 
 @code {
-    private string? statusMessage;
+    string? statusMessage;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromQuery]
-    private string? UserId { get; set; }
+    string? UserId { get; set; }
 
     [SupplyParameterFromQuery]
-    private string? Code { get; set; }
+    string? Code { get; set; }
 
     protected override async Task OnInitializedAsync()
     {

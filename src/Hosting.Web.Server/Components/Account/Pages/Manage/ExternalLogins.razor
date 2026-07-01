@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/ExternalLogins"
+@page "/Account/Manage/ExternalLogins"
 
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
@@ -65,22 +65,22 @@
 @code {
     public const string LinkLoginCallbackAction = "LinkLoginCallback";
 
-    private ApplicationUser? user;
-    private IList<UserLoginInfo>? currentLogins;
-    private IList<AuthenticationScheme>? otherLogins;
-    private bool showRemoveButton;
+    ApplicationUser? user;
+    IList<UserLoginInfo>? currentLogins;
+    IList<AuthenticationScheme>? otherLogins;
+    bool showRemoveButton;
 
     [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
+    HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
-    private string? LoginProvider { get; set; }
+    string? LoginProvider { get; set; }
 
     [SupplyParameterFromForm]
-    private string? ProviderKey { get; set; }
+    string? ProviderKey { get; set; }
 
     [SupplyParameterFromQuery]
-    private string? Action { get; set; }
+    string? Action { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -110,7 +110,7 @@
         }
     }
 
-    private async Task OnSubmitAsync()
+    async Task OnSubmitAsync()
     {
         if (user is null)
         {
@@ -130,7 +130,7 @@
         }
     }
 
-    private async Task OnGetLinkLoginCallbackAsync()
+    async Task OnGetLinkLoginCallbackAsync()
     {
         if (user is null)
         {

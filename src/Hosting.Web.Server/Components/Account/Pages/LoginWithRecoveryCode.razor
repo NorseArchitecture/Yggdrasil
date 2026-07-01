@@ -1,4 +1,4 @@
-﻿@page "/Account/LoginWithRecoveryCode"
+@page "/Account/LoginWithRecoveryCode"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
@@ -30,14 +30,14 @@
     </FluentGridItem>
 </FluentGrid>
 @code {
-    private string? message;
-    private ApplicationUser user = default!;
+    string? message;
+    ApplicationUser user = default!;
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = default!;
+    InputModel Input { get; set; } = default!;
 
     [SupplyParameterFromQuery]
-    private string? ReturnUrl { get; set; }
+    string? ReturnUrl { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -48,7 +48,7 @@
             throw new InvalidOperationException("Unable to load two-factor authentication user.");
     }
 
-    private async Task OnValidSubmitAsync()
+    async Task OnValidSubmitAsync()
     {
         var recoveryCode = Input.RecoveryCode.Replace(" ", string.Empty);
 
@@ -73,7 +73,7 @@
         }
     }
 
-    private sealed class InputModel
+    sealed class InputModel
     {
         [Required]
         [DataType(DataType.Text)]
