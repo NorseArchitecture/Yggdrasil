@@ -29,5 +29,8 @@
 		<PackageVersion Include="Norse.Abstractions.Migrations" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Web.Server" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Worker" Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.EntityFramework.Migrations.PostgreSQL" Version="$(UrdarbrunnrVersion)" />
+		<PackageVersion Include="Norse.Infrastructure.Migrations" Version="$(MidgardVersion)" />
+		<PackageVersion Include="Norse.Identity.Migrations" Version="$(HiminbjorgVersion)" />
 	</ItemGroup>
 </Project>
