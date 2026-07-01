@@ -13,7 +13,7 @@
 
 <h1>Recovery code verification</h1>
 <hr />
-<StatusMessage Message="@message" />
+<StatusMessage Message="@_message" />
 <p>
     You have requested to log in with a recovery code. This login will not be remembered until you provide
     an authenticator app code at log in or disable 2FA and log in again.
@@ -30,8 +30,8 @@
     </FluentGridItem>
 </FluentGrid>
 @code {
-    string? message;
-    ApplicationUser user = default!;
+    string? _message;
+    ApplicationUser _user = default!;
 
     [SupplyParameterFromForm]
     InputModel Input { get; set; } = default!;
@@ -45,7 +45,7 @@
         Input ??= new();
 
         // Ensure the user has gone through the username & password screen first
-        user = await SignInManager.GetTwoFactorAuthenticationUserAsync() ??
+        _user = await SignInManager.GetTwoFactorAuthenticationUserAsync() ??
             throw new InvalidOperationException("Unable to load two-factor authentication user.");
     }
 
@@ -55,7 +55,7 @@
 
         var result = await SignInManager.TwoFactorRecoveryCodeSignInAsync(recoveryCode);
 
-        var userId = await UserManager.GetUserIdAsync(user);
+        var userId = await UserManager.GetUserIdAsync(_user);
 
         if (result.Succeeded)
         {
@@ -70,7 +70,7 @@
         else
         {
             Logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", userId);
-            message = "Error: Invalid recovery code entered.";
+            _message = "Error: Invalid recovery code entered.";
         }
     }
 

@@ -14,13 +14,13 @@
 
 <PageTitle>Configure authenticator app</PageTitle>
 
-@if (recoveryCodes is not null)
+@if (_recoveryCodes is not null)
 {
-    <ShowRecoveryCodes RecoveryCodes="recoveryCodes.ToArray()" StatusMessage="@message" />
+    <ShowRecoveryCodes RecoveryCodes="_recoveryCodes.ToArray()" StatusMessage="@_message" />
 }
 else
 {
-   <StatusMessage Message="@message" />
+   <StatusMessage Message="@_message" />
     <h3>Configure authenticator app</h3>
     <FluentGrid>
         <FluentGridItem xs="12" sm="6">
@@ -37,10 +37,10 @@ else
                     </p>
                 </li>
                 <li>
-                    <p>Scan the QR Code or enter this key <kbd>@sharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
+                    <p>Scan the QR Code or enter this key <kbd>@_sharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
                     <div class="alert alert-info">Learn how to <a href="https://go.microsoft.com/fwlink/?Linkid=852423">enable QR code generation</a>.</div>
                     <div></div>
-                    <div data-url="@authenticatorUri"></div>
+                    <div data-url="@_authenticatorUri"></div>
                 </li>
                 <li>
                     <p>
@@ -66,11 +66,11 @@ else
 @code {
     const string AuthenticatorUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
 
-    string? message;
-    ApplicationUser? user;
-    string? sharedKey;
-    string? authenticatorUri;
-    IEnumerable<string>? recoveryCodes;
+    string? _message;
+    ApplicationUser? _user;
+    string? _sharedKey;
+    string? _authenticatorUri;
+    IEnumerable<string>? _recoveryCodes;
 
     [CascadingParameter]
     HttpContext HttpContext { get; set; } = default!;
@@ -83,19 +83,19 @@ else
     {
         Input ??= new();
 
-        user = await UserManager.GetUserAsync(HttpContext.User);
-        if (user is null)
+        _user = await UserManager.GetUserAsync(HttpContext.User);
+        if (_user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
         }
 
-        await LoadSharedKeyAndQrCodeUriAsync(user);
+        await LoadSharedKeyAndQrCodeUriAsync(_user);
     }
 
     async Task OnValidSubmitAsync()
     {
-        if (user is null)
+        if (_user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
@@ -104,28 +104,28 @@ else
         // Strip spaces and hyphens
         var verificationCode = Input.Code.Replace(" ", string.Empty).Replace("-", string.Empty);
 
-        var is2faTokenValid = await UserManager.VerifyTwoFactorTokenAsync(
-            user, UserManager.Options.Tokens.AuthenticatorTokenProvider, verificationCode);
+        var is2FaTokenValid = await UserManager.VerifyTwoFactorTokenAsync(
+            _user, UserManager.Options.Tokens.AuthenticatorTokenProvider, verificationCode);
 
-        if (!is2faTokenValid)
+        if (!is2FaTokenValid)
         {
-            message = "Error: Verification code is invalid.";
+            _message = "Error: Verification code is invalid.";
             return;
         }
 
-        await UserManager.SetTwoFactorEnabledAsync(user, true);
-        var userId = await UserManager.GetUserIdAsync(user);
+        await UserManager.SetTwoFactorEnabledAsync(_user, true);
+        var userId = await UserManager.GetUserIdAsync(_user);
         Logger.LogInformation("User with ID '{UserId}' has enabled 2FA with an authenticator app.", userId);
 
-        message = "Your authenticator app has been verified.";
+        _message = "Your authenticator app has been verified.";
 
-        if (await UserManager.CountRecoveryCodesAsync(user) == 0)
+        if (await UserManager.CountRecoveryCodesAsync(_user) == 0)
         {
-            recoveryCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+            _recoveryCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(_user, 10);
         }
         else
         {
-            RedirectManager.RedirectToWithStatus("Account/Manage/TwoFactorAuthentication", message, HttpContext);
+            RedirectManager.RedirectToWithStatus("Account/Manage/TwoFactorAuthentication", _message, HttpContext);
         }
     }
 
@@ -139,10 +139,10 @@ else
             unformattedKey = await UserManager.GetAuthenticatorKeyAsync(user);
         }
 
-        sharedKey = FormatKey(unformattedKey!);
+        _sharedKey = FormatKey(unformattedKey!);
 
         var email = await UserManager.GetEmailAsync(user);
-        authenticatorUri = GenerateQrCodeUri(email!, unformattedKey!);
+        _authenticatorUri = GenerateQrCodeUri(email!, unformattedKey!);
     }
 
     string FormatKey(string unformattedKey)

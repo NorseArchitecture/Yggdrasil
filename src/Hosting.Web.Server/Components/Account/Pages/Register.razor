@@ -46,7 +46,7 @@
 </FluentGrid>
 
 @code {
-    IEnumerable<IdentityError>? identityErrors;
+    IEnumerable<IdentityError>? _identityErrors;
 
     [SupplyParameterFromForm]
     InputModel Input { get; set; } = default!;
@@ -55,7 +55,7 @@
     string? ReturnUrl { get; set; }
 
     string? Message =>
-        identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+        _identityErrors is null ? null : $"Error: {string.Join(", ", _identityErrors.Select(error => error.Description))}";
 
     /// <inheritdoc />
     protected override void OnInitialized()
@@ -74,7 +74,7 @@
 
         if (!result.Succeeded)
         {
-            identityErrors = result.Errors;
+            _identityErrors = result.Errors;
             return;
         }
 

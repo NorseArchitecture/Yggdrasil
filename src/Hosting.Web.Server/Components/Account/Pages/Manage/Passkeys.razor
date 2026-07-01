@@ -18,7 +18,7 @@
     <FluentGridItem xs="12" sm="6">
         <StatusMessage />
 
-        @if (currentPasskeys is { Count: > 0 })
+        @if (_currentPasskeys is { Count: > 0 })
         {
             <table style="margin-top: 10px;">
                 <thead>
@@ -28,7 +28,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var passkey in currentPasskeys)
+                    @foreach (var passkey in _currentPasskeys)
                     {
                         <tr style="height: 44px;">
                             <td>@(passkey.Name ?? "Unnamed passkey")</td>
@@ -62,7 +62,7 @@
         }
     <form @formname="add-passkey" @onsubmit="AddPasskey" method="post">
                 <AntiforgeryToken />
-    @if (currentPasskeys is { Count: >= MaxPasskeyCount })
+    @if (_currentPasskeys is { Count: >= MaxPasskeyCount })
     {
         <p class="text-danger">You have reached the maximum number of allowed passkeys. Please delete one before adding a new one.</p>
     }
@@ -78,8 +78,8 @@
 @code {
     const int MaxPasskeyCount = 100;
 
-    ApplicationUser? user;
-    IList<UserPasskeyInfo>? currentPasskeys;
+    ApplicationUser? _user;
+    IList<UserPasskeyInfo>? _currentPasskeys;
 
     [CascadingParameter]
     HttpContext HttpContext { get; set; } = default!;
@@ -98,18 +98,18 @@
     {
         Input ??= new();
 
-        user = await UserManager.GetUserAsync(HttpContext.User);
-        if (user is null)
+        _user = await UserManager.GetUserAsync(HttpContext.User);
+        if (_user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
         }
-        currentPasskeys = await UserManager.GetPasskeysAsync(user);
+        _currentPasskeys = await UserManager.GetPasskeysAsync(_user);
     }
 
     async Task AddPasskey()
     {
-        if (user is null)
+        if (_user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
@@ -127,7 +127,7 @@
             return;
         }
 
-        if (currentPasskeys!.Count >= MaxPasskeyCount)
+        if (_currentPasskeys!.Count >= MaxPasskeyCount)
         {
             RedirectManager.RedirectToCurrentPageWithStatus($"Error: You have reached the maximum number of allowed passkeys.", HttpContext);
             return;
@@ -140,7 +140,7 @@
             return;
         }
 
-        var addPasskeyResult = await UserManager.AddOrUpdatePasskeyAsync(user, attestationResult.Passkey);
+        var addPasskeyResult = await UserManager.AddOrUpdatePasskeyAsync(_user, attestationResult.Passkey);
         if (!addPasskeyResult.Succeeded)
         {
             RedirectManager.RedirectToCurrentPageWithStatus("Error: The passkey could not be added to your account.", HttpContext);
@@ -170,7 +170,7 @@
 
     async Task DeletePasskey()
     {
-        if (user is null)
+        if (_user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
@@ -187,7 +187,7 @@
             return;
         }
 
-        var result = await UserManager.RemovePasskeyAsync(user, credentialId);
+        var result = await UserManager.RemovePasskeyAsync(_user, credentialId);
         if (!result.Succeeded)
         {
             RedirectManager.RedirectToCurrentPageWithStatus("Error: The passkey could not be deleted.", HttpContext);

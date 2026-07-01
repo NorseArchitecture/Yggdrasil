@@ -1,4 +1,3 @@
-#nullable enable
 using Norse.Hosting.Web.Server.Identity;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
@@ -9,7 +8,7 @@ sealed class IdentityRedirectManager(NavigationManager navigationManager)
 {
 	public const string StatusCookieName = "Identity.StatusMessage";
 
-	static readonly CookieBuilder StatusCookieBuilder = new()
+	static readonly CookieBuilder _statusCookieBuilder = new()
 	{
 		SameSite = SameSiteMode.Strict,
 		HttpOnly = true,
@@ -56,7 +55,7 @@ sealed class IdentityRedirectManager(NavigationManager navigationManager)
 	/// <param name="context">The current HTTP context, used to write the status cookie.</param>
 	public void RedirectToWithStatus(string uri, string message, HttpContext context)
 	{
-		context.Response.Cookies.Append(StatusCookieName, message, StatusCookieBuilder.Build(context));
+		context.Response.Cookies.Append(StatusCookieName, message, _statusCookieBuilder.Build(context));
 		RedirectTo(uri);
 	}
 

@@ -7,7 +7,7 @@
 }
 
 @code {
-    string? messageFromCookie;
+    string? _messageFromCookie;
 
     [Parameter]
     public string? Message { get; set; }
@@ -16,14 +16,14 @@
     HttpContext HttpContext { get; set; } = default!;
 
     string? DisplayMessage =>
-        Message ?? messageFromCookie;
+        Message ?? _messageFromCookie;
 
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        messageFromCookie = HttpContext.Request.Cookies[IdentityRedirectManager.StatusCookieName];
+        _messageFromCookie = HttpContext.Request.Cookies[IdentityRedirectManager.StatusCookieName];
 
-        if (messageFromCookie is not null)
+        if (_messageFromCookie is not null)
         {
             HttpContext.Response.Cookies.Delete(IdentityRedirectManager.StatusCookieName);
         }

@@ -11,7 +11,7 @@
 
 <PageTitle>Delete Personal Data</PageTitle>
 
-<StatusMessage Message="@message" />
+<StatusMessage Message="@_message" />
 
 <h3>Delete Personal Data</h3>
 
@@ -25,7 +25,7 @@
         <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
             <DataAnnotationsValidator />
             <FluentValidationSummary class="text-danger" role="alert" />
-            @if (requirePassword)
+            @if (_requirePassword)
             {
                 <FluentTextField type="password" Name="Input.Password" @bind-Value="Input.Password" AutoComplete="new-password" Required="true" Placeholder="Please enter your password." Label="Password" Style="width: 100%" />
                 <FluentValidationMessage For="() => Input.Password" class="text-danger" />
@@ -37,9 +37,9 @@
     </FluentGridItem>
 </FluentGrid>
 @code {
-    string? message;
-    ApplicationUser? user;
-    bool requirePassword;
+    string? _message;
+    ApplicationUser? _user;
+    bool _requirePassword;
 
     [CascadingParameter]
     HttpContext HttpContext { get; set; } = default!;
@@ -52,30 +52,30 @@
     {
         Input ??= new();
 
-        user = await UserManager.GetUserAsync(HttpContext.User);
-        if (user is null)
+        _user = await UserManager.GetUserAsync(HttpContext.User);
+        if (_user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
         }
-        requirePassword = await UserManager.HasPasswordAsync(user);
+        _requirePassword = await UserManager.HasPasswordAsync(_user);
     }
 
     async Task OnValidSubmitAsync()
     {
-        if (user is null)
+        if (_user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;
         }
 
-        if (requirePassword && !await UserManager.CheckPasswordAsync(user, Input.Password))
+        if (_requirePassword && !await UserManager.CheckPasswordAsync(_user, Input.Password))
         {
-            message = "Error: Incorrect password.";
+            _message = "Error: Incorrect password.";
             return;
         }
 
-        var result = await UserManager.DeleteAsync(user);
+        var result = await UserManager.DeleteAsync(_user);
         if (!result.Succeeded)
         {
             throw new InvalidOperationException("Unexpected error occurred deleting user.");
@@ -83,7 +83,7 @@
 
         await SignInManager.SignOutAsync();
 
-        var userId = await UserManager.GetUserIdAsync(user);
+        var userId = await UserManager.GetUserIdAsync(_user);
         Logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
 
         RedirectManager.RedirectToCurrentPage();
