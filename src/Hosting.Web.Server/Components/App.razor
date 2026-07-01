@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["_content/Norse.Hosting.Web.Components/app.css"]" />
+    <link rel="stylesheet" href="@Assets["Norse.Hosting.Web.Server.styles.css"]" />
+    <ImportMap />
+    <link rel="icon" type="image/x-icon" href="@Assets["_content/Norse.Hosting.Web.Components/favicon.ico"]" />
+    <HeadOutlet @rendermode="PageRenderMode" />
+</head>
+
+<body>
+    @*
+        So rendermode is a hosting level concern which means it doesn't work in MAUI at all ergo default to InteractiveAuto at the top level and then let any routable component with a @page directive override it to InteractiveServer if it wants to.
+        This is the only way to get a MAUI app to work with routable components that are prerendered on the server.
+        PageRenderMode is null for requests that don't support interactive routing (e.g. direct API/non-navigation
+        requests), so those stay static instead of forcing an interactive render mode on them.
+    *@
+    <Routes @rendermode="PageRenderMode" />
+    <ReconnectModal/>
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["Components/Account/Shared/PasskeySubmit.razor.js"]" type="module"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.AcceptsInteractiveRouting() ? InteractiveAuto : null;
+}

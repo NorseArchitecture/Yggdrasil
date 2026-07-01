@@ -3,6 +3,7 @@
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
 		<DotNetVersion>11.0.0-preview.5.26302.115</DotNetVersion>
+		<FluentUIVersion>4.14.3</FluentUIVersion>
 		<SvartalfheimVersion>0.0.4</SvartalfheimVersion>
 		<AsgardVersion>0.0.1</AsgardVersion>
 		<MidgardVersion>0.0.1</MidgardVersion>
@@ -12,13 +13,21 @@
 		<HeimdallVersion>0.0.0</HeimdallVersion>
 	</PropertyGroup>
 	<ItemGroup>
+		<PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="$(DotNetVersion)" />
+		<PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="$(DotNetVersion)" />
+		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(DotNetVersion)" />
+		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="$(DotNetVersion)" />
+		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(DotNetVersion)" />
+		<PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(DotNetVersion)" />
+		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="$(FluentUIVersion)" />
+		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
-		<PackageVersion Include="Norse.Abstractions.Backend"    Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.Abstractions.Backend" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Components" Version="$(AsgardVersion)" />
-		<PackageVersion Include="Norse.Abstractions.Contracts"  Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.Abstractions.Contracts" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Migrations" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Web.Server" Version="$(AsgardVersion)" />
-		<PackageVersion Include="Norse.Abstractions.Worker"     Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.Abstractions.Worker" Version="$(AsgardVersion)" />
 	</ItemGroup>
 </Project>

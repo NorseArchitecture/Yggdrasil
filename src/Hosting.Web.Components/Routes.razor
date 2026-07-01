@@ -1,0 +1,26 @@
+@using System.Reflection
+
+<Router AppAssembly="@typeof(Routes).Assembly" AdditionalAssemblies="@AdditionalAssemblies" NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
+            <NotAuthorized>
+                <RedirectToLogin />
+            </NotAuthorized>
+        </AuthorizeRouteView>
+    </Found>
+</Router>
+
+@code {
+
+    /// <summary>
+    /// Supplied by whoever hosts this component (Hosting.Web.Server today, MAUI later) so that
+    /// this project never takes a compile-time dependency on host-specific assemblies. Resolved via DI,
+    /// not a [Parameter], because Assembly isn't JSON-serializable and can't cross an interactive
+    /// render-mode boundary.
+    /// </summary>
+    [Inject]
+    private RoutesAdditionalAssemblies AdditionalAssembliesSource { get; set; } = default!;
+
+    private IEnumerable<Assembly> AdditionalAssemblies => AdditionalAssembliesSource.Assemblies;
+
+}

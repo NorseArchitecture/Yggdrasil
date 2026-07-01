@@ -1,8 +1,31 @@
 <Solution>
-	<Project Path="src/Hosting.Migrations.Service/Hosting.Migrations.Service.csproj" />
-	<Project Path="src/Hosting.Web.Server/Hosting.Web.Server.csproj" />
-	<Project Path="src/Hosting.Worker/Hosting.Worker.csproj" />
-	<Project Path="tests/Hosting.Migrations.Service.Tests/Hosting.Migrations.Service.Tests.csproj" />
-	<Project Path="tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj" />
-	<Project Path="tests/Hosting.Worker.Tests/Hosting.Worker.Tests.csproj" />
+	<Folder Name="/Solution Items/">
+		<File Path=".editorconfig" />
+		<File Path=".gitattributes" />
+		<File Path=".gitignore" />
+		<File Path="CLAUDE.md" />
+		<File Path="Directory.Build.props" />
+		<File Path="Directory.Packages.props" />
+		<File Path="global.json" />
+		<File Path="LICENSE" />
+		<File Path="nuget.config" />
+		<File Path="README.md" />
+	</Folder>
+	<Folder Name="/src/">
+		<File Path="src/Directory.Build.props" />
+		<File Path="src/Directory.Build.targets" />
+		<Project Path="src/Hosting.Migrations.Service/Hosting.Migrations.Service.csproj" />
+		<Project Path="src/Hosting.Web.Client/Hosting.Web.Client.csproj" />
+		<Project Path="src/Hosting.Web.Components/Hosting.Web.Components.csproj" />
+		<Project Path="src/Hosting.Web.Server/Hosting.Web.Server.csproj" />
+		<Project Path="src/Hosting.Worker/Hosting.Worker.csproj" />
+	</Folder>
+	<Folder Name="/tests/">
+		<File Path="tests/Directory.Build.props" />
+		<File Path="tests/Directory.Build.targets" />
+		<File Path="tests/Directory.Packages.props" />
+		<Project Path="tests/Hosting.Migrations.Service.Tests/Hosting.Migrations.Service.Tests.csproj" />
+		<Project Path="tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj" />
+		<Project Path="tests/Hosting.Worker.Tests/Hosting.Worker.Tests.csproj" />
+	</Folder>
 </Solution>
