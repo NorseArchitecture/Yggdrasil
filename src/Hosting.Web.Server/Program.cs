@@ -14,6 +14,7 @@ builder.Services
 	.AddInteractiveServerComponents()
 	.AddInteractiveWebAssemblyComponents();
 
+builder.Services.AddSingleton(new RoutesAdditionalAssemblies([typeof(Program).Assembly]));
 builder.Services.AddFluentUIComponents();
 
 builder.Services.AddCascadingAuthenticationState();
