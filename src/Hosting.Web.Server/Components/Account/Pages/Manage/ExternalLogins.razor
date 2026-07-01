@@ -82,6 +82,7 @@
     [SupplyParameterFromQuery]
     string? Action { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         user = await UserManager.GetUserAsync(HttpContext.User);

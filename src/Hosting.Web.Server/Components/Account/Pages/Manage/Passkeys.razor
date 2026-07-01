@@ -93,6 +93,7 @@
     [SupplyParameterFromForm(FormName = "add-passkey")]
     PasskeyInputModel Input { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();

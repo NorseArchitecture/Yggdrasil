@@ -47,6 +47,7 @@
     [SupplyParameterFromQuery]
     bool RememberMe { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();

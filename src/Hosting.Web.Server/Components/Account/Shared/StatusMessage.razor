@@ -18,6 +18,7 @@
     string? DisplayMessage =>
         Message ?? messageFromCookie;
 
+    /// <inheritdoc />
     protected override void OnInitialized()
     {
         messageFromCookie = HttpContext.Request.Cookies[IdentityRedirectManager.StatusCookieName];

@@ -57,6 +57,7 @@
     string? Message =>
         identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
 
+    /// <inheritdoc />
     protected override void OnInitialized()
     {
         Input ??= new();

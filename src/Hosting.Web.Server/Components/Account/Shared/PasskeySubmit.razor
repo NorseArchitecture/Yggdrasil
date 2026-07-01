@@ -32,6 +32,7 @@
     [Parameter(CaptureUnmatchedValues = true)]
     public IDictionary<string, object>? AdditionalAttributes { get; set; }
 
+    /// <inheritdoc />
     protected override void OnInitialized()
     {
         tokens = Services.GetService<IAntiforgery>()?.GetTokens(HttpContext);

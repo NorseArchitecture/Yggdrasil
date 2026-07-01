@@ -65,6 +65,7 @@
     string? ProviderDisplayName =>
         externalLoginInfo?.ProviderDisplayName;
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();

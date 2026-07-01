@@ -39,6 +39,7 @@
     [SupplyParameterFromQuery]
     string? ReturnUrl { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();

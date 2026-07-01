@@ -78,6 +78,7 @@ else
     [SupplyParameterFromForm]
     InputModel Input { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();

@@ -47,6 +47,7 @@ else
     [CascadingParameter]
     HttpContext HttpContext { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         user = await UserManager.GetUserAsync(HttpContext.User);

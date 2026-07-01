@@ -41,6 +41,7 @@ else
     [SupplyParameterFromQuery]
     string? ReturnUrl { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         if (Email is null)

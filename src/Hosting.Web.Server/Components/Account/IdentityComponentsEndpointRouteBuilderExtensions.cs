@@ -17,6 +17,12 @@ namespace Microsoft.AspNetCore.Routing;
 static class IdentityComponentsEndpointRouteBuilderExtensions
 {
 	// These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
+	/// <summary>
+	/// Maps the external login, logout, passkey, and account-management endpoints required by the
+	/// Identity Razor components under <c>/Components/Account/Pages</c>.
+	/// </summary>
+	/// <param name="endpoints">The endpoint route builder to add the Identity endpoints to.</param>
+	/// <returns>A convention builder for the mapped <c>/Account</c> endpoint group.</returns>
 	public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)
 	{
 		ArgumentNullException.ThrowIfNull(endpoints);

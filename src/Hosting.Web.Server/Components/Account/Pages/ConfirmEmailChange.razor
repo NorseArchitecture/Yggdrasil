@@ -30,6 +30,7 @@
     [SupplyParameterFromQuery]
     string? Code { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         if (UserId is null || Email is null || Code is null)

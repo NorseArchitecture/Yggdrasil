@@ -63,6 +63,7 @@
     [SupplyParameterFromQuery]
     string? ReturnUrl { get; set; }
 
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -76,6 +77,10 @@
         }
     }
 
+    /// <summary>
+    /// Handles the login form submission: attempts passkey or password sign-in and redirects
+    /// based on the result (success, two-factor required, or lockout).
+    /// </summary>
     public async Task LoginUser()
     {
         if (!string.IsNullOrEmpty(Input.Passkey?.Error))
