@@ -10,7 +10,7 @@ Connective tissue for the Norse Architecture — **`Norse.Hosting`**: the web, w
 
 ## Status
 
-Scaffolded — `Hosting.Web.Server`, `Hosting.Worker`, and `Hosting.Migrations.Service` exist as minimal deployable stubs: placeholder code, passing tests, and container-publishable via `dotnet publish /t:PublishContainer`. Real hosting abstractions land once Asgard and Midgard have shipped their foundations. Each subsequent type surface follows the spec-first discipline: brainstorm → spec → plan in [Glitnir](https://github.com/NorseArchitecture/Glitnir)'s `docs/Yggdrasil/`, greenlit by the human, then code.
+**`Hosting.Migrations.Service` is live** — the first real deployable in this realm, part of the platform-wide migrations framework proven end to end across six realms (the full story is on [Bifröst's README](https://github.com/NorseArchitecture/Bifrost#readme)). Its `Program.cs` is three lines calling the source-generated `AddNorseMigrations()` from Urdarbrunnr; it runs against a real Postgres database (`norse_identity`) and exits clean. `Hosting.Web.Server` and `Hosting.Worker` remain minimal stubs — placeholder code, passing tests, container-publishable via `dotnet publish /t:PublishContainer` — until Asgard and Midgard ship the hosting abstractions they're waiting on. Each subsequent type surface follows the spec-first discipline: brainstorm → spec → plan in [Glitnir](https://github.com/NorseArchitecture/Glitnir)'s `docs/Yggdrasil/`, greenlit by the human, then code.
 
 ## The cosmos
 
