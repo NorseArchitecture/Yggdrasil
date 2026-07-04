@@ -4,7 +4,7 @@
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
 		<DotNetVersion>11.0.0-preview.5.26302.115</DotNetVersion>
 		<FluentUIVersion>4.14.3</FluentUIVersion>
-		<SvartalfheimVersion>0.0.6</SvartalfheimVersion>
+		<SvartalfheimVersion>0.0.7</SvartalfheimVersion>
 		<AsgardVersion>0.0.2</AsgardVersion>
 		<MidgardVersion>0.0.2</MidgardVersion>
 		<UrdarbrunnrVersion>0.0.5</UrdarbrunnrVersion>
