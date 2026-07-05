@@ -17,5 +17,8 @@
 		<NorseRef Include="Identity.Migrations">
 			<Repo>Himinbjorg</Repo>
 		</NorseRef>
+		<NorseRef Include="ReferenceData.Data.Migrations">
+			<Repo>Mimisbrunnr</Repo>
+		</NorseRef>
 	</ItemGroup>
 </Project>
