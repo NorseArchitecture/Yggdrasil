@@ -7,7 +7,7 @@
 		<HiminbjorgVersion>0.0.4</HiminbjorgVersion>
 		<MidgardVersion>0.0.2</MidgardVersion>
 		<MimirVersion>0.0.0</MimirVersion>
-		<MimisbrunnrVersion>0.0.0</MimisbrunnrVersion>
+		<MimisbrunnrVersion>0.0.1</MimisbrunnrVersion>
 		<RatatoskrVersion>0.0.0</RatatoskrVersion>
 		<SvartalfheimVersion>0.0.7</SvartalfheimVersion>
 		<UrdarbrunnrVersion>0.0.5</UrdarbrunnrVersion>
@@ -36,5 +36,6 @@
 		<PackageVersion Include="Norse.EntityFramework.Migrations.PostgreSQL" Version="$(UrdarbrunnrVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Migrations" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations" Version="$(HiminbjorgVersion)" />
+		<PackageVersion Include="Norse.ReferenceData.Data.Migrations" Version="$(MimisbrunnrVersion)" />
 	</ItemGroup>
 </Project>
