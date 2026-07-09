@@ -9,6 +9,7 @@ public class NorseMigrationsGeneratedExtensionsTests
 	{
 		var builder = Host.CreateApplicationBuilder();
 		builder.Configuration["ConnectionStrings:norse_identity"] = "Host=localhost;Database=test";
+		builder.Configuration["ConnectionStrings:norse_referencedata"] = "Host=localhost;Database=test";
 
 		Should.NotThrow(() => builder.AddNorseMigrations());
 	}
