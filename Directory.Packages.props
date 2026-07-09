@@ -1,16 +1,20 @@
 <Project>
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<!-- Norse versions -->
+		<AsgardVersion>0.0.2</AsgardVersion>
+		<HeimdallVersion>0.0.0</HeimdallVersion>
+		<HiminbjorgVersion>0.0.4</HiminbjorgVersion>
+		<MidgardVersion>0.0.2</MidgardVersion>
+		<MimirVersion>0.0.0</MimirVersion>
+		<MimisbrunnrVersion>0.0.0</MimisbrunnrVersion>
+		<RatatoskrVersion>0.0.0</RatatoskrVersion>
+		<SvartalfheimVersion>0.0.7</SvartalfheimVersion>
+		<UrdarbrunnrVersion>0.0.5</UrdarbrunnrVersion>
+		<!-- 3rd party versions -->
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
 		<DotNetVersion>11.0.0-preview.5.26302.115</DotNetVersion>
 		<FluentUIVersion>4.14.3</FluentUIVersion>
-		<SvartalfheimVersion>0.0.7</SvartalfheimVersion>
-		<AsgardVersion>0.0.2</AsgardVersion>
-		<MidgardVersion>0.0.2</MidgardVersion>
-		<UrdarbrunnrVersion>0.0.5</UrdarbrunnrVersion>
-		<RatatoskrVersion>0.0.0</RatatoskrVersion>
-		<HiminbjorgVersion>0.0.4</HiminbjorgVersion>
-		<HeimdallVersion>0.0.0</HeimdallVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="$(DotNetVersion)" />
