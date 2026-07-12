@@ -24,6 +24,7 @@
 		<PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="$(DotNetVersion)" />
+		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(DotNetVersion)" />

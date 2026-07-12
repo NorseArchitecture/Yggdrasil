@@ -1,6 +1,12 @@
 # Hosting.Stories.Client
 
-The WASM host for Bragi's `DesignSystem.Stories` content, served in production by `Hosting.Stories.Server` via `UseBlazorFrameworkFiles()`.
+The WASM host for Bragi's `DesignSystem.Stories` content, served by `Hosting.Stories.Server` via `MapStaticAssets()` + `MapFallbackToFile("index.html")`.
+
+## `Microsoft.AspNetCore.Components.WebAssembly.DevServer` is not cruft
+
+This project references `Microsoft.AspNetCore.Components.WebAssembly.DevServer` (`PrivateAssets="all"`). It looks unused — nothing in source calls it directly — but removing it breaks `dotnet run` on `Hosting.Stories.Server`: ASP.NET Core only wires a referenced WASM project's static web assets (`index.html` included) into the host's `WebRootFileProvider` when running, which is what makes `MapFallbackToFile("index.html")` resolve anything. Without the package, `GET /` 404s and the console warns `The WebRootPath was not found` — `Hosting.Stories.Server` has no physical `wwwroot` of its own by design; everything comes from this project via static web assets. It's also a prerequisite for `Hosting.Stories.Server`'s `UseWebAssemblyDebugging()` call. Got excised once already (2026-07-12, `aa53619`) on the assumption it was leftover template scaffolding — it isn't; restored the same day.
+
+Relatedly, `Hosting.Stories.Server` needs `ASPNETCORE_ENVIRONMENT=Development` to load static web assets at all (see its `Properties/launchSettings.json`) — that auto-wiring is Development-only by ASP.NET Core convention, regardless of this package.
 
 ## Why this has two HTML documents, not one
 
