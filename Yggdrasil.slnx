@@ -15,6 +15,8 @@
 		<File Path="src/Directory.Build.props" />
 		<File Path="src/Directory.Build.targets" />
 		<Project Path="src/Hosting.Migrations.Service/Hosting.Migrations.Service.csproj" />
+		<Project Path="src/Hosting.Stories.Client/Hosting.Stories.Client.csproj" />
+		<Project Path="src/Hosting.Stories.Server/Hosting.Stories.Server.csproj" />
 		<Project Path="src/Hosting.Web.Client/Hosting.Web.Client.csproj" />
 		<Project Path="src/Hosting.Web.Components/Hosting.Web.Components.csproj" />
 		<Project Path="src/Hosting.Web.Server/Hosting.Web.Server.csproj" />
@@ -25,6 +27,7 @@
 		<File Path="tests/Directory.Build.targets" />
 		<File Path="tests/Directory.Packages.props" />
 		<Project Path="tests/Hosting.Migrations.Service.Tests/Hosting.Migrations.Service.Tests.csproj" />
+		<Project Path="tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj" />
 		<Project Path="tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj" />
 		<Project Path="tests/Hosting.Worker.Tests/Hosting.Worker.Tests.csproj" />
 	</Folder>
