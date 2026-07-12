@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+	<PropertyGroup>
+		<OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BlazingStory" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<NorseRef Include="DesignSystem.Stories">
+			<Repo>Naglfar</Repo>
+		</NorseRef>
+	</ItemGroup>
+
+	<!--
+		src/Directory.Build.targets hard-codes OutputType=Library for every /src project — true for
+		every other Norse.* class library, but this is a runnable BlazingStory WASM host, matching
+		the same override Hosting.Migrations.Service and (formerly) Naglfar's DesignSystem.Stories
+		needed for their own genuinely different project shapes.
+	-->
+	<Target Name="RestoreBlazorWebAssemblyOutputType" BeforeTargets="CoreCompile;Publish;GetTargetPath">
+		<PropertyGroup>
+			<OutputType>Exe</OutputType>
+		</PropertyGroup>
+	</Target>
+
+</Project>
