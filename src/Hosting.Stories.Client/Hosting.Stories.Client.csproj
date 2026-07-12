@@ -16,4 +16,10 @@
 		</NorseRef>
 	</ItemGroup>
 
+	<ItemGroup>
+		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
+			<Repo>Midgard</Repo>
+		</NorseRef>
+	</ItemGroup>
+
 </Project>
