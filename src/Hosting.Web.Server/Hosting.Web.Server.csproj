@@ -8,4 +8,9 @@
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
 	</ItemGroup>
+	<ItemGroup>
+		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
+			<Repo>Midgard</Repo>
+		</NorseRef>
+	</ItemGroup>
 </Project>
