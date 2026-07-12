@@ -7,7 +7,6 @@
 	<ItemGroup>
 		<PackageReference Include="BlazingStory" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
 	</ItemGroup>
 
 	<ItemGroup>
