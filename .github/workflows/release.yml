@@ -8,10 +8,40 @@ on:
 permissions:
   contents: write
   packages: write
-  pull-requests: write
   security-events: write
+  pull-requests: write
 
 jobs:
-  release:
-    uses: NorseArchitecture/.github/.github/workflows/release-container.yml@master
+  build-test:
+    uses: NorseArchitecture/.github/.github/workflows/ci-build-test.yml@master
     secrets: inherit
+
+  codeql:
+    uses: NorseArchitecture/.github/.github/workflows/codeql.yml@master
+    secrets: inherit
+    with:
+      language: csharp
+
+  publish-container:
+    needs: [build-test, codeql]
+    uses: NorseArchitecture/.github/.github/workflows/publish-container.yml@master
+    secrets: inherit
+
+  create-release:
+    needs: [publish-container]
+    uses: NorseArchitecture/.github/.github/workflows/create-release.yml@master
+    secrets: inherit
+
+  deploy-hook:
+    needs: [publish-container]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to feature environment
+        if: ${{ contains(github.ref_name, '-') }}
+        run: |
+          echo "Pre-release ${{ github.ref_name }} — deploy hook target: feature environment (not yet implemented)"
+
+      - name: Deploy to dev/integration
+        if: ${{ !contains(github.ref_name, '-') }}
+        run: |
+          echo "Stable ${{ github.ref_name }} — deploy hook target: dev/integration environment (not yet implemented)"
