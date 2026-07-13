@@ -17,7 +17,7 @@
 		<BlazingStoryVersion>1.0.0-preview.88</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
 		<DotNetVersion>11.0.0-preview.5.26302.115</DotNetVersion>
-		<FluentUIVersion>4.14.3</FluentUIVersion>
+		<FluentUIVersion>5.0.0-rc.4-26180.1</FluentUIVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="BlazingStory" Version="$(BlazingStoryVersion)" />
