@@ -9,6 +9,7 @@
 		<MidgardVersion>0.0.2</MidgardVersion>
 		<MimirVersion>0.0.0</MimirVersion>
 		<MimisbrunnrVersion>0.0.1</MimisbrunnrVersion>
+		<NaglfarVersion>0.0.0</NaglfarVersion>
 		<RatatoskrVersion>0.0.0</RatatoskrVersion>
 		<SvartalfheimVersion>0.0.7</SvartalfheimVersion>
 		<UrdarbrunnrVersion>0.0.6</UrdarbrunnrVersion>
@@ -31,6 +32,7 @@
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="Norse.DesignSystem.Stories" Version="$(BragiVersion)" />
+		<PackageVersion Include="Norse.DesignSystem.Tokens" Version="$(NaglfarVersion)" />
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Backend" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Components" Version="$(AsgardVersion)" />
@@ -39,6 +41,8 @@
 		<PackageVersion Include="Norse.Abstractions.Web.Server" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Worker" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.EntityFramework.Migrations.PostgreSQL" Version="$(UrdarbrunnrVersion)" />
+		<PackageVersion Include="Norse.Infrastructure.Components.Theme" Version="$(MidgardVersion)" />
+		<PackageVersion Include="Norse.Infrastructure.Components.Theme.FluentUI" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Migrations" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.ReferenceData.Data.Migrations" Version="$(MimisbrunnrVersion)" />
