@@ -3,7 +3,6 @@
 @using Norse.Hosting.Web.Server.Identity
 
 @inject SignInManager<ApplicationUser> SignInManager
-@inject IdentityRedirectManager RedirectManager
 
 @if (_externalLogins.Length == 0)
 {
@@ -23,7 +22,9 @@ else
             <p>
                 @foreach (var provider in _externalLogins)
                 {
-                    <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" Name="provider" Value="@provider.Name" Title="@($"Log in using your {provider.DisplayName} account")">@provider.DisplayName</FluentButton>
+                    <FluentButton Type="ButtonType.Submit" Appearance="ButtonAppearance.Primary" Name="provider"
+                                  Value="@provider.Name" Title="@($"Log in using your {provider.DisplayName} account")">
+                        @provider.DisplayName</FluentButton>
                     <text>&nbsp;</text>
                 }
             </p>
