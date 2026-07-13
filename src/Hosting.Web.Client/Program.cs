@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.FluentUI.AspNetCore.Components;
+using Norse.Infrastructure.Components.Theme.FluentUI;
 
 // <summary>
 // ARCHITECTURE NOTE — READ BEFORE ADDING CODE HERE
@@ -24,7 +24,7 @@ builder.Services
 	.AddAuthorizationCore()
 	.AddCascadingAuthenticationState()
 	.AddAuthenticationStateDeserialization()
-	.AddFluentUIComponents();
+	.AddNorseFluentUiTheme();
 
 await builder
 	.Build()

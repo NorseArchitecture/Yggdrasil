@@ -8,6 +8,7 @@
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["_content/Norse.Hosting.Web.Components/app.css"]" />
     <link rel="stylesheet" href="@Assets["Norse.Hosting.Web.Server.styles.css"]" />
+    <link rel="stylesheet" href="_content/Norse.DesignSystem.Tokens/norse-design-tokens.css" />
     <ImportMap />
     <link rel="icon" type="image/x-icon" href="@Assets["_content/Norse.Hosting.Web.Components/favicon.ico"]" />
     <HeadOutlet @rendermode="PageRenderMode" />
@@ -20,6 +21,7 @@
         PageRenderMode is null for requests that don't support interactive routing (e.g. direct API/non-navigation
         requests), so those stay static instead of forcing an interactive render mode on them.
     *@
+    <NorseFluentDesignTheme />
     <Routes @rendermode="PageRenderMode" />
     <ReconnectModal/>
     <script src="@Assets["_framework/blazor.web.js"]"></script>

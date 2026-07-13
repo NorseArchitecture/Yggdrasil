@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.FluentUI.AspNetCore.Components;
 using Norse.Hosting.Web.Components;
 using Norse.Hosting.Web.Server.Components;
 using Norse.Hosting.Web.Server.Components.Account;
 using Norse.Hosting.Web.Server.Identity;
+using Norse.Infrastructure.Components.Theme.FluentUI;
 
 Console.Title = "Norse Web Server";
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +15,7 @@ builder.Services
 	.AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddSingleton(new RoutesAdditionalAssemblies([typeof(Program).Assembly]));
-builder.Services.AddFluentUIComponents();
+builder.Services.AddNorseFluentUiTheme();
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityRedirectManager>();

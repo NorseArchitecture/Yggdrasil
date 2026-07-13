@@ -12,4 +12,10 @@
 		<ProjectReference Include="..\Hosting.Web.Components\Hosting.Web.Components.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
+			<Repo>Midgard</Repo>
+		</NorseRef>
+	</ItemGroup>
+
 </Project>
