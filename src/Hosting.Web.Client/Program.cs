@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Norse.Hosting.Web.Components;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 
 // <summary>
@@ -25,6 +26,11 @@ builder.Services
 	.AddCascadingAuthenticationState()
 	.AddAuthenticationStateDeserialization()
 	.AddNorseFluentUiTheme();
+
+// This project hosts no components of its own (see the architecture note above), so it has
+// no additional assemblies to contribute beyond Routes' own — unlike Hosting.Web.Server, which
+// contributes its own assembly for the server-only Identity/Account pages.
+builder.Services.AddSingleton(new RoutesAdditionalAssemblies([]));
 
 await builder
 	.Build()
