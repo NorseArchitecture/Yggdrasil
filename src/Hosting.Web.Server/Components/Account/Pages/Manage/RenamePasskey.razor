@@ -20,9 +20,7 @@
             {
                 <h4>Enter a name for your passkey</h4>
             }
-            <hr />
             <ValidationSummary class="text-danger" role="alert" />
-
             <FluentLabel ForId="Input.Name">Passkey name</FluentLabel>
             <FluentTextInput Style="width: 100%;" @bind-Value="Input.Name" Id="Input.Name" Name="Input.Name" Required="true" Placeholder="My passkey" />
             <ValidationMessage For="() => Input.Name" class="text-danger" />
