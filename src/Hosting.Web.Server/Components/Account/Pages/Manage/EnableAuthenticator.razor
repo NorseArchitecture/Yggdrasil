@@ -5,9 +5,9 @@
 @using System.Text
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
-@using Norse.Hosting.Web.Server.Identity
+@using Norse.Identity
 
-@inject UserManager<ApplicationUser> UserManager
+@inject UserManager<NorseUser> UserManager
 @inject UrlEncoder UrlEncoder
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<EnableAuthenticator> Logger
@@ -67,7 +67,7 @@ else
     const string AuthenticatorUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
 
     string? _message;
-    ApplicationUser? _user;
+    NorseUser? _user;
     string? _sharedKey;
     string? _authenticatorUri;
     IEnumerable<string>? _recoveryCodes;
@@ -129,7 +129,7 @@ else
         }
     }
 
-    async ValueTask LoadSharedKeyAndQrCodeUriAsync(ApplicationUser user)
+    async ValueTask LoadSharedKeyAndQrCodeUriAsync(NorseUser user)
     {
         // Load the authenticator key & QR code URI to display on the form
         var unformattedKey = await UserManager.GetAuthenticatorKeyAsync(user);

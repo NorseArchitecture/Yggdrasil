@@ -1,6 +1,11 @@
+using Grpc.Net.Client;
+using Grpc.Net.Client.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Norse.AuthN.Components;
+using Norse.Hosting.Web.Client;
 using Norse.Hosting.Web.Components;
 using Norse.Infrastructure.Components.Theme.FluentUI;
+using ProtoBuf.Grpc.Client;
 
 // <summary>
 // ARCHITECTURE NOTE — READ BEFORE ADDING CODE HERE
@@ -31,6 +36,14 @@ builder.Services
 // no additional assemblies to contribute beyond Routes' own — unlike Hosting.Web.Server, which
 // contributes its own assembly for the server-only Identity/Account pages.
 builder.Services.AddSingleton(new RoutesAdditionalAssemblies([]));
+
+// gRPC-Web rides ordinary HTTP/1.1 — no HTTP/2-specific channel configuration needed in the browser.
+var authNChannel = GrpcChannel.ForAddress(builder.HostEnvironment.BaseAddress, new GrpcChannelOptions
+{
+	HttpHandler = new GrpcWebHandler { InnerHandler = new BrowserCredentialsHandler { InnerHandler = new HttpClientHandler() } },
+});
+builder.Services.AddSingleton(authNChannel.CreateGrpcService<IAuthenticationService>());
+builder.Services.AddScoped<IAuthenticationGateway, WasmAuthenticationGateway>();
 
 await builder
 	.Build()

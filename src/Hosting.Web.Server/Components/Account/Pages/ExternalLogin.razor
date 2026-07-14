@@ -6,12 +6,12 @@
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using Norse.Hosting.Web.Server.Identity
+@using Norse.Identity
 
-@inject SignInManager<ApplicationUser> SignInManager
-@inject UserManager<ApplicationUser> UserManager
-@inject IUserStore<ApplicationUser> UserStore
-@inject IEmailSender<ApplicationUser> EmailSender
+@inject SignInManager<NorseUser> SignInManager
+@inject UserManager<NorseUser> UserManager
+@inject IUserStore<NorseUser> UserStore
+@inject IEmailSender<NorseUser> EmailSender
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<ExternalLogin> Logger
@@ -70,14 +70,14 @@
 
         if (RemoteError is not null)
         {
-            RedirectManager.RedirectToWithStatus("Account/Login", $"Error from external provider: {RemoteError}", HttpContext);
+            RedirectManager.RedirectToWithStatus("auth/login", $"Error from external provider: {RemoteError}", HttpContext);
             return;
         }
 
         var info = await SignInManager.GetExternalLoginInfoAsync();
         if (info is null)
         {
-            RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information.", HttpContext);
+            RedirectManager.RedirectToWithStatus("auth/login", "Error loading external login information.", HttpContext);
             return;
         }
 
@@ -93,7 +93,7 @@
 
             // We should only reach this page via the login callback, so redirect back to
             // the login page if we get here some other way.
-            RedirectManager.RedirectTo("Account/Login");
+            RedirectManager.RedirectTo("auth/login");
         }
     }
 
@@ -101,7 +101,7 @@
     {
         if (_externalLoginInfo is null)
         {
-            RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information.", HttpContext);
+            RedirectManager.RedirectToWithStatus("auth/login", "Error loading external login information.", HttpContext);
             return;
         }
 
@@ -138,7 +138,7 @@
     {
         if (_externalLoginInfo is null)
         {
-            RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information during confirmation.", HttpContext);
+            RedirectManager.RedirectToWithStatus("auth/login", "Error loading external login information during confirmation.", HttpContext);
             return;
         }
 
@@ -183,26 +183,26 @@
         }
     }
 
-    ApplicationUser CreateUser()
+    NorseUser CreateUser()
     {
         try
         {
-            return Activator.CreateInstance<ApplicationUser>();
+            return Activator.CreateInstance<NorseUser>();
         }
         catch
         {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor");
+            throw new InvalidOperationException($"Can't create an instance of '{nameof(NorseUser)}'. " +
+                $"Ensure that '{nameof(NorseUser)}' is not an abstract class and has a parameterless constructor");
         }
     }
 
-    IUserEmailStore<ApplicationUser> GetEmailStore()
+    IUserEmailStore<NorseUser> GetEmailStore()
     {
         if (!UserManager.SupportsUserEmail)
         {
             throw new NotSupportedException("The default UI requires a user store with email support.");
         }
-        return (IUserEmailStore<ApplicationUser>)UserStore;
+        return (IUserEmailStore<NorseUser>)UserStore;
     }
 
     sealed class InputModel

@@ -1,9 +1,9 @@
 @page "/Account/Manage/Disable2fa"
 
 @using Microsoft.AspNetCore.Identity
-@using Norse.Hosting.Web.Server.Identity
+@using Norse.Identity
 
-@inject UserManager<ApplicationUser> UserManager
+@inject UserManager<NorseUser> UserManager
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<Disable2fa> Logger
 
@@ -31,7 +31,7 @@
 </FluentGrid>
 
 @code {
-    ApplicationUser? _user;
+    NorseUser? _user;
 
     [CascadingParameter]
     HttpContext HttpContext { get; set; } = default!;

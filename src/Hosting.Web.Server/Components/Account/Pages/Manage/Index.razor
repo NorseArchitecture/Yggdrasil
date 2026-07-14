@@ -2,10 +2,10 @@
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
-@using Norse.Hosting.Web.Server.Identity
+@using Norse.Identity
 
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<NorseUser> UserManager
+@inject SignInManager<NorseUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Profile</PageTitle>
@@ -29,7 +29,7 @@
 </FluentGrid>
 
 @code {
-    ApplicationUser? _user;
+    NorseUser? _user;
     string? _username;
     string? _phoneNumber;
 

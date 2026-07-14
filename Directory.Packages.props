@@ -21,6 +21,9 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="BlazingStory" Version="$(BlazingStoryVersion)" />
+		<PackageVersion Include="Grpc.AspNetCore.Server.Reflection" Version="2.80.0" />
+		<PackageVersion Include="Grpc.Net.Client" Version="2.80.0" />
+		<PackageVersion Include="Grpc.Net.Client.Web" Version="2.80.0" />
 		<PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(DotNetVersion)" />
@@ -46,5 +49,6 @@
 		<PackageVersion Include="Norse.Infrastructure.Migrations" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.ReferenceData.Data.Migrations" Version="$(MimisbrunnrVersion)" />
+		<PackageVersion Include="protobuf-net.Grpc" Version="1.2.5" />
 	</ItemGroup>
 </Project>

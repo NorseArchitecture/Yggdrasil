@@ -1,4 +1,4 @@
-using Norse.Hosting.Web.Server.Identity;
+using Norse.Identity;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 
@@ -80,6 +80,6 @@ sealed class IdentityRedirectManager(NavigationManager navigationManager)
 	/// </summary>
 	/// <param name="userManager">The user manager used to resolve the current user's ID for the message.</param>
 	/// <param name="context">The current HTTP context, used to read the user principal and write the status cookie.</param>
-	public void RedirectToInvalidUser(UserManager<ApplicationUser> userManager, HttpContext context) =>
+	public void RedirectToInvalidUser(UserManager<NorseUser> userManager, HttpContext context) =>
 		RedirectToWithStatus("Account/InvalidUser", $"Error: Unable to load user with ID '{userManager.GetUserId(context.User)}'.", context);
 }

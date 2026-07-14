@@ -1,10 +1,15 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Norse.AuthN.Components;
+using Norse.AuthN.Components.FluentUI;
 using Norse.Hosting.Web.Components;
+using Norse.Hosting.Web.Server;
 using Norse.Hosting.Web.Server.Components;
 using Norse.Hosting.Web.Server.Components.Account;
-using Norse.Hosting.Web.Server.Identity;
+using Norse.Identity;
+using Norse.Identity.Web.Server;
 using Norse.Infrastructure.Components.Theme.FluentUI;
+using Norse.Infrastructure.Web.Server.DeferredSignIn;
 
 Console.Title = "Norse Web Server";
 var builder = WebApplication.CreateBuilder(args);
@@ -14,32 +19,28 @@ builder.Services
 	.AddInteractiveServerComponents()
 	.AddInteractiveWebAssemblyComponents();
 
-builder.Services.AddSingleton(new RoutesAdditionalAssemblies([typeof(Program).Assembly]));
+// Logout lives in AuthN.Components (headless -- no FluentUI markup); Login/Register stay in
+// AuthN.Components.FluentUI. Two distinct assemblies, both need to be discoverable by the router.
+builder.Services.AddSingleton(new RoutesAdditionalAssemblies([typeof(Program).Assembly, typeof(Login).Assembly, typeof(Logout).Assembly]));
 builder.Services.AddNorseFluentUiTheme();
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-builder.Services
-	.AddAuthentication(options =>
-	{
-		options.DefaultScheme = IdentityConstants.ApplicationScheme;
-		options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-	})
-	.AddIdentityCookies();
-
-// NOTE: no .AddEntityFrameworkStores<T>() here — persistence lands in a separate tree.
-// PlaceholderUserStore satisfies DI validation; anything that actually touches it throws
-// until that tree replaces it with a real EF-backed IUserStore.
-builder.Services.AddScoped<IUserStore<ApplicationUser>, PlaceholderUserStore>();
-builder.Services
-	.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-	.AddSignInManager()
-	.AddDefaultTokenProviders();
-
 builder.Services.AddAuthorization();
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+builder.Services.AddSingleton<IEmailSender<NorseUser>, IdentityNoOpEmailSender>();
+
+var norseIdentityConnectionString = builder.Configuration.GetConnectionString("norse_identity")
+	?? throw new InvalidOperationException("Connection string 'norse_identity' is not configured.");
+builder.Services.AddNorseAuthenticationService(norseIdentityConnectionString);
+builder.Services.AddScoped<IAuthenticationGateway, BlazorServerAuthenticationGateway>();
+builder.Services.AddDeferredSignIn();
+
+// Dev-only: lets Postman/grpcurl discover IAuthenticationService and call it directly, proving the
+// protobuf-net.Grpc wire lifecycle independent of the Blazor UI. Never mapped outside Development —
+// reflection hands out the full service/message catalog to anyone who can reach the endpoint.
+builder.Services.AddGrpcReflection();
 
 var app = builder.Build();
 
@@ -63,9 +64,17 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
 	.AddInteractiveServerRenderMode()
 	.AddInteractiveWebAssemblyRenderMode()
-	.AddAdditionalAssemblies(typeof(Routes).Assembly);
+	.AddAdditionalAssemblies(typeof(Routes).Assembly, typeof(Login).Assembly, typeof(Logout).Assembly);
 
 app.MapAdditionalIdentityEndpoints();
+
+app.MapNorseAuthenticationService();
+app.MapDeferredSignIn();
+
+if (app.Environment.IsDevelopment())
+{
+	app.MapGrpcReflectionService();
+}
 
 await app
 	.RunAsync()

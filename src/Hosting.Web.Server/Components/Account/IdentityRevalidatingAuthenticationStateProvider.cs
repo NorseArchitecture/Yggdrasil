@@ -1,4 +1,4 @@
-using Norse.Hosting.Web.Server.Identity;
+using Norse.Identity;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
@@ -25,11 +25,11 @@ sealed class IdentityRevalidatingAuthenticationStateProvider(
 		// Get the user manager from a new scope to ensure it fetches fresh data
 		var scope = scopeFactory.CreateAsyncScope();
 		await using var _ = scope.ConfigureAwait(false);
-		var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+		var userManager = scope.ServiceProvider.GetRequiredService<UserManager<NorseUser>>();
 		return await ValidateSecurityStampAsync(userManager, authenticationState.User).ConfigureAwait(false);
 	}
 
-	async Task<bool> ValidateSecurityStampAsync(UserManager<ApplicationUser> userManager, ClaimsPrincipal principal)
+	async Task<bool> ValidateSecurityStampAsync(UserManager<NorseUser> userManager, ClaimsPrincipal principal)
 	{
 		var user = await userManager.GetUserAsync(principal).ConfigureAwait(false);
 		if (user is null)

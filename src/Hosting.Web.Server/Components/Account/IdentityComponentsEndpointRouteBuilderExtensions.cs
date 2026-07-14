@@ -1,6 +1,6 @@
 using Norse.Hosting.Web.Server.Components.Account.Pages;
 using Norse.Hosting.Web.Server.Components.Account.Pages.Manage;
-using Norse.Hosting.Web.Server.Identity;
+using Norse.Identity;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -31,7 +31,7 @@ static partial class IdentityComponentsEndpointRouteBuilderExtensions
 
 		accountGroup.MapPost("/PerformExternalLogin", (
 			HttpContext context,
-			[FromServices] SignInManager<ApplicationUser> signInManager,
+			[FromServices] SignInManager<NorseUser> signInManager,
 			[FromForm] string provider,
 			[FromForm] string returnUrl) =>
 		{
@@ -51,7 +51,7 @@ static partial class IdentityComponentsEndpointRouteBuilderExtensions
 		});
 
 		accountGroup.MapPost("/Logout", async (
-			[FromServices] SignInManager<ApplicationUser> signInManager,
+			[FromServices] SignInManager<NorseUser> signInManager,
 			[FromForm] string returnUrl) =>
 		{
 			await signInManager.SignOutAsync().ConfigureAwait(false);
@@ -60,8 +60,8 @@ static partial class IdentityComponentsEndpointRouteBuilderExtensions
 
 		accountGroup.MapPost("/PasskeyCreationOptions", async (
 			HttpContext context,
-			[FromServices] UserManager<ApplicationUser> userManager,
-			[FromServices] SignInManager<ApplicationUser> signInManager,
+			[FromServices] UserManager<NorseUser> userManager,
+			[FromServices] SignInManager<NorseUser> signInManager,
 			[FromServices] IAntiforgery antiforgery) =>
 		{
 			await antiforgery.ValidateRequestAsync(context).ConfigureAwait(false);
@@ -85,8 +85,8 @@ static partial class IdentityComponentsEndpointRouteBuilderExtensions
 
 		accountGroup.MapPost("/PasskeyRequestOptions", async (
 			HttpContext context,
-			[FromServices] UserManager<ApplicationUser> userManager,
-			[FromServices] SignInManager<ApplicationUser> signInManager,
+			[FromServices] UserManager<NorseUser> userManager,
+			[FromServices] SignInManager<NorseUser> signInManager,
 			[FromServices] IAntiforgery antiforgery,
 			[FromQuery] string? username) =>
 		{
@@ -101,7 +101,7 @@ static partial class IdentityComponentsEndpointRouteBuilderExtensions
 
 		manageGroup.MapPost("/LinkExternalLogin", async (
 			HttpContext context,
-			[FromServices] SignInManager<ApplicationUser> signInManager,
+			[FromServices] SignInManager<NorseUser> signInManager,
 			[FromForm] string provider) =>
 		{
 			// Clear the existing external cookie to ensure a clean login process
@@ -123,7 +123,7 @@ static partial class IdentityComponentsEndpointRouteBuilderExtensions
 
 		manageGroup.MapPost("/DownloadPersonalData", async (
 			HttpContext context,
-			[FromServices] UserManager<ApplicationUser> userManager,
+			[FromServices] UserManager<NorseUser> userManager,
 			[FromServices] AuthenticationStateProvider authenticationStateProvider) =>
 		{
 			var user = await userManager.GetUserAsync(context.User).ConfigureAwait(false);
@@ -137,7 +137,7 @@ static partial class IdentityComponentsEndpointRouteBuilderExtensions
 
 			// Only include personal data for download
 			var personalData = new Dictionary<string, string>();
-			var personalDataProps = typeof(ApplicationUser).GetProperties().Where(
+			var personalDataProps = typeof(NorseUser).GetProperties().Where(
 				prop => Attribute.IsDefined(prop, typeof(PersonalDataAttribute)));
 			foreach (var p in personalDataProps)
 			{

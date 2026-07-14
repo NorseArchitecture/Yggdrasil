@@ -1,7 +1,7 @@
 @using Microsoft.AspNetCore.Identity
-@using Norse.Hosting.Web.Server.Identity
+@using Norse.Identity
 
-@inject SignInManager<ApplicationUser> SignInManager
+@inject SignInManager<NorseUser> SignInManager
 
 <FluentNav>
     <FluentNavItem Href="Account/Manage" Match="NavLinkMatch.All">Profile</FluentNavItem>

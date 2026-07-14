@@ -1,11 +1,11 @@
 @page "/Account/Manage/Passkeys"
 
-@using Norse.Hosting.Web.Server.Identity
+@using Norse.Identity
 @using Microsoft.AspNetCore.Identity
 @using System.Buffers.Text
 
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<NorseUser> UserManager
+@inject SignInManager<NorseUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Manage your passkeys</PageTitle>
@@ -76,7 +76,7 @@
 @code {
     const int MaxPasskeyCount = 100;
 
-    ApplicationUser? _user;
+    NorseUser? _user;
     IList<UserPasskeyInfo>? _currentPasskeys;
 
     [CascadingParameter]

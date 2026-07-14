@@ -16,6 +16,18 @@
 		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseRef Include="AuthN.Components.FluentUI">
+			<Repo>Heimdall</Repo>
+		</NorseRef>
+		<NorseRef Include="Infrastructure.Web.Client">
+			<Repo>Midgard</Repo>
+		</NorseRef>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="protobuf-net.Grpc" />
+		<PackageReference Include="Grpc.Net.Client" />
+		<PackageReference Include="Grpc.Net.Client.Web" />
 	</ItemGroup>
 
 </Project>

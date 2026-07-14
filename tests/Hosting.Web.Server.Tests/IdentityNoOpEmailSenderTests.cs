@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Identity;
 using Norse.Hosting.Web.Server.Components.Account;
-using Norse.Hosting.Web.Server.Identity;
+using Norse.Identity;
 
 namespace Norse.Hosting.Web.Server.Tests;
 
 public class IdentityNoOpEmailSenderTests
 {
-	readonly IEmailSender<ApplicationUser> _sender = new IdentityNoOpEmailSender();
-	readonly ApplicationUser _user = new();
+	readonly IEmailSender<NorseUser> _sender = new IdentityNoOpEmailSender();
+	readonly NorseUser _user = new();
 
 	[Fact]
 	async Task SendConfirmationLinkAsync_completes_without_throwing() =>

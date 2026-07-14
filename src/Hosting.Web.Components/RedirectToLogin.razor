@@ -3,5 +3,5 @@
 @code {
     /// <inheritdoc />
     protected override void OnInitialized() =>
-        NavigationManager.NavigateTo($"Account/Login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", forceLoad: true);
+        NavigationManager.NavigateTo($"auth/login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", forceLoad: true);
 }

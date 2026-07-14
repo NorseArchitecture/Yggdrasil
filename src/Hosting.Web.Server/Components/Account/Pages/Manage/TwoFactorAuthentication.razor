@@ -2,10 +2,10 @@
 
 @using Microsoft.AspNetCore.Http.Features
 @using Microsoft.AspNetCore.Identity
-@using Norse.Hosting.Web.Server.Identity
+@using Norse.Identity
 
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<NorseUser> UserManager
+@inject SignInManager<NorseUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Two-factor authentication (2FA)</PageTitle>

@@ -3,10 +3,10 @@
 @using System.Text
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using Norse.Hosting.Web.Server.Identity
+@using Norse.Identity
 
-@inject UserManager<ApplicationUser> UserManager
-@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<NorseUser> UserManager
+@inject SignInManager<NorseUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
 <PageTitle>Confirm email change</PageTitle>
@@ -36,7 +36,7 @@
         if (UserId is null || Email is null || Code is null)
         {
             RedirectManager.RedirectToWithStatus(
-                "Account/Login", "Error: Invalid email change confirmation link.", HttpContext);
+                "auth/login", "Error: Invalid email change confirmation link.", HttpContext);
             return;
         }
 
