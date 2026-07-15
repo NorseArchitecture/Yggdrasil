@@ -3,7 +3,7 @@
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<!-- Norse versions -->
 		<AsgardVersion>0.0.6</AsgardVersion>
-		<BragiVersion>0.0.1</BragiVersion>
+		<BragiVersion>0.0.2</BragiVersion>
 		<HeimdallVersion>0.0.2</HeimdallVersion>
 		<HiminbjorgVersion>0.0.4</HiminbjorgVersion>
 		<MidgardVersion>0.0.5</MidgardVersion>
