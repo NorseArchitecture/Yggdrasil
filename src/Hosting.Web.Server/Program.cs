@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Norse.Abstractions.Components.Primitives;
 using Norse.AuthN.Components;
 using Norse.AuthN.Components.FluentUI;
 using Norse.Hosting.Web.Components;
 using Norse.Hosting.Web.Server;
 using Norse.Hosting.Web.Server.Components;
-using Norse.Hosting.Web.Server.Components.Account;
 using Norse.Identity;
 using Norse.Identity.Web.Server;
+using Norse.Identity.Web.Server.Components.Pages;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
 
@@ -20,8 +21,10 @@ builder.Services
 	.AddInteractiveWebAssemblyComponents();
 
 // Logout lives in AuthN.Components (headless -- no FluentUI markup); Login/Register stay in
-// AuthN.Components.FluentUI. Two distinct assemblies, both need to be discoverable by the router.
-builder.Services.AddSingleton(new RoutesAdditionalAssemblies([typeof(Program).Assembly, typeof(Login).Assembly, typeof(Logout).Assembly]));
+// AuthN.Components.FluentUI; the Account pages (ExternalLogin, Manage, etc.) live in Himinbjorg's
+// Identity.Web.Server. Three distinct assemblies, all need to be discoverable by the router.
+builder.Services.AddSingleton(new RoutesAdditionalAssemblies([typeof(Program).Assembly, typeof(Login).Assembly, typeof(Logout).Assembly, typeof(ExternalLogin).Assembly]));
+builder.Services.AddSingleton<IAppShellLayout, AppShellLayout>();
 builder.Services.AddNorseFluentUiTheme();
 
 builder.Services.AddCascadingAuthenticationState();
@@ -64,7 +67,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
 	.AddInteractiveServerRenderMode()
 	.AddInteractiveWebAssemblyRenderMode()
-	.AddAdditionalAssemblies(typeof(Routes).Assembly, typeof(Login).Assembly, typeof(Logout).Assembly);
+	.AddAdditionalAssemblies(typeof(Routes).Assembly, typeof(Login).Assembly, typeof(Logout).Assembly, typeof(ExternalLogin).Assembly);
 
 app.MapAdditionalIdentityEndpoints();
 

@@ -11,4 +11,10 @@
 		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<NorseRef Include="Abstractions.Components">
+			<Repo>Asgard</Repo>
+		</NorseRef>
+	</ItemGroup>
+
 </Project>
