@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<!-- Norse versions -->
-		<AsgardVersion>0.0.7</AsgardVersion>
+		<AsgardVersion>0.0.8</AsgardVersion>
 		<BragiVersion>0.0.2</BragiVersion>
 		<HeimdallVersion>0.0.2</HeimdallVersion>
 		<HiminbjorgVersion>0.0.4</HiminbjorgVersion>
