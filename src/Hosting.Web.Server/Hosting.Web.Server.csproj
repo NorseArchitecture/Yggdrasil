@@ -10,6 +10,9 @@
 		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseRef Include="Infrastructure.Web.Server">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<NorseRef Include="Identity.Web.Server">
 			<Repo>Himinbjorg</Repo>
 		</NorseRef>

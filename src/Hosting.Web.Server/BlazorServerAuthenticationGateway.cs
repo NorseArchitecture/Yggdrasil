@@ -1,6 +1,6 @@
 using Norse.Abstractions.Web.Server.Mediator;
 using Norse.AuthN.Components;
-using Norse.Identity;
+using Norse.Identity.Web.Server;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
 
 namespace Norse.Hosting.Web.Server;
