@@ -8,11 +8,11 @@
 		<HiminbjorgVersion>0.0.4</HiminbjorgVersion>
 		<MidgardVersion>0.0.5</MidgardVersion>
 		<MimirVersion>0.0.0</MimirVersion>
-		<MimisbrunnrVersion>0.0.1</MimisbrunnrVersion>
+		<MimisbrunnrVersion>0.0.2</MimisbrunnrVersion>
 		<NaglfarVersion>0.0.4</NaglfarVersion>
 		<RatatoskrVersion>0.0.0</RatatoskrVersion>
 		<SvartalfheimVersion>0.0.7</SvartalfheimVersion>
-		<UrdarbrunnrVersion>0.0.2</UrdarbrunnrVersion>
+		<UrdarbrunnrVersion>0.0.3</UrdarbrunnrVersion>
 		<!-- 3rd party versions -->
 		<BlazingStoryVersion>1.0.0-preview.88</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
