@@ -32,7 +32,11 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-builder.Services.AddAuthorization();
+// AuthN.Public is satisfied by any principal, anonymous-role cookie included (Norse.AuthN.Services.AuthNPolicies) —
+// every AuthenticationService method still declares it per decided law item 4, so it must exist here even though
+// it imposes no real requirement. Composition root's job: Heimdall stays policy-name-only, never registers policies.
+builder.Services.AddAuthorizationBuilder()
+	.AddPolicy(AuthNPolicies.Public, policy => policy.RequireAssertion(_ => true));
 builder.Services.AddSingleton<IEmailSender<NorseUser>, IdentityNoOpEmailSender>();
 
 var norseIdentityConnectionString = builder.Configuration.GetConnectionString("norse_identity")

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components;
 using Norse.Abstractions.Contracts;
 using Norse.Primitives;
@@ -28,7 +29,7 @@ public sealed class EnvelopeHydrationState(PersistentComponentState state)
 		});
 
 	/// <summary>Reconstructs the persisted <see cref="Outcome{T}"/> for <paramref name="key"/>, if present.</summary>
-	public bool TryTakeOutcome<T>(string key, out Outcome<T> outcome) where T : notnull
+	public bool TryTakeOutcome<T>(string key, [MaybeNullWhen(false)] out Outcome<T> outcome) where T : notnull
 	{
 		if (state.TryTakeFromJson<EnvelopeDto<T>>(key, out var dto) && dto is not null)
 		{
