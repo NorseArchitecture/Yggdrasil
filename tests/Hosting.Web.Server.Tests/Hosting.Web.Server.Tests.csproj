@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\Hosting.Web.Server\Hosting.Web.Server.csproj" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.0.0-preview.5.26302.115" />
 	</ItemGroup>
 </Project>

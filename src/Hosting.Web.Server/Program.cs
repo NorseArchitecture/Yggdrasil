@@ -3,14 +3,15 @@ using Microsoft.AspNetCore.Identity;
 using Norse.Abstractions.Components.Primitives;
 using Norse.AuthN.Components;
 using Norse.AuthN.Components.FluentUI;
+using Norse.AuthN.Services;
 using Norse.Hosting.Web.Components;
 using Norse.Hosting.Web.Server;
 using Norse.Hosting.Web.Server.Components;
-using Norse.Identity;
 using Norse.Identity.Web.Server;
 using Norse.Identity.Web.Server.Components.Pages;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
+using Norse.Infrastructure.Web.Server.Mediator.Grpc;
 
 Console.Title = "Norse Web Server";
 var builder = WebApplication.CreateBuilder(args);
@@ -36,8 +37,10 @@ builder.Services.AddSingleton<IEmailSender<NorseUser>, IdentityNoOpEmailSender>(
 
 var norseIdentityConnectionString = builder.Configuration.GetConnectionString("norse_identity")
 	?? throw new InvalidOperationException("Connection string 'norse_identity' is not configured.");
+builder.Services.AddNorseCodeFirstGrpc(); // generic, per Midgard — knows nothing about AuthenticationService specifically
 builder.Services.AddNorseAuthenticationService(norseIdentityConnectionString);
-builder.Services.AddScoped<IAuthenticationGateway, BlazorServerAuthenticationGateway>();
+builder.Services.AddScoped<IAuthenticationGateway, AuthenticationInProcessGateway>(); // generated, Task 8/9
+builder.Services.AddScoped<EnvelopeHydrationState>();
 builder.Services.AddDeferredSignIn();
 
 // Dev-only: lets Postman/grpcurl discover IAuthenticationService and call it directly, proving the
@@ -71,7 +74,7 @@ app.MapRazorComponents<App>()
 
 app.MapAdditionalIdentityEndpoints();
 
-app.MapNorseAuthenticationService();
+app.MapGrpcService<AuthenticationService>();
 app.MapDeferredSignIn();
 
 if (app.Environment.IsDevelopment())

@@ -1,7 +1,7 @@
 using Grpc.Net.Client;
 using Grpc.Net.Client.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Norse.AuthN.Components;
+using Norse.AuthN.Services;
 using Norse.Hosting.Web.Client;
 using Norse.Hosting.Web.Components;
 using Norse.Infrastructure.Components.Theme.FluentUI;
@@ -43,7 +43,7 @@ var authNChannel = GrpcChannel.ForAddress(builder.HostEnvironment.BaseAddress, n
 	HttpHandler = new GrpcWebHandler { InnerHandler = new BrowserCredentialsHandler { InnerHandler = new HttpClientHandler() } },
 });
 builder.Services.AddSingleton(authNChannel.CreateGrpcService<IAuthenticationService>());
-builder.Services.AddScoped<IAuthenticationGateway, WasmAuthenticationGateway>();
+builder.Services.AddScoped<IAuthenticationGateway, AuthenticationWireGateway>(); // generated, Task 8
 
 await builder
 	.Build()

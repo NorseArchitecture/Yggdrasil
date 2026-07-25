@@ -1,4 +1,4 @@
-using Norse.AuthN.Components;
+using Norse.AuthN.Services;
 using Norse.Hosting.Stories.Client;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
