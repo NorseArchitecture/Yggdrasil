@@ -1,4 +1,5 @@
 using Norse.AuthN.Components;
+using Norse.AuthN.Services;
 
 namespace Norse.Hosting.Stories.Client;
 

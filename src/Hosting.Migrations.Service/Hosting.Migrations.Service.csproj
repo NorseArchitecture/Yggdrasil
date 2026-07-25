@@ -7,17 +7,17 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 	</ItemGroup>
 	<ItemGroup>
-		<NorseRef Include="EntityFramework.Migrations.PostgreSQL">
+		<NorseRef Include="Persistence.EntityFramework.Design.PostgreSQL">
 			<Repo>Urdarbrunnr</Repo>
 			<Generator>true</Generator>
 		</NorseRef>
 		<NorseRef Include="Infrastructure.Migrations">
 			<Repo>Midgard</Repo>
 		</NorseRef>
-		<NorseRef Include="Identity.Migrations">
+		<NorseRef Include="Identity.Migrations.PostgreSQL">
 			<Repo>Himinbjorg</Repo>
 		</NorseRef>
-		<NorseRef Include="ReferenceData.Data.Migrations">
+		<NorseRef Include="Reference.Data.Migrations.PostgreSQL">
 			<Repo>Mimisbrunnr</Repo>
 		</NorseRef>
 	</ItemGroup>

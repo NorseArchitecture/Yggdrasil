@@ -1,5 +1,6 @@
 using Grpc.Core;
 using Norse.AuthN.Components;
+using Norse.AuthN.Services;
 using Norse.Infrastructure.Web.Client.Grpc;
 
 namespace Norse.Hosting.Web.Client;
