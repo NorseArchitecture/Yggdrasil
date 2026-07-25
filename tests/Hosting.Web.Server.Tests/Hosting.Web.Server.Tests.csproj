@@ -3,4 +3,17 @@
 		<ProjectReference Include="..\..\src\Hosting.Web.Server\Hosting.Web.Server.csproj" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.0.0-preview.5.26302.115" />
 	</ItemGroup>
+	<ItemGroup>
+		<!-- Test-only cross-reference so TestExtensions.cs can call ToRpcException/DecodeProblem
+		     directly (same justification as Midgard's own RpcExceptionExtensionsTests, Task 5) —
+		     both are already transitively reachable via Hosting.Web.Server -> Hosting.Web.Client, but
+		     the test's real dependency is on Midgard's mediator round-trip, not on Yggdrasil's own
+		     hosting wiring, so it's named explicitly here. -->
+		<NorseRef Include="Infrastructure.Web.Server">
+			<Repo>Midgard</Repo>
+		</NorseRef>
+		<NorseRef Include="Infrastructure.Web.Client">
+			<Repo>Midgard</Repo>
+		</NorseRef>
+	</ItemGroup>
 </Project>
