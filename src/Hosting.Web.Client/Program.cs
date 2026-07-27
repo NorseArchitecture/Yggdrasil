@@ -42,8 +42,9 @@ var authNChannel = GrpcChannel.ForAddress(builder.HostEnvironment.BaseAddress, n
 {
 	HttpHandler = new GrpcWebHandler { InnerHandler = new BrowserCredentialsHandler { InnerHandler = new HttpClientHandler() } },
 });
-builder.Services.AddSingleton(authNChannel.CreateGrpcService<IAuthenticationService>());
-builder.Services.AddScoped<IAuthenticationGateway, AuthenticationWireGateway>(); // generated, Task 8
+builder.Services
+	.AddSingleton(authNChannel.CreateGrpcService<IAuthenticationService>())
+	.AddScoped<IAuthenticationGateway, AuthenticationWireGateway>(); // generated, Task 8
 
 await builder
 	.Build()

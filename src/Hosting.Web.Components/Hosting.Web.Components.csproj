@@ -4,17 +4,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<SupportedPlatform Include="browser" />
+		<NorseRef Include="Abstractions.Components">
+			<Repo>Asgard</Repo>
+		</NorseRef>
 		<PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.Web" />
 		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" />
 		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<NorseRef Include="Abstractions.Components">
-			<Repo>Asgard</Repo>
-		</NorseRef>
+		<SupportedPlatform Include="browser" />
 	</ItemGroup>
 
 </Project>

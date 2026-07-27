@@ -8,7 +8,7 @@
 		<NorseRef Include="Infrastructure.Web.Server">
 			<Repo>Midgard</Repo>
 		</NorseRef>
-		<ProjectReference Include="..\..\src\Hosting.Web.Server\Hosting.Web.Server.csproj" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.*-*" />
+		<ProjectReference Include="..\..\src\Hosting.Web.Server\Hosting.Web.Server.csproj" />
 	</ItemGroup>
 </Project>

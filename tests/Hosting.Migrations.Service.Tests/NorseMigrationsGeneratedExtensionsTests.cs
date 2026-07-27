@@ -2,7 +2,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Norse.Hosting.Migrations.Service.Tests;
 
-public class NorseMigrationsGeneratedExtensionsTests
+public sealed class NorseMigrationsGeneratedExtensionsTests
 {
 	[Fact]
 	void AddNorseMigrations_registers_all_contributors_without_throwing()

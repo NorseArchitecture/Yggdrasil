@@ -21,16 +21,16 @@ public sealed class AuthenticationHydrationParityTests
 		var inProcessResult = Outcome<LoginResult>.Err(ErrorCategory.Forbidden);
 
 		// Persist across the simulated prerender -> WASM handoff.
-		var store = new Dictionary<string, byte[]>();
+		Dictionary<string, byte[]> store = [];
 		var persistingState = TestPersistentComponentState.Create(store);
-		var hydration = new EnvelopeHydrationState(persistingState);
+		EnvelopeHydrationState hydration = new(persistingState);
 		using var subscription = hydration.Persist("login", () => inProcessResult);
 		await TestPersistentComponentState.PersistAsync(persistingState, store);
 
 		// WASM hydration: read the persisted state back — this is what the component renders from
 		// the instant hydration completes, before the wire gateway is even asked to re-answer.
 		var restoredState = TestPersistentComponentState.CreateFromStore(store);
-		var restoredHydration = new EnvelopeHydrationState(restoredState);
+		EnvelopeHydrationState restoredHydration = new(restoredState);
 		restoredHydration.TryTakeOutcome<LoginResult>("login", out var hydratedResult).ShouldBeTrue();
 
 		// The wire gateway independently re-answers the same forced-Forbidden scenario, decoding the
@@ -46,17 +46,17 @@ public sealed class AuthenticationHydrationParityTests
 	[Fact]
 	async Task Success_IdenticalLoginResult_AcrossInProcessThenWireGateway()
 	{
-		var loginResult = new LoginResult { Succeeded = true, DeferredCompletionUrl = null };
+		LoginResult loginResult = new() { Succeeded = true, DeferredCompletionUrl = null };
 		var inProcessResult = Outcome<LoginResult>.Ok(loginResult);
 
-		var store = new Dictionary<string, byte[]>();
+		Dictionary<string, byte[]> store = [];
 		var persistingState = TestPersistentComponentState.Create(store);
-		var hydration = new EnvelopeHydrationState(persistingState);
+		EnvelopeHydrationState hydration = new(persistingState);
 		using var subscription = hydration.Persist("login", () => inProcessResult);
 		await TestPersistentComponentState.PersistAsync(persistingState, store);
 
 		var restoredState = TestPersistentComponentState.CreateFromStore(store);
-		var restoredHydration = new EnvelopeHydrationState(restoredState);
+		EnvelopeHydrationState restoredHydration = new(restoredState);
 		restoredHydration.TryTakeOutcome<LoginResult>("login", out var hydratedResult).ShouldBeTrue();
 
 		hydratedResult.TryGetValue(out Success<LoginResult> success).ShouldBeTrue();

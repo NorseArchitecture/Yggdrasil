@@ -22,7 +22,7 @@ static class TestPersistentComponentState
 	/// <summary>Creates a fresh persisting-side state, not yet backed by <paramref name="store"/> — register callbacks against it, then flush with <see cref="PersistAsync"/>.</summary>
 	public static PersistentComponentState Create(Dictionary<string, byte[]> store)
 	{
-		var manager = new ComponentStatePersistenceManager(NullLogger<ComponentStatePersistenceManager>.Instance);
+		ComponentStatePersistenceManager manager = new(NullLogger<ComponentStatePersistenceManager>.Instance);
 		_registrations.Add(manager.State, new Registration(manager, store));
 		return manager.State;
 	}
@@ -35,14 +35,14 @@ static class TestPersistentComponentState
 		if (!ReferenceEquals(registration.Store, store))
 			throw new InvalidOperationException($"{nameof(store)} must be the same instance passed to {nameof(Create)} for this state.");
 
-		using var renderer = new TestRenderer();
+		using TestRenderer renderer = new();
 		await registration.Manager.PersistStateAsync(new TestPersistentComponentStateStore(store), renderer);
 	}
 
 	/// <summary>Restores a fresh state from <paramref name="store"/> — the WASM-side half of the round-trip. Restoration always completes synchronously against the in-memory test store, so callers don't need to await it.</summary>
 	public static PersistentComponentState CreateFromStore(Dictionary<string, byte[]> store)
 	{
-		var manager = new ComponentStatePersistenceManager(NullLogger<ComponentStatePersistenceManager>.Instance);
+		ComponentStatePersistenceManager manager = new(NullLogger<ComponentStatePersistenceManager>.Instance);
 		manager.RestoreStateAsync(new TestPersistentComponentStateStore(store)).GetAwaiter().GetResult();
 		return manager.State;
 	}

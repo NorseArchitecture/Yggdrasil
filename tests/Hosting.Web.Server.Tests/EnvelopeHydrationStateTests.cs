@@ -17,15 +17,15 @@ public sealed class EnvelopeHydrationStateTests
 	[Fact]
 	async Task Persist_ThenTryTake_RoundTripsSuccessCase()
 	{
-		var store = new Dictionary<string, byte[]>();
+		Dictionary<string, byte[]> store = [];
 
 		var persistingState = TestPersistentComponentState.Create(store);
-		var hydration = new EnvelopeHydrationState(persistingState);
+		EnvelopeHydrationState hydration = new(persistingState);
 		using var subscription = hydration.Persist("login", () => Outcome<bool>.Ok(true));
 		await TestPersistentComponentState.PersistAsync(persistingState, store);
 
 		var restoredState = TestPersistentComponentState.CreateFromStore(store);
-		var restoredHydration = new EnvelopeHydrationState(restoredState);
+		EnvelopeHydrationState restoredHydration = new(restoredState);
 
 		restoredHydration.TryTakeOutcome<bool>("login", out var outcome).ShouldBeTrue();
 		outcome.TryGetValue(out Success<bool> success).ShouldBeTrue();
@@ -35,16 +35,16 @@ public sealed class EnvelopeHydrationStateTests
 	[Fact]
 	async Task Persist_ThenTryTake_RoundTripsFailureCase_CategoryAndErrors()
 	{
-		var store = new Dictionary<string, byte[]>();
+		Dictionary<string, byte[]> store = [];
 
 		var persistingState = TestPersistentComponentState.Create(store);
-		var hydration = new EnvelopeHydrationState(persistingState);
+		EnvelopeHydrationState hydration = new(persistingState);
 		using var subscription = hydration.Persist("login", () =>
 			Outcome<bool>.Err(ErrorCategory.Forbidden, new Dictionary<string, string[]> { [""] = ["nope"] }));
 		await TestPersistentComponentState.PersistAsync(persistingState, store);
 
 		var restoredState = TestPersistentComponentState.CreateFromStore(store);
-		var restoredHydration = new EnvelopeHydrationState(restoredState);
+		EnvelopeHydrationState restoredHydration = new(restoredState);
 
 		restoredHydration.TryTakeOutcome<bool>("login", out var outcome).ShouldBeTrue();
 		outcome.TryGetValue(out Failed failed).ShouldBeTrue();

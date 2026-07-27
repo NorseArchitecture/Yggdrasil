@@ -18,39 +18,30 @@
 
 	<ItemGroup>
 		<Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" />
-		<ProjectReference Include="..\Hosting.Web.Components\Hosting.Web.Components.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
-			<Repo>Midgard</Repo>
-		</NorseRef>
-		<NorseRef Include="AuthN.Components.FluentUI">
-			<Repo>Heimdall</Repo>
-		</NorseRef>
-		<NorseRef Include="Infrastructure.Web.Client">
-			<Repo>Midgard</Repo>
-		</NorseRef>
-		<NorseRef Include="Abstractions.Contracts" Generator="true">
-			<Repo>Asgard</Repo>
-		</NorseRef>
 		<!-- Asgard's GatewayGenerator reads NorseGatewayEmissionMode via AnalyzerConfigOptionsProvider,
 		     which only sees an MSBuild property once the consuming project declares it
 		     CompilerVisibleProperty (Asgard ships no props/targets that does this for consumers,
 		     in either PackageReference or dev-mode ProjectReference form — a real gap, flagged for
 		     Asgard to fix at the source; this is the narrow, project-local workaround). -->
 		<CompilerVisibleProperty Include="NorseGatewayEmissionMode" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="protobuf-net.Grpc" />
+		<NorseRef Include="Abstractions.Contracts" Generator="true">
+			<Repo>Asgard</Repo>
+		</NorseRef>
+		<NorseRef Include="AuthN.Components.FluentUI">
+			<Repo>Heimdall</Repo>
+		</NorseRef>
+		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
+			<Repo>Midgard</Repo>
+		</NorseRef>
+		<NorseRef Include="Infrastructure.Web.Client">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<PackageReference Include="Grpc.Net.Client" />
 		<PackageReference Include="Grpc.Net.Client.Web" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" />
+		<PackageReference Include="protobuf-net.Grpc" />
+		<ProjectReference Include="..\Hosting.Web.Components\Hosting.Web.Components.csproj" />
 	</ItemGroup>
 
 </Project>

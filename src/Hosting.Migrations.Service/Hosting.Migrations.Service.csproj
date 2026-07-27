@@ -4,21 +4,19 @@
 		<Description>Norse.Hosting.Migrations.Service: the init-container that runs all IMigrationContributor implementations to completion and exits. Program.cs is three lines and contains no reference to any contributor type.</Description>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Hosting" />
-	</ItemGroup>
-	<ItemGroup>
-		<NorseRef Include="Persistence.EntityFramework.Design.PostgreSQL">
-			<Repo>Urdarbrunnr</Repo>
-			<Generator>true</Generator>
+		<NorseRef Include="Identity.Migrations.PostgreSQL">
+			<Repo>Himinbjorg</Repo>
 		</NorseRef>
 		<NorseRef Include="Infrastructure.Migrations">
 			<Repo>Midgard</Repo>
 		</NorseRef>
-		<NorseRef Include="Identity.Migrations.PostgreSQL">
-			<Repo>Himinbjorg</Repo>
+		<NorseRef Include="Persistence.EntityFramework.Design.PostgreSQL">
+			<Repo>Urdarbrunnr</Repo>
+			<Generator>true</Generator>
 		</NorseRef>
 		<NorseRef Include="Reference.Data.Migrations.PostgreSQL">
 			<Repo>Mimisbrunnr</Repo>
 		</NorseRef>
+		<PackageReference Include="Microsoft.Extensions.Hosting" />
 	</ItemGroup>
 </Project>
