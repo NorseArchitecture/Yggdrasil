@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Identity;
 using Norse.Abstractions.Components.Primitives;
 using Norse.AuthN.Components;
@@ -31,7 +32,8 @@ builder.Services
 	.AddNorseFluentUiTheme()
 	.AddCascadingAuthenticationState()
 	.AddScoped<IdentityRedirectManager>()
-	.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+	.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>()
+	.AddScoped<CircuitHandler, LoggingCircuitHandler>();
 
 // AuthN.Public is satisfied by any principal, anonymous-role cookie included (Norse.AuthN.Services.AuthNPolicies) —
 // every AuthenticationService method still declares it per decided law item 4, so it must exist here even though
