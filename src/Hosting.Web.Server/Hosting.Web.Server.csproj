@@ -2,26 +2,9 @@
 	<PropertyGroup>
 		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
 		<ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:$(ContainerVersion)</ContainerBaseImage>
-		<NorseGatewayEmissionMode>InProcessHost</NorseGatewayEmissionMode>
-		<!-- Diagnostic-only: writes generator output to disk so it can be inspected (Task 13
-		     verification step) — doesn't affect what actually compiles either way. Deliberately NOT
-		     under obj/: the Blazor/Razor SDK's own targets sweep obj/**/*.cs back into @(Compile)
-		     regardless of the SDK's normal default-glob excludes, so a generated copy placed there
-		     collides (CS0101) with the same type the generator already contributes in-memory to the
-		     same compilation. A project-root-relative folder plus the explicit Remove below is the
-		     documented Roslyn pattern for inspecting generator output for exactly this reason. -->
-		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-		<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
-		<!-- Asgard's GatewayGenerator reads NorseGatewayEmissionMode via AnalyzerConfigOptionsProvider,
-		     which only sees an MSBuild property once the consuming project declares it
-		     CompilerVisibleProperty (Asgard ships no props/targets that does this for consumers,
-		     in either PackageReference or dev-mode ProjectReference form — a real gap, flagged for
-		     Asgard to fix at the source; this is the narrow, project-local workaround). -->
-		<CompilerVisibleProperty Include="NorseGatewayEmissionMode" />
-		<NorseRef Include="Abstractions.Contracts" Generator="true">
+		<NorseRef Include="Abstractions.Contracts">
 			<Repo>Asgard</Repo>
 		</NorseRef>
 		<NorseRef Include="Abstractions.Web.Server">
@@ -36,10 +19,11 @@
 		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
-		<NorseRef Include="Infrastructure.Web.Server">
+		<NorseRef Include="Infrastructure.Web.Server" Generator="true">
 			<Repo>Midgard</Repo>
 		</NorseRef>
 		<PackageReference Include="Grpc.AspNetCore.Server.Reflection" />
+		<PackageReference Include="Grpc.AspNetCore.Web" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
 		<ProjectReference Include="..\Hosting.Web.Client\Hosting.Web.Client.csproj" />
 	</ItemGroup>

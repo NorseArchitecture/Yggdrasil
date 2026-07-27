@@ -11,6 +11,7 @@ using Norse.Identity.Web.Server;
 using Norse.Identity.Web.Server.Components.Pages;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
+using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
 
 Console.Title = "Norse Web Server";
@@ -42,10 +43,9 @@ var norseIdentityConnectionString = builder.Configuration.GetConnectionString("n
 	?? throw new InvalidOperationException("Connection string 'norse_identity' is not configured.");
 builder.Services
 	.AddSingleton<IEmailSender<NorseUser>, IdentityNoOpEmailSender>()
-	.AddNorseCodeFirstGrpc() // generic, per Midgard — knows nothing about AuthenticationService specifically
+	.AddNorsePipeline() // Midgard: behaviors in law order, PrincipalAccessor, Sender
+	.AddNorseCodeFirstGrpc() // Midgard: Unhandled -> Seeding -> Outcome interceptor stack
 	.AddNorseAuthenticationService(norseIdentityConnectionString)
-	.AddScoped<IAuthenticationGateway, AuthenticationInProcessGateway>() // generated, Task 8/9
-	.AddScoped<EnvelopeHydrationState>()
 	.AddDeferredSignIn()
 	// Dev-only: lets Postman/grpcurl discover IAuthenticationService and call it directly, proving the
 	// protobuf-net.Grpc wire lifecycle independent of the Blazor UI. Never mapped outside Development —
@@ -80,7 +80,7 @@ app.MapRazorComponents<App>()
 
 app.MapAdditionalIdentityEndpoints();
 
-app.MapGrpcService<AuthenticationService>();
+app.MapNorseGrpcServices();
 app.MapDeferredSignIn();
 
 if (app.Environment.IsDevelopment())
