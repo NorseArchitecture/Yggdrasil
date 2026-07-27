@@ -1,6 +1,6 @@
 namespace Norse.Hosting.Worker.Tests;
 
-public class PlaceholderTests
+public sealed class PlaceholderTests
 {
 	[Fact]
 	void ServiceName_returns_short_form() =>

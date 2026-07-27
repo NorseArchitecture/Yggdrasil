@@ -4,13 +4,30 @@
 		<ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:$(ContainerVersion)</ContainerBaseImage>
 	</PropertyGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\Hosting.Web.Client\Hosting.Web.Client.csproj" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
-		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
-	</ItemGroup>
-	<ItemGroup>
+		<NorseRef Include="Abstractions.Contracts">
+			<Repo>Asgard</Repo>
+		</NorseRef>
+		<NorseRef Include="Abstractions.Web.Server">
+			<Repo>Asgard</Repo>
+		</NorseRef>
+		<NorseRef Include="AuthN.Components.FluentUI">
+			<Repo>Heimdall</Repo>
+		</NorseRef>
+		<NorseRef Include="Identity.Web.Server">
+			<Repo>Himinbjorg</Repo>
+		</NorseRef>
 		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseRef Include="Infrastructure.Web.Server" Generator="true">
+			<Repo>Midgard</Repo>
+		</NorseRef>
+		<PackageReference Include="Grpc.AspNetCore.Server.Reflection" />
+		<PackageReference Include="Grpc.AspNetCore.Web" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+		<!-- Overrides the stale >= 2.4.8 transitive floor protobuf-net.Grpc 1.2.5 declares for
+		     plain protobuf-net. -->
+		<PackageReference Include="protobuf-net" />
+		<ProjectReference Include="..\Hosting.Web.Client\Hosting.Web.Client.csproj" />
 	</ItemGroup>
 </Project>

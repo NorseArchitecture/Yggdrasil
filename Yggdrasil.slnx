@@ -28,6 +28,7 @@
 		<File Path="tests/Directory.Packages.props" />
 		<Project Path="tests/Hosting.Migrations.Service.Tests/Hosting.Migrations.Service.Tests.csproj" />
 		<Project Path="tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj" />
+		<Project Path="tests/Hosting.Web.Client.Tests/Hosting.Web.Client.Tests.csproj" />
 		<Project Path="tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj" />
 		<Project Path="tests/Hosting.Worker.Tests/Hosting.Worker.Tests.csproj" />
 	</Folder>

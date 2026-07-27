@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<PackageReference Include="Grpc.Net.Client" Version="2.80.0" />
+		<ProjectReference Include="..\..\src\Hosting.Web.Client\Hosting.Web.Client.csproj" />
+	</ItemGroup>
+</Project>

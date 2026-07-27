@@ -10,7 +10,15 @@
     </FluentLayoutItem>
     <FluentLayoutItem Area="LayoutArea.Content" Class="main">
         <div class="content">
-            @Body
+            <ErrorBoundary @ref="_errorBoundary">
+                <ChildContent>@Body</ChildContent>
+                <ErrorContent>
+                    <div class="norse-fault">
+                        <p>An unexpected error occurred. The details have been logged.</p>
+                        <button @onclick="() => _errorBoundary?.Recover()">Try again</button>
+                    </div>
+                </ErrorContent>
+            </ErrorBoundary>
         </div>
     </FluentLayoutItem>
 
@@ -30,6 +38,10 @@
 </FluentLayout>
 
 <FluentProviders />
+
+@code {
+	ErrorBoundary? _errorBoundary;
+}
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.

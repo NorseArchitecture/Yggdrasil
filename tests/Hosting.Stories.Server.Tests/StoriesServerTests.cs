@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Norse.Hosting.Stories.Server.Tests;
 
-public class StoriesServerTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public sealed class StoriesServerTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
 {
 	readonly HttpClient _client = factory.CreateClient();
 
