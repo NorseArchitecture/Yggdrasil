@@ -1,4 +1,5 @@
 using Grpc.AspNetCore.Server;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -73,5 +74,15 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 		// describes LoginResult's own shape (its DataMembers), not Outcome<T>'s private union layout.
 		var schema = RuntimeTypeModel.Default.GetSchema(typeof(Outcome<LoginResult>));
 		schema.ShouldContain(nameof(LoginResult.Succeeded));
+	}
+
+	[Fact]
+	void CircuitHandler_registers_LoggingCircuitHandler()
+	{
+		using var scope = factory.Services.CreateScope();
+
+		var circuitHandlers = scope.ServiceProvider.GetServices<CircuitHandler>();
+
+		circuitHandlers.OfType<LoggingCircuitHandler>().ShouldNotBeEmpty();
 	}
 }
