@@ -45,6 +45,7 @@
 		<PackageVersion Include="Norse.Abstractions.Backend" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Components" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Contracts" Version="$(AsgardVersion)" />
+		<PackageVersion Include="Norse.Abstractions.Emit" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Migrations" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Web.Server" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Worker" Version="$(AsgardVersion)" />
@@ -62,8 +63,11 @@
 		<PackageVersion Include="Norse.Infrastructure.Migrations" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Client" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Server" Version="$(MidgardVersion)" />
-		<!-- Himinbjorg — base Identity.Migrations is IsPackable=false now (superseded by the
-		     provider siblings); base Identity project was deleted, folded into Identity.Web.Server. -->
+		<!-- Himinbjorg — base Identity project was deleted, folded into Identity.Web.Server. Base
+		     Identity.Migrations is still packable (provider-agnostic migration tooling) alongside its
+		     provider siblings, not superseded by them — corrected 2026-07-27, previously logged here
+		     as IsPackable=false, which the shipped csproj does not support. -->
+		<PackageVersion Include="Norse.Identity.Migrations" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations.PostgreSQL" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations.SqlServer" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Web.Server" Version="$(HiminbjorgVersion)" />

@@ -5,6 +5,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<!-- Deliberate direct reference: this project consumes IAuthenticationService directly
+		     (FakeAuthenticationService). Bragi's DesignSystem.Stories package carries its own baked
+		     transitive floor on Norse.AuthN.Services (0.0.3-era, old interface) that NuGet's
+		     nearest-wins resolution would otherwise pick over our CPM pin — the direct ref plus the
+		     CPM pin at $(HeimdallVersion) keeps this composition root's pin authoritative. -->
+		<NorseRef Include="AuthN.Services">
+			<Repo>Heimdall</Repo>
+		</NorseRef>
 		<NorseRef Include="DesignSystem.Stories">
 			<Repo>Bragi</Repo>
 		</NorseRef>
