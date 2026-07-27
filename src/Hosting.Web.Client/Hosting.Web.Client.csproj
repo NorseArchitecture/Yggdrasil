@@ -40,6 +40,9 @@
 		<PackageReference Include="Grpc.Net.Client.Web" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" />
+		<!-- Overrides the stale >= 2.4.8 transitive floor protobuf-net.Grpc 1.2.5 declares for
+		     plain protobuf-net. -->
+		<PackageReference Include="protobuf-net" />
 		<PackageReference Include="protobuf-net.Grpc" />
 		<ProjectReference Include="..\Hosting.Web.Components\Hosting.Web.Components.csproj" />
 	</ItemGroup>

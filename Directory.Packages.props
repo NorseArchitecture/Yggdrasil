@@ -36,6 +36,7 @@
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="$(FluentUIVersion)" />
+		<PackageVersion Include="protobuf-net" Version="3.2.56" />
 		<PackageVersion Include="protobuf-net.Grpc" Version="1.2.5" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
