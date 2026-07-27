@@ -5,21 +5,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BlazingStory" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<NorseRef Include="DesignSystem.Stories">
 			<Repo>Bragi</Repo>
 		</NorseRef>
-	</ItemGroup>
-
-	<ItemGroup>
 		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<PackageReference Include="BlazingStory" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+
 	</ItemGroup>
 
 </Project>

@@ -13,8 +13,8 @@ namespace Norse.Hosting.Web.Server.Tests;
 static class TestExtensions
 {
 	public static RpcException ToRpcExceptionForTest(this Problem problem) =>
-		Norse.Infrastructure.Web.Server.Mediator.Grpc.ProblemExtensions.ToRpcException(problem);
+		Infrastructure.Web.Server.Mediator.Grpc.ProblemExtensions.ToRpcException(problem);
 
 	public static Problem DecodeProblemForTest(this RpcException exception) =>
-		Norse.Infrastructure.Web.Client.Grpc.RpcExceptionExtensions.DecodeProblem(exception);
+		Infrastructure.Web.Client.Grpc.RpcExceptionExtensions.DecodeProblem(exception);
 }
