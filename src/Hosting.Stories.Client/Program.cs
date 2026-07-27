@@ -11,6 +11,6 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services
 	.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) })
 	.AddNorseFluentUiTheme()
-	.AddScoped<IAuthenticationGateway, FakeAuthenticationGateway>();
+	.AddScoped<IAuthenticationService, FakeAuthenticationService>();
 
 await builder.Build().RunAsync().ConfigureAwait(false);
