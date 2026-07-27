@@ -2,17 +2,17 @@
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<!-- Norse versions -->
-		<AsgardVersion>0.0.13</AsgardVersion>
+		<AsgardVersion>0.0.14</AsgardVersion>
 		<BragiVersion>0.0.3</BragiVersion>
-		<HeimdallVersion>0.0.4</HeimdallVersion>
-		<HiminbjorgVersion>0.0.6</HiminbjorgVersion>
+		<HeimdallVersion>0.0.5</HeimdallVersion>
+		<HiminbjorgVersion>0.0.7</HiminbjorgVersion>
 		<MidgardVersion>0.0.6</MidgardVersion>
 		<MimirVersion>0.0.0</MimirVersion>
-		<MimisbrunnrVersion>0.0.5</MimisbrunnrVersion>
+		<MimisbrunnrVersion>0.0.6</MimisbrunnrVersion>
 		<NaglfarVersion>0.0.4</NaglfarVersion>
 		<RatatoskrVersion>0.0.0</RatatoskrVersion>
 		<SvartalfheimVersion>0.0.8</SvartalfheimVersion>
-		<UrdarbrunnrVersion>0.0.6</UrdarbrunnrVersion>
+		<UrdarbrunnrVersion>0.0.7</UrdarbrunnrVersion>
 		<!-- 3rd party versions -->
 		<BlazingStoryVersion>1.0.0-preview.89</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
