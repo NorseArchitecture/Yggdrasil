@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 	<PropertyGroup>
 		<ContainerBaseImage>mcr.microsoft.com/dotnet/runtime:$(ContainerVersion)</ContainerBaseImage>
-		<Description>Norse.Hosting.Migrations.Service: the init-container that runs all IMigrationContributor implementations to completion and exits. Program.cs is three lines and contains no reference to any contributor type.</Description>
+		<Description>Norse.Hosting.Migrations.Service: the init-container that runs all IMigrationContributor implementations to completion and exits. Program.cs is four lines and contains no reference to any contributor type.</Description>
 	</PropertyGroup>
 	<ItemGroup>
 		<NorseRef Include="Identity.Migrations.PostgreSQL">
