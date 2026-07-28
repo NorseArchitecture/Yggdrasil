@@ -50,11 +50,13 @@
 		<PackageVersion Include="Norse.Abstractions.Web.Server" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Worker" Version="$(AsgardVersion)" />
 		<!-- Urdarbrunnr — widened from the old single Norse.EntityFramework.Migrations.PostgreSQL into
-		     a provider-agnostic base plus per-provider design/runtime siblings (2026-07-22 rename). -->
+		     a provider-agnostic base plus per-provider design/runtime siblings (2026-07-22 rename).
+		     v0.0.8 consolidates the design-time factory into one neutral Design package and moves
+		     EfMigrationContributor<T>/MigrationConnectionStringAttribute into the new Migrations
+		     package; the old Design.PostgreSQL/.SqlServer packages are deleted. -->
 		<PackageVersion Include="Norse.Persistence.EntityFramework" Version="$(UrdarbrunnrVersion)" />
 		<PackageVersion Include="Norse.Persistence.EntityFramework.Design" Version="$(UrdarbrunnrVersion)" />
-		<PackageVersion Include="Norse.Persistence.EntityFramework.Design.PostgreSQL" Version="$(UrdarbrunnrVersion)" />
-		<PackageVersion Include="Norse.Persistence.EntityFramework.Design.SqlServer" Version="$(UrdarbrunnrVersion)" />
+		<PackageVersion Include="Norse.Persistence.EntityFramework.Migrations" Version="$(UrdarbrunnrVersion)" />
 		<PackageVersion Include="Norse.Persistence.EntityFramework.PostgreSQL" Version="$(UrdarbrunnrVersion)" />
 		<PackageVersion Include="Norse.Persistence.EntityFramework.SqlServer" Version="$(UrdarbrunnrVersion)" />
 		<!-- Midgard -->
