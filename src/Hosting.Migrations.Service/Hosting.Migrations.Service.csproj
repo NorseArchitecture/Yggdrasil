@@ -10,6 +10,9 @@
 		<NorseRef Include="Infrastructure.Migrations">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseRef Include="Infrastructure.ServiceDefaults">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<NorseRef Include="Persistence.EntityFramework.Migrations">
 			<Repo>Urdarbrunnr</Repo>
 			<Generator>true</Generator>

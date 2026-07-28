@@ -19,6 +19,9 @@
 		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseRef Include="Infrastructure.ServiceDefaults">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<NorseRef Include="Infrastructure.Web.Server" Generator="true">
 			<Repo>Midgard</Repo>
 		</NorseRef>

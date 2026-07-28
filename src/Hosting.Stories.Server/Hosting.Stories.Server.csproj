@@ -3,6 +3,9 @@
 		<ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:$(ContainerVersion)</ContainerBaseImage>
 	</PropertyGroup>
 	<ItemGroup>
+		<NorseRef Include="Infrastructure.ServiceDefaults">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
 		<ProjectReference Include="..\Hosting.Stories.Client\Hosting.Stories.Client.csproj" />
 	</ItemGroup>

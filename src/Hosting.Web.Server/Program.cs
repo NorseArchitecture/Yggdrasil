@@ -11,6 +11,7 @@ using Norse.Hosting.Web.Server.Components;
 using Norse.Identity.Web.Server;
 using Norse.Identity.Web.Server.Components.Pages;
 using Norse.Infrastructure.Components.Theme.FluentUI;
+using Norse.Infrastructure.ServiceDefaults;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
@@ -18,6 +19,7 @@ using ProtoBuf.Grpc.Server;
 
 Console.Title = "Norse Web Server";
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
 builder.Services
 	.AddRazorComponents()
