@@ -22,12 +22,12 @@
 		<NorseRef Include="Infrastructure.Web.Server" Generator="true">
 			<Repo>Midgard</Repo>
 		</NorseRef>
-		<PackageReference Include="Grpc.AspNetCore.Server.Reflection" />
 		<PackageReference Include="Grpc.AspNetCore.Web" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
 		<!-- Overrides the stale >= 2.4.8 transitive floor protobuf-net.Grpc 1.2.5 declares for
 		     plain protobuf-net. -->
 		<PackageReference Include="protobuf-net" />
+		<PackageReference Include="protobuf-net.Grpc.AspNetCore.Reflection" />
 		<ProjectReference Include="..\Hosting.Web.Client\Hosting.Web.Client.csproj" />
 	</ItemGroup>
 </Project>

@@ -14,6 +14,7 @@ using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
+using ProtoBuf.Grpc.Server;
 
 Console.Title = "Norse Web Server";
 var builder = WebApplication.CreateBuilder(args);
@@ -52,7 +53,7 @@ builder.Services
 	// Dev-only: lets Postman/grpcurl discover IAuthenticationService and call it directly, proving the
 	// protobuf-net.Grpc wire lifecycle independent of the Blazor UI. Never mapped outside Development —
 	// reflection hands out the full service/message catalog to anyone who can reach the endpoint.
-	.AddGrpcReflection();
+	.AddCodeFirstGrpcReflection();
 
 var app = builder.Build();
 
@@ -87,7 +88,7 @@ app.MapDeferredSignIn();
 
 if (app.Environment.IsDevelopment())
 {
-	app.MapGrpcReflectionService();
+	app.MapCodeFirstGrpcReflectionService();
 }
 
 await app
