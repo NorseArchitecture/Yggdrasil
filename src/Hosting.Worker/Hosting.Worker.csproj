@@ -3,6 +3,9 @@
 		<ContainerBaseImage>mcr.microsoft.com/dotnet/runtime:$(ContainerVersion)</ContainerBaseImage>
 	</PropertyGroup>
 	<ItemGroup>
+		<NorseRef Include="Infrastructure.ServiceDefaults">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 	</ItemGroup>
 </Project>

@@ -1,5 +1,8 @@
+using Norse.Infrastructure.ServiceDefaults;
+
 Console.Title = "Norse Stories Server";
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
