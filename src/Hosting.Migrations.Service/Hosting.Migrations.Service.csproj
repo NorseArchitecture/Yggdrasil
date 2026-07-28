@@ -10,7 +10,7 @@
 		<NorseRef Include="Infrastructure.Migrations">
 			<Repo>Midgard</Repo>
 		</NorseRef>
-		<NorseRef Include="Persistence.EntityFramework.Design.PostgreSQL">
+		<NorseRef Include="Persistence.EntityFramework.Migrations">
 			<Repo>Urdarbrunnr</Repo>
 			<Generator>true</Generator>
 		</NorseRef>
