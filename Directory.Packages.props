@@ -22,7 +22,6 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="BlazingStory" Version="$(BlazingStoryVersion)" />
-		<PackageVersion Include="Grpc.AspNetCore.Server.Reflection" Version="$(GrpcVersion)" />
 		<PackageVersion Include="Grpc.AspNetCore.Web" Version="$(GrpcVersion)" />
 		<PackageVersion Include="Grpc.Net.Client" Version="$(GrpcVersion)" />
 		<PackageVersion Include="Grpc.Net.Client.Web" Version="$(GrpcVersion)" />
@@ -38,6 +37,7 @@
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="protobuf-net" Version="3.2.56" />
 		<PackageVersion Include="protobuf-net.Grpc" Version="1.2.5" />
+		<PackageVersion Include="protobuf-net.Grpc.AspNetCore.Reflection" Version="1.2.2" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
 		<PackageVersion Include="Norse.Primitives.Ingestion" Version="$(SvartalfheimVersion)" />
@@ -62,6 +62,7 @@
 		<PackageVersion Include="Norse.Infrastructure.Components.Theme.FluentUI" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Migrations" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Client" Version="$(MidgardVersion)" />
+		<PackageVersion Include="Norse.Infrastructure.Web.Grpc" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Server" Version="$(MidgardVersion)" />
 		<!-- Himinbjorg — base Identity project was deleted, folded into Identity.Web.Server. Base
 		     Identity.Migrations is still packable (provider-agnostic migration tooling) alongside its
