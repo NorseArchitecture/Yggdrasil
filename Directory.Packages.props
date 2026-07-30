@@ -64,6 +64,7 @@
 		<PackageVersion Include="Norse.Infrastructure.Components.Theme.FluentUI" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Migrations" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.ServiceDefaults" Version="$(MidgardVersion)" />
+		<PackageVersion Include="Norse.Infrastructure.ServiceDefaults.AspNet" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Client" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Grpc" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Server" Version="$(MidgardVersion)" />

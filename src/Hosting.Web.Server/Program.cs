@@ -11,7 +11,7 @@ using Norse.Hosting.Web.Server.Components;
 using Norse.Identity.Web.Server;
 using Norse.Identity.Web.Server.Components.Pages;
 using Norse.Infrastructure.Components.Theme.FluentUI;
-using Norse.Infrastructure.ServiceDefaults;
+using Norse.Infrastructure.ServiceDefaults.AspNet;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
@@ -19,7 +19,7 @@ using ProtoBuf.Grpc.Server;
 
 Console.Title = "Norse Web Server";
 var builder = WebApplication.CreateBuilder(args);
-builder.AddServiceDefaults();
+builder.AddAspNetServiceDefaults();
 
 builder.Services
 	.AddRazorComponents()
@@ -76,7 +76,7 @@ app
 	.UseAuthorization()
 	.UseAntiforgery();
 
-app.MapStaticAssets();
+app.MapStaticAssets().DisableHttpMetrics();
 
 app.MapRazorComponents<App>()
 	.AddInteractiveServerRenderMode()
@@ -86,6 +86,11 @@ app.MapRazorComponents<App>()
 app.MapAdditionalIdentityEndpoints();
 
 app.MapNorseGrpcServices();
+app.MapDefaultEndpoints();
+// The gRPC health service is polled on a timer by its own clients, as aggressively as any HTTP
+// probe, and it is an endpoint this project does not own -- so its metrics are suppressed here, at
+// the map site. Its traces need nothing: AspNetTraceFilter already excludes the /grpc.health. prefix.
+app.MapGrpcHealthChecksService().DisableHttpMetrics();
 app.MapDeferredSignIn();
 
 if (app.Environment.IsDevelopment())

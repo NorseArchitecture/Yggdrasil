@@ -1,8 +1,8 @@
-using Norse.Infrastructure.ServiceDefaults;
+using Norse.Infrastructure.ServiceDefaults.AspNet;
 
 Console.Title = "Norse Stories Server";
 var builder = WebApplication.CreateBuilder(args);
-builder.AddServiceDefaults();
+builder.AddAssetHostServiceDefaults();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -10,7 +10,8 @@ if (app.Environment.IsDevelopment())
 	app.UseWebAssemblyDebugging();
 }
 
-app.MapStaticAssets();
+app.MapStaticAssets().DisableHttpMetrics();
+app.MapDefaultEndpoints();
 
 // BlazingStory derives the host app's scoped-CSS bundle name from the .csproj filename
 // (Hosting.Stories.Client), not the Norse-branded AssemblyName the bundle actually ships
