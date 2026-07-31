@@ -3,7 +3,7 @@
 		<ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:$(ContainerVersion)</ContainerBaseImage>
 	</PropertyGroup>
 	<ItemGroup>
-		<NorseRef Include="Infrastructure.ServiceDefaults">
+		<NorseRef Include="Infrastructure.ServiceDefaults.AspNet">
 			<Repo>Midgard</Repo>
 		</NorseRef>
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />

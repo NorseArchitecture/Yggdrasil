@@ -1,11 +1,15 @@
+using System.Net;
 using Grpc.AspNetCore.Server;
 using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
 using Norse.AuthN.Services;
+using Norse.Infrastructure.ServiceDefaults.AspNet;
 using ProtoBuf.Meta;
 
 namespace Norse.Hosting.Web.Server.Tests;
@@ -84,5 +88,37 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 		var circuitHandlers = scope.ServiceProvider.GetServices<CircuitHandler>();
 
 		circuitHandlers.OfType<LoggingCircuitHandler>().ShouldNotBeEmpty();
+	}
+
+	[Theory]
+	[InlineData(HealthEndpoints.Liveness)]
+	[InlineData(HealthEndpoints.Readiness)]
+	async Task MapDefaultEndpoints_answers_the_probe_with_a_bare_healthy_body(string path)
+	{
+		using var client = factory.CreateClient();
+
+		var response = await client.GetAsync(new Uri(path, UriKind.Relative), TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+		body.ShouldBe("Healthy");
+	}
+
+	// The gRPC health service is polled by its own clients on a timer, exactly as aggressively as an
+	// HTTP probe, so the DisableHttpMetrics() chained onto its map site is load-bearing rather than
+	// decoration. Its traces are suppressed elsewhere -- AspNetTraceFilter knows the /grpc.health.
+	// prefix -- which is why only the metrics half is assertable here.
+	[Fact]
+	void MapGrpcHealthChecksService_maps_the_health_endpoint_with_http_metrics_disabled()
+	{
+		var endpoints = factory.Services
+			.GetRequiredService<EndpointDataSource>()
+			.Endpoints
+			.OfType<RouteEndpoint>()
+			.Where(static endpoint => endpoint.RoutePattern.RawText?.StartsWith("/grpc.health.", StringComparison.Ordinal) == true)
+			.ToList();
+
+		endpoints.ShouldNotBeEmpty();
+		endpoints.ShouldAllBe(endpoint => endpoint.Metadata.GetMetadata<IDisableHttpMetricsMetadata>() != null);
 	}
 }
