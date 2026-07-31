@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
-using Microsoft.AspNetCore.Identity;
 using Norse.Abstractions.Components.Primitives;
 using Norse.AuthN.Components;
 using Norse.AuthN.Components.FluentUI;
@@ -47,7 +46,6 @@ builder.Services.AddAuthorizationBuilder()
 var norseIdentityConnectionString = builder.Configuration.GetConnectionString("norse_identity")
 	?? throw new InvalidOperationException("Connection string 'norse_identity' is not configured.");
 builder.Services
-	.AddSingleton<IEmailSender<NorseUser>, IdentityNoOpEmailSender>()
 	.AddNorsePipeline() // Midgard: behaviors in law order, PrincipalAccessor, Sender
 	.AddNorseCodeFirstGrpc() // Midgard: Unhandled -> Seeding -> Outcome interceptor stack
 	.AddNorseAuthenticationService(norseIdentityConnectionString)
