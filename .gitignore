@@ -261,12 +261,6 @@ orleans.codegen.cs
 # RIA/Silverlight projects
 Generated_Code/
 
-# EmitCompilerGeneratedFiles diagnostic output (Hosting.Web.Server/.Web.Client) — deliberately
-# project-root-relative, not under obj/, since the Razor/Blazor SDK sweeps obj/**/*.cs back into
-# @(Compile) regardless of the normal default-glob excludes.
-/src/Hosting.Web.Server/Generated/
-/src/Hosting.Web.Client/Generated/
-
 # Backup & report files from converting an old project file
 # to a newer Visual Studio version. Backup files are not needed,
 # because we have git ;-)
