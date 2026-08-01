@@ -82,6 +82,9 @@
 		<PackageVersion Include="Norse.Reference.Data.Migrations" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.Migrations.PostgreSQL" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.Migrations.SqlServer" Version="$(MimisbrunnrVersion)" />
+		<!-- Mimir -->
+		<PackageVersion Include="Norse.Reference.Contracts" Version="$(MimirVersion)" />
+		<PackageVersion Include="Norse.Reference.Web.Server" Version="$(MimirVersion)" />
 		<!-- Heimdall — was entirely absent; HeimdallVersion prop existed but nothing consumed it. -->
 		<PackageVersion Include="Norse.AuthN.Components" Version="$(HeimdallVersion)" />
 		<PackageVersion Include="Norse.AuthN.Components.FluentUI" Version="$(HeimdallVersion)" />
