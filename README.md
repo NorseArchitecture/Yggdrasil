@@ -2,7 +2,9 @@
 
 > The world tree, whose branches and roots bind all nine realms together.
 
-![Yggdrasil — the immense world tree whose roots reach into the underworld and whose branches cradle the nine realms](https://github.com/user-attachments/assets/49b591e9-87c8-4d2a-a5ba-3d33dc3a15c2 "Yggdrasil — the world tree whose branches and roots bind all nine realms together")
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/49b591e9-87c8-4d2a-a5ba-3d33dc3a15c2" alt="Yggdrasil — the immense world tree whose roots reach into the underworld and whose branches cradle the nine realms" title="Yggdrasil — the world tree whose branches and roots bind all nine realms together" />
+</p>
 
 *Image credit: [@norsemythologyclips](https://www.instagram.com/norsemythologyclips/) — go follow them.*
 
