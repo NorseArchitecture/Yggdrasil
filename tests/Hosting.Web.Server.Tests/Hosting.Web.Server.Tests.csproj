@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
-		<NorseRef Include="Persistence.EntityFramework.PostgreSQL">
-			<Repo>Urdarbrunnr</Repo>
-		</NorseRef>
-		<NorseRef Include="Reference.Data.Migrations">
-			<Repo>Mimisbrunnr</Repo>
-		</NorseRef>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*-*" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.*-*" />
+		<!-- NorseRef never belongs in tests/ (CPM is deliberately off here) — Norse package
+		     references pin an explicit VersionOverride directly instead, same as Testcontainers.PostgreSql
+		     below. 0.0.8 mirrors each realm's current Directory.Packages.props pin at the time of writing;
+		     bump by hand alongside the next real version pin. -->
+		<PackageReference Include="Norse.Persistence.EntityFramework.PostgreSQL" VersionOverride="0.0.8" />
+		<PackageReference Include="Norse.Reference.Data.Migrations" VersionOverride="0.0.8" />
 		<!-- Not CPM-pinned (halt-and-ask gate on Directory.Packages.props, Task 13): VersionOverride
 		     pins this one third-party package for this project without touching the central file.
 		     4.13.0 mirrors the version every other realm's own PostgresContainerFixture already
