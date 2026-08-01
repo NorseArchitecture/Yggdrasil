@@ -36,11 +36,16 @@ builder.Services
 builder.Services.AddSingleton(new RoutesAdditionalAssemblies([]));
 
 // gRPC-Web rides ordinary HTTP/1.1 — no HTTP/2-specific channel configuration needed in the browser.
-var authNChannel = GrpcChannel.ForAddress(builder.HostEnvironment.BaseAddress, new GrpcChannelOptions
+// One channel, not one per service: every Norse gRPC service this client talks to (IAuthenticationService,
+// IReferenceService) is hosted in the same Hosting.Web.Server process at the same base address, and
+// AddNorseGrpcClients (Midgard's generated client wiring) registers a proxy for every contract it
+// discovers in this compilation over the single channel handed to it — there is no per-contract channel
+// parameter to plumb.
+var norseChannel = GrpcChannel.ForAddress(builder.HostEnvironment.BaseAddress, new GrpcChannelOptions
 {
 	HttpHandler = new GrpcWebHandler { InnerHandler = new BrowserCredentialsHandler { InnerHandler = new HttpClientHandler() } },
 });
-builder.Services.AddNorseGrpcClients(authNChannel); // generated, Task 14
+builder.Services.AddNorseGrpcClients(norseChannel); // generated, Task 14
 
 await builder
 	.Build()

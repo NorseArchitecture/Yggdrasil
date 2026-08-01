@@ -19,6 +19,9 @@
 		<NorseRef Include="Infrastructure.Web.Client" Generator="true">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseRef Include="Reference.Contracts">
+			<Repo>Mimir</Repo>
+		</NorseRef>
 		<PackageReference Include="Grpc.Net.Client" />
 		<PackageReference Include="Grpc.Net.Client.Web" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />

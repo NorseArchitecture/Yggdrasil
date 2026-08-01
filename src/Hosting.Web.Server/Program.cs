@@ -14,6 +14,8 @@ using Norse.Infrastructure.ServiceDefaults.AspNet;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
+using Norse.Reference;
+using Norse.Reference.Web.Server;
 using ProtoBuf.Grpc.Server;
 
 Console.Title = "Norse Web Server";
@@ -37,18 +39,24 @@ builder.Services
 	.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>()
 	.AddScoped<CircuitHandler, LoggingCircuitHandler>();
 
-// AuthN.Public is satisfied by any principal, anonymous-role cookie included (Norse.AuthN.Services.AuthNPolicies) —
-// every AuthenticationService method still declares it per decided law item 4, so it must exist here even though
-// it imposes no real requirement. Composition root's job: Heimdall stays policy-name-only, never registers policies.
+// AuthN.Public/Reference.Public are satisfied by any principal, anonymous-role cookie included
+// (Norse.AuthN.Services.AuthNPolicies / Norse.Reference.ReferencePolicies) — every
+// AuthenticationService/ReferenceService method still declares one per decided law item 4 (NORSE011),
+// so both must exist here even though neither imposes a real requirement. Composition root's job:
+// Heimdall/Mimir stay policy-name-only, never register policies themselves.
 builder.Services.AddAuthorizationBuilder()
-	.AddPolicy(AuthNPolicies.Public, policy => policy.RequireAssertion(_ => true));
+	.AddPolicy(AuthNPolicies.Public, policy => policy.RequireAssertion(_ => true))
+	.AddPolicy(ReferencePolicies.Public, policy => policy.RequireAssertion(_ => true));
 
 var norseIdentityConnectionString = builder.Configuration.GetConnectionString("norse_identity")
 	?? throw new InvalidOperationException("Connection string 'norse_identity' is not configured.");
+var norseReferenceConnectionString = builder.Configuration.GetConnectionString("norse_reference")
+	?? throw new InvalidOperationException("Connection string 'norse_reference' is not configured.");
 builder.Services
 	.AddNorsePipeline() // Midgard: behaviors in law order, PrincipalAccessor, Sender
 	.AddNorseCodeFirstGrpc() // Midgard: Unhandled -> Seeding -> Outcome interceptor stack
 	.AddNorseAuthenticationService(norseIdentityConnectionString)
+	.AddNorseReferenceService(norseReferenceConnectionString)
 	.AddDeferredSignIn()
 	// Dev-only: lets Postman/grpcurl discover IAuthenticationService and call it directly, proving the
 	// protobuf-net.Grpc wire lifecycle independent of the Blazor UI. Never mapped outside Development —

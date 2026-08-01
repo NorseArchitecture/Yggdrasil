@@ -1,7 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
+		<NorseRef Include="Persistence.EntityFramework.PostgreSQL">
+			<Repo>Urdarbrunnr</Repo>
+		</NorseRef>
+		<NorseRef Include="Reference.Data.Migrations">
+			<Repo>Mimisbrunnr</Repo>
+		</NorseRef>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*-*" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.*-*" />
+		<!-- Not CPM-pinned (halt-and-ask gate on Directory.Packages.props, Task 13): VersionOverride
+		     pins this one third-party package for this project without touching the central file.
+		     4.13.0 mirrors the version every other realm's own PostgresContainerFixture already
+		     resolves via its own (non-CPM) csproj. -->
+		<PackageReference Include="Testcontainers.PostgreSql" VersionOverride="4.13.0" />
 		<ProjectReference Include="..\..\src\Hosting.Web.Server\Hosting.Web.Server.csproj" />
 	</ItemGroup>
 </Project>
