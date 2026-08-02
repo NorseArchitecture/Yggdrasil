@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
+	<PropertyGroup Condition="'$(UseProjectReferences)' == 'true'">
 		<!-- NU1605 local-dev-mode false positive: from Bifrost root, UseProjectReferences=true turns
 		     every NorseRef this project reaches transitively (Hosting.Web.Server to Identity.Web.Server
 		     to Persistence.EntityFramework.PostgreSQL) into a ProjectReference. NuGet's restore-time
@@ -8,7 +8,8 @@
 		     git-tag-derived version. That collides with this project's explicit VersionOverride below
 		     (0.0.9, the real published version) as a spurious "downgrade". CI never sees this: it
 		     restores the real published Norse.Persistence.EntityFramework.PostgreSQL package (no
-		     ProjectReference, no MinVer timing gap), so the pin above is what actually governs there. -->
+		     ProjectReference, no MinVer timing gap), so the pin above is what actually governs there.
+		     Scoped to dev mode only — CI's package-mode restore must keep NU1605 as an error. -->
 		<NoWarn>$(NoWarn);NU1605</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
