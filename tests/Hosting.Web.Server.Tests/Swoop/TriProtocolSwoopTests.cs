@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using FluentValidation;
+using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
@@ -23,7 +24,6 @@ using Norse.Infrastructure.Web.Server.OpenApi;
 using Norse.Infrastructure.Web.Server.Xml;
 using Norse.Primitives;
 using ProtoBuf;
-using ProtoBuf.Grpc.Client;
 using ProtoBuf.Meta;
 
 namespace Norse.Hosting.Web.Server.Tests.Swoop;
@@ -134,12 +134,44 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		await App.DisposeAsync().ConfigureAwait(false);
 	}
 
-	/// <summary>An in-proc gRPC client for <see cref="IParityService"/>, decoding <see cref="Outcome{T}"/> failures via <see cref="OutcomeClientInterceptor"/>.</summary>
-	public IParityService CreateGrpcClient()
+	/// <summary>
+	/// Invokes <see cref="IParityService.EchoAsync"/> with hand-built wire bytes for the request,
+	/// decoding <see cref="Outcome{T}"/> failures via <see cref="OutcomeClientInterceptor"/> exactly as
+	/// the type-safe client proxy would. Never goes through <c>ParityRequest</c>'s own protobuf-net
+	/// contract writer -- <c>ResultSerializer&lt;T&gt;.Write</c> throws unconditionally now
+	/// (<c>Result&lt;T&gt;</c> is deserialization-only on every channel, Midgard commit
+	/// <c>08e1357</c>/<c>1e31d9a</c>/<c>f175275</c>), so the type-safe proxy can never legally construct
+	/// a <c>ParityRequest</c> message again, for any state, valid or not. <paramref name="requestBytes"/>
+	/// is instead built by the caller via a plain-field mirror contract serialized through the normal
+	/// model (<see cref="ParityRequestWireFixture"/>) — Midgard's own established idiom for this exact
+	/// problem, per <c>ResultSerializerTests.cs</c>'s <c>PlainEnvelope&lt;T&gt;</c> pattern, adapted here
+	/// to a real wire call rather than a local round trip.
+	/// </summary>
+	public async Task<Outcome<ParityReport>> EchoRawAsync(byte[] requestBytes, CancellationToken cancellationToken)
 	{
 		var channel = GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = App.GetTestServer().CreateHandler() });
 		var invoker = channel.Intercept(new OutcomeClientInterceptor());
-		return GrpcClientFactory.CreateGrpcService<IParityService>(invoker);
+
+		Method<byte[], Outcome<ParityReport>> method = new(
+			MethodType.Unary,
+			serviceName: "grpc.parity.v1.ParityService",
+			// protobuf-net.Grpc strips the "Async" suffix from the C# method name by convention (no
+			// [OperationContract(Name=...)] override on IParityService.EchoAsync) -- confirmed empirically
+			// against the real bound path via a throwaway interceptor, never guessed: the type-safe
+			// client proxy's own ClientInterceptorContext.Method.FullName reads
+			// "/grpc.parity.v1.ParityService/Echo".
+			name: "Echo",
+			requestMarshaller: Marshallers.Create<byte[]>(static bytes => bytes, static bytes => bytes),
+			responseMarshaller: Marshallers.Create<Outcome<ParityReport>>(
+				serializer: static _ => throw new NotSupportedException($"{nameof(EchoRawAsync)} never serializes a response — this marshaller direction is client-inbound only."),
+				deserializer: static bytes =>
+				{
+					using MemoryStream stream = new(bytes);
+					return (Outcome<ParityReport>)RuntimeTypeModel.Default.Deserialize(stream, null, typeof(Outcome<ParityReport>))!;
+				}));
+
+		using var call = invoker.AsyncUnaryCall(method, host: null, new CallOptions(cancellationToken: cancellationToken), requestBytes);
+		return await call.ResponseAsync;
 	}
 }
 
@@ -172,6 +204,43 @@ sealed class TestDateTimeOffsetSerializer : ProtoBuf.Serializers.ISerializer<Dat
 		state.WriteString(value.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
 }
 
+/// <summary>
+/// The plain-field mirror of <see cref="ParityRequest"/> — same field numbers (<c>[DataMember(Order=N)]</c>
+/// on the real type, confirmed 1:1 against protobuf field numbers via <c>RuntimeTypeModel.GetSchema</c>
+/// earlier in this task), raw types instead of <c>Result&lt;T&gt;</c>, so it can actually serialize
+/// (<c>ResultSerializer&lt;T&gt;.Write</c> throws unconditionally on the real type now). Mirrors
+/// <c>ResultSerializerTests.PlainEnvelope&lt;T&gt;</c>'s exact idiom. <see cref="TimestampOffset"/>
+/// works here specifically because <see cref="TestDateTimeOffsetSerializer"/> is registered generally
+/// for bare <see cref="DateTimeOffset"/> on the same <see cref="RuntimeTypeModel.Default"/> (needed
+/// anyway for <see cref="ParityReport.TimestampOffset"/>) — its wire form (a plain "O"-format string)
+/// is exactly what <c>ResultSerializer&lt;DateTimeOffset&gt;.Read</c> expects.
+/// </summary>
+[ProtoContract]
+sealed class ParityRequestWireFixture
+{
+	[ProtoMember(1)] public bool IsActive { get; set; }
+	[ProtoMember(2)] public int Count { get; set; }
+	[ProtoMember(3)] public decimal Amount { get; set; }
+	[ProtoMember(4)] public float Ratio { get; set; }
+	[ProtoMember(5)] public double Measurement { get; set; }
+	[ProtoMember(6)] public char Initial { get; set; }
+	[ProtoMember(7)] public string Name { get; set; } = "";
+	[ProtoMember(8)] public Guid Identifier { get; set; }
+	[ProtoMember(9)] public DateTime Timestamp { get; set; }
+	[ProtoMember(10)] public DateTimeOffset TimestampOffset { get; set; }
+	[ProtoMember(11)] public DateOnly EffectiveDate { get; set; }
+	[ProtoMember(12)] public TimeOnly StartTime { get; set; }
+	[ProtoMember(13)] public TimeSpan Duration { get; set; }
+	[ProtoMember(14)] public List<ParityTagWireFixture> Tags { get; set; } = [];
+}
+
+/// <summary>The plain-field mirror of <see cref="ParityTag"/> — same technique, same reason.</summary>
+[ProtoContract]
+sealed class ParityTagWireFixture
+{
+	[ProtoMember(1)] public string Value { get; set; } = "";
+}
+
 [CollectionDefinition(SwoopCollection.Name)]
 [SuppressMessage("Design", "CA1711:Identifiers should not have incorrect suffix", Justification = "xUnit collection fixture naming convention")]
 public sealed class SwoopCollection : ICollectionFixture<SwoopHostFixture>
@@ -199,23 +268,36 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 	static readonly TimeOnly _startTime = new(14, 30, 0);
 	static readonly TimeSpan _duration = new(1, 2, 3, 4);
 
-	static ParityRequest ValidGrpcRequest() => new()
+	/// <summary>
+	/// Builds real wire bytes for a valid <see cref="ParityRequest"/> via the plain-field mirror
+	/// technique (see <see cref="ParityRequestWireFixture"/>'s remarks) — never touches
+	/// <see cref="Result{T}"/> as a CLR type, never calls the type-safe client proxy's own serialization
+	/// path, since that path throws unconditionally now.
+	/// </summary>
+	static byte[] BuildValidRequestBytes(string name = "Alice")
 	{
-		IsActive = new Success<bool>(true),
-		Count = new Success<int>(42),
-		Amount = new Success<decimal>(1234.56m),
-		Ratio = new Success<float>(1.5f),
-		Measurement = new Success<double>(2.25d),
-		Initial = new Success<char>('A'),
-		Name = new Success<string>("Alice"),
-		Identifier = new Success<Guid>(_identifier),
-		Timestamp = new Success<DateTime>(_timestamp),
-		TimestampOffset = new Success<DateTimeOffset>(_timestampOffset),
-		EffectiveDate = new Success<DateOnly>(_effectiveDate),
-		StartTime = new Success<TimeOnly>(_startTime),
-		Duration = new Success<TimeSpan>(_duration),
-		Tags = [new ParityTag { Value = new Success<string>("tag-one") }, new ParityTag { Value = new Success<string>("tag-two") }]
-	};
+		ParityRequestWireFixture fixture = new()
+		{
+			IsActive = true,
+			Count = 42,
+			Amount = 1234.56m,
+			Ratio = 1.5f,
+			Measurement = 2.25d,
+			Initial = 'A',
+			Name = name,
+			Identifier = _identifier,
+			Timestamp = _timestamp,
+			TimestampOffset = _timestampOffset,
+			EffectiveDate = _effectiveDate,
+			StartTime = _startTime,
+			Duration = _duration,
+			Tags = [new ParityTagWireFixture { Value = "tag-one" }, new ParityTagWireFixture { Value = "tag-two" }]
+		};
+
+		using MemoryStream stream = new();
+		RuntimeTypeModel.Default.Serialize(stream, fixture);
+		return stream.ToArray();
+	}
 
 	const string JsonBody = """
 		{
@@ -282,7 +364,7 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 	{
 		var cancellationToken = TestContext.Current.CancellationToken;
 
-		var grpcOutcome = await fixture.CreateGrpcClient().EchoAsync(ValidGrpcRequest(), cancellationToken);
+		var grpcOutcome = await fixture.EchoRawAsync(BuildValidRequestBytes(), cancellationToken);
 		grpcOutcome.TryGetValue(out Success<ParityReport> grpcSuccess).ShouldBeTrue();
 		var grpcReport = grpcSuccess.Value;
 
@@ -401,27 +483,21 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 	}
 
 	[Fact]
-	async Task Required_absent_detail_wording_is_literally_equal_between_XML_and_JSON()
+	async Task Required_absent_detail_wording_is_literally_equal_across_all_three_channels()
 	{
-		// Task 13 finding, confirmed empirically (both against a fully-default ParityRequest() and
-		// against a single-field-default variant): Midgard's ResultSerializer<T>.Write throws
-		// unconditionally for any non-Success Result<T> -- including the CLR default(Result<T>) state a
-		// code-first gRPC client produces for a field it simply never set. There is no legal way, using
-		// protobuf-net's current code-first API, to construct a client-side ParityRequest that leaves one
-		// Result<T> member "absent" the way an omitted JSON property or a missing XML attribute is
-		// absent -- the write throws before the request ever reaches the wire, and that throw surfaces
-		// through OutcomeClientInterceptor as an opaque ErrorCategory.Fault with no CorrelationId/errors,
-		// not the ErrorCategory.Validation/"required value missing" wording spec §9.3 describes. This
-		// contradicts ResultSerializers.cs's own doc comment ("an absent field on read leaves the member
-		// at default(Result{T})") -- that comment is only true for READ; WRITE has no matching path for a
-		// caller that legitimately wants to omit an optional/required-but-not-yet-known field. Filed as a
-		// cross-task finding for Midgard's Infrastructure.Web.Grpc, not fixed here (outside this task's
-		// remit). What Task 13 CAN and does prove instead: the two text channels render byte-identical
-		// wording for the identical semantic condition (spec §8.2, context note #6) -- ResultRules'
-		// required-rule fallback and XmlReadContext.AddScalarFailure both call
-		// Parser.ParseRequired<T>(string.Empty, ...) rendered via FailureDetail.Render, so "required value
-		// missing" is the literal text on both, proven live below.
+		// spec §9.3/§8.2, the Task 4 FailureDetail.Render-parity condition, now provable end-to-end on
+		// gRPC too: an empty wire payload (zero bytes) means every field's tag is genuinely absent --
+		// mirrors ResultSerializerTests.An_absent_field_deserializes_to_a_default_Result's own proof that
+		// this decodes every Result<T> member to default(Result<T>), the identical semantic state an
+		// omitted JSON property or a missing XML attribute produces. Never touches ResultSerializer<T>.
+		// Write (which throws unconditionally now, Midgard commit 08e1357/1e31d9a/f175275) -- the payload
+		// is simply zero bytes, no serialization of anything Result-shaped involved at all.
 		var cancellationToken = TestContext.Current.CancellationToken;
+
+		var grpcOutcome = await fixture.EchoRawAsync([], cancellationToken);
+		grpcOutcome.TryGetValue(out Failed grpcFailed).ShouldBeTrue();
+		grpcFailed.Problem.Category.ShouldBe(ErrorCategory.Validation);
+		grpcFailed.Problem.Errors.Values.SelectMany(v => v).ShouldAllBe(detail => detail == "required value missing");
 
 		var xmlErrors = await PostAndReadProblemErrorsAsync(
 			"""<?xml version="1.0" encoding="utf-8"?><parityRequest name="" />""", "application/xml", cancellationToken);
@@ -431,17 +507,24 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		var jsonErrors = await PostAndReadProblemErrorsAsync("{}", "application/json", cancellationToken);
 		jsonErrors.ShouldContain(e => e.Detail == "required value missing");
 		jsonErrors.Select(e => e.Detail).Distinct().ShouldBe(["required value missing"]);
+
+		// FailureDetail.Render parity, literally: the same message text, independent of which channel
+		// or which mechanism (formatter-level ModelState vs. mediator ValidationBehavior) produced it.
+		grpcFailed.Problem.Errors.Values.SelectMany(v => v).Distinct().ShouldBe(["required value missing"]);
 	}
 
 	[Fact]
 	async Task Required_result_string_carrying_empty_content_round_trips_and_succeeds()
 	{
 		// Spec §8.2: "" is present-legitimately-empty content for a required Result<string> -- distinct
-		// from absence -- and must succeed, never route through the "required missing" funnel.
+		// from absence -- and must succeed, never route through the "required missing" funnel. Proven
+		// here via real wire bytes (Name field present, explicitly empty) -- ResultSerializerTests.
+		// Round_trips_Result_of_an_empty_string proves protobuf-net itself writes a present-but-empty
+		// string field distinctly from an absent one, the same presence/emptiness law Futhark's own
+		// generated shapes enforce on the text channels.
 		var cancellationToken = TestContext.Current.CancellationToken;
 
-		var request = ValidGrpcRequest() with { Name = new Success<string>("") };
-		var outcome = await fixture.CreateGrpcClient().EchoAsync(request, cancellationToken);
+		var outcome = await fixture.EchoRawAsync(BuildValidRequestBytes(name: ""), cancellationToken);
 
 		outcome.TryGetValue(out Success<ParityReport> success).ShouldBeTrue();
 		success.Value.Name.ShouldBe("");
