@@ -34,7 +34,7 @@
 		     pins this one third-party package for this project without touching the central file.
 		     4.13.0 mirrors the version every other realm's own PostgresContainerFixture already
 		     resolves via its own (non-CPM) csproj. -->
-		<PackageReference Include="Testcontainers.PostgreSql" Version="* />
+		<PackageReference Include="Testcontainers.PostgreSql" Version="*" />
 		<ProjectReference Include="..\..\src\Hosting.Web.Server\Hosting.Web.Server.csproj" />
 	</ItemGroup>
 </Project>
