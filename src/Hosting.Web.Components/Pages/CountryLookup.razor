@@ -1,5 +1,4 @@
 @page "/reference/country-lookup"
-@using System.Globalization
 @inherits AsyncComponentBase
 @inject IReferenceService ReferenceService
 
@@ -9,9 +8,8 @@
 
 <p>
 	Resolves a country by any ISO 3166-1 code form (alpha-2, alpha-3, or numeric — padded or
-	unpadded) over the wire, then recomputes the same identifier locally from
-	<code>MimirNamespaces.Iso3166</code> to prove the two land on the identical
-	<code>DeterministicGuid</code>.
+	unpadded) over the wire, then looks the same identifier up locally from
+	<code>Iso3166.Ids</code> to prove the two land on the identical value.
 </p>
 
 <FluentTextInput @bind-Value="_code" Label="Code" Placeholder="US, USA, 840, 40..." />
@@ -35,11 +33,11 @@
 		<dd>@_response.Id</dd>
 	</dl>
 
-	@if (_recomputedId is { } recomputedId)
+	@if (_bakedId is { } bakedId)
 	{
 		<p>
-			Client-recomputed Id: @recomputedId
-			@if (recomputedId == _response.Id)
+			Client-baked Id: @bakedId
+			@if (bakedId == _response.Id)
 			{
 				<FluentBadge Appearance="BadgeAppearance.Filled">Match</FluentBadge>
 			}
@@ -55,13 +53,13 @@
 	string _code = "";
 	string? _errorMessage;
 	CountryResponse? _response;
-	Guid? _recomputedId;
+	Guid? _bakedId;
 
 	async Task LookupAsync()
 	{
 		_errorMessage = null;
 		_response = null;
-		_recomputedId = null;
+		_bakedId = null;
 
 		var outcome = await ReferenceService.GetCountry(new() { Code = _code }, CancellationToken);
 
@@ -80,14 +78,16 @@
 
 		// The wire response carries no numeric code, deliberately (CountryResponse's shape is fixed
 		// wire law) -- re-parsing the same user-typed code through the same generated IsoCountryCodes
-		// parser the server used, then zero-padding its own numeric value to three digits, reproduces
-		// the exact string CountryQueryHandler fed into Iso3166.Ids server-side, so recomputing
-		// DeterministicGuid from it here is a genuine independent proof, not a copy of the wire value.
-		if (IsoCountryCodes.Parse(_code).TryGetValue(out Success<IsoCountryCode> success))
+		// parser the server used yields the exact IsoCountryCode CountryQueryHandler resolved
+		// server-side, so looking its Id up in Iso3166.Ids -- Reference.Data.Primitives' own
+		// precomputed dataset, browser-safe by charter -- proves the wire result matches the
+		// client's own baked-in copy of the same row. The client never recomputes the identifier
+		// itself: Norse.Reference.Data.Namespaces (and the DeterministicGuid derivation it feeds)
+		// is server/tooling/tests-only law -- the browser never computes what Primitives already bakes.
+		if (IsoCountryCodes.Parse(_code).TryGetValue(out Success<IsoCountryCode> success) &&
+			Iso3166.Ids.TryGetValue(success.Value, out Guid bakedId))
 		{
-			var numericCode = ((ushort)success.Value).ToString("D3", CultureInfo.InvariantCulture);
-			DeterministicGuid local = new(MimirNamespaces.Iso3166, numericCode);
-			_recomputedId = local.Value;
+			_bakedId = bakedId;
 		}
 	}
 }

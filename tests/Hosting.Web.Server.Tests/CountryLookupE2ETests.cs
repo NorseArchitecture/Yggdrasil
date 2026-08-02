@@ -18,8 +18,8 @@ using Norse.Persistence.EntityFramework;
 using Norse.Persistence.EntityFramework.PostgreSQL;
 using Norse.Primitives.Identifiers;
 using Norse.Reference;
-using Norse.Reference.Data;
-using Norse.Reference.Data.Migrations;
+using Norse.Reference.Data.EntityFramework;
+using Norse.Reference.Data.EntityFramework.Migrations;
 using Norse.Reference.Web.Server;
 using ProtoBuf.Grpc.Client;
 using Testcontainers.PostgreSql;
@@ -136,7 +136,7 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 
 		// Recompute client-side from the frozen name form -- Guid equality AND canonical string
 		// equality (byte-order settled law: this assertion is its only mention, per spec §1).
-		DeterministicGuid local = new(MimirNamespaces.Iso3166, expectedD3);
+		DeterministicGuid local = new(ReferenceNamespaces.Iso3166, expectedD3);
 		response.Id.ShouldBe(local.Value);
 		response.Id.ToString().ShouldBe(local.Value.ToString());
 	}

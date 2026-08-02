@@ -82,15 +82,15 @@
 		<PackageVersion Include="Norse.Identity.Migrations.PostgreSQL" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations.SqlServer" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Web.Server" Version="$(HiminbjorgVersion)" />
-		<!-- Mimisbrunnr — Norse.ReferenceData.Data.Migrations renamed to Norse.Reference.Data.Migrations,
-		     plus new Norse.Reference.Data (base entities) and provider siblings. -->
-		<PackageVersion Include="Norse.Reference.Data" Version="$(MimisbrunnrVersion)" />
-		<PackageVersion Include="Norse.Reference.Data.Migrations" Version="$(MimisbrunnrVersion)" />
-		<PackageVersion Include="Norse.Reference.Data.Migrations.PostgreSQL" Version="$(MimisbrunnrVersion)" />
-		<PackageVersion Include="Norse.Reference.Data.Migrations.SqlServer" Version="$(MimisbrunnrVersion)" />
+		<!-- Mimisbrunnr -->
+		<PackageVersion Include="Norse.Reference.Data.EntityFramework" Version="$(MimisbrunnrVersion)" />
+		<PackageVersion Include="Norse.Reference.Data.EntityFramework.Migrations" Version="$(MimisbrunnrVersion)" />
+		<PackageVersion Include="Norse.Reference.Data.EntityFramework.Migrations.PostgreSQL" Version="$(MimisbrunnrVersion)" />
+		<PackageVersion Include="Norse.Reference.Data.EntityFramework.Migrations.SqlServer" Version="$(MimisbrunnrVersion)" />
+		<PackageVersion Include="Norse.Reference.Data.Namespaces" Version="$(MimisbrunnrVersion)" />
+		<PackageVersion Include="Norse.Reference.Data.Primitives" Version="$(MimisbrunnrVersion)" />
 		<!-- Mimir -->
 		<PackageVersion Include="Norse.Reference.Contracts" Version="$(MimirVersion)" />
-		<PackageVersion Include="Norse.Reference.Seeds" Version="$(MimirVersion)" />
 		<PackageVersion Include="Norse.Reference.Web.Server" Version="$(MimirVersion)" />
 		<!-- Heimdall — was entirely absent; HeimdallVersion prop existed but nothing consumed it. -->
 		<PackageVersion Include="Norse.AuthN.Components" Version="$(HeimdallVersion)" />

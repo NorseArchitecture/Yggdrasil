@@ -17,7 +17,7 @@
 			<Repo>Urdarbrunnr</Repo>
 			<Generator>true</Generator>
 		</NorseRef>
-		<NorseRef Include="Reference.Data.Migrations.PostgreSQL">
+		<NorseRef Include="Reference.Data.EntityFramework.Migrations.PostgreSQL">
 			<Repo>Mimisbrunnr</Repo>
 		</NorseRef>
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
