@@ -6,12 +6,12 @@
 		<BragiVersion>0.0.3</BragiVersion>
 		<HeimdallVersion>0.0.8</HeimdallVersion>
 		<HiminbjorgVersion>0.0.13</HiminbjorgVersion>
-		<MidgardVersion>0.0.14</MidgardVersion>
+		<MidgardVersion>0.0.15</MidgardVersion>
 		<MimirVersion>0.0.2</MimirVersion>
 		<MimisbrunnrVersion>0.0.10</MimisbrunnrVersion>
 		<NaglfarVersion>0.0.4</NaglfarVersion>
 		<RatatoskrVersion>0.0.0</RatatoskrVersion>
-		<SvartalfheimVersion>0.0.9</SvartalfheimVersion>
+		<SvartalfheimVersion>0.0.10</SvartalfheimVersion>
 		<UrdarbrunnrVersion>0.0.9</UrdarbrunnrVersion>
 		<!-- 3rd party versions -->
 		<BlazingStoryVersion>1.0.0-preview.91</BlazingStoryVersion>
