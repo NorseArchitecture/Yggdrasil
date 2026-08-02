@@ -24,13 +24,20 @@
 	<Target Name="_NorseRemoveUnwantedGeneratorAnalyzers" BeforeTargets="CoreCompile" Condition="'@(Analyzer)' != ''">
 		<ItemGroup>
 			<_NorseWantedGeneratorAnalyzer Include="@(NorseRef->WithMetadataValue('Generator', 'true')->'Norse.%(Identity).Generator')" />
+			<!-- Gap 4 (2026-08-02): a second generator on the same NorseRef library, named via the
+			     separate NorseGeneratorRef item list (see Bifrost/Directory.Build.targets) rather than
+			     the Generator="true" boolean, since that convention only ever names one. -->
+			<_NorseWantedGeneratorAnalyzer Include="@(NorseGeneratorRef->'Norse.%(Identity)')" />
 		</ItemGroup>
 		<PropertyGroup>
 			<!-- Semicolon-joined so a per-Analyzer-item Condition can do a plain substring Contains check below. -->
 			<_NorseWantedGeneratorAnalyzerNames>;@(_NorseWantedGeneratorAnalyzer);</_NorseWantedGeneratorAnalyzerNames>
 		</PropertyGroup>
 		<ItemGroup>
-			<Analyzer Remove="@(Analyzer)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Analyzer.Filename)', '^Norse\..+\.Generator$')) and !$(_NorseWantedGeneratorAnalyzerNames.Contains(';%(Analyzer.Filename);'))" />
+			<!-- Provenance-scoped (2026-07-31): only a NuGet-delivered analyzer is ever a strip candidate;
+			     a ProjectReference-wired one (a project's own sibling gen/ generator, or Bifrost's
+			     dev-mode Choose-block forwarding) is deliberate by construction. -->
+			<Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' != '' and $([System.Text.RegularExpressions.Regex]::IsMatch('%(Analyzer.Filename)', '^Norse\..+\.Generator$')) and !$(_NorseWantedGeneratorAnalyzerNames.Contains(';%(Analyzer.Filename);'))" />
 		</ItemGroup>
 	</Target>
 </Project>

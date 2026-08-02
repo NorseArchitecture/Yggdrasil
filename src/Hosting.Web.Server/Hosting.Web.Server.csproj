@@ -2,6 +2,10 @@
 	<PropertyGroup>
 		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
 		<ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:$(ContainerVersion)</ContainerBaseImage>
+		<!-- AddOpenApi's bundled XML-doc-comment source generator (Task 11 in Midgard) emits
+		     interceptors; needs this opt-in explicitly, same fix Infrastructure.Web.Server.Tests.csproj
+		     already carries for the identical generator. -->
+		<InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.OpenApi.Generated</InterceptorsNamespaces>
 	</PropertyGroup>
 	<ItemGroup>
 		<NorseRef Include="Abstractions.Contracts">
@@ -25,6 +29,9 @@
 		<NorseRef Include="Infrastructure.Web.Server" Generator="true">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseGeneratorRef Include="Infrastructure.Web.Server.Xml.Generator">
+			<Repo>Midgard</Repo>
+		</NorseGeneratorRef>
 		<NorseRef Include="Reference.Web.Server">
 			<Repo>Mimir</Repo>
 		</NorseRef>

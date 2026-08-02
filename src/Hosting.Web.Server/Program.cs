@@ -7,13 +7,17 @@ using Norse.AuthN.Services;
 using Norse.Hosting.Web.Components;
 using Norse.Hosting.Web.Server;
 using Norse.Hosting.Web.Server.Components;
+using Norse.Hosting.Web.Server.NorseXmlShapes;
 using Norse.Identity.Web.Server;
 using Norse.Identity.Web.Server.Components.Pages;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.ServiceDefaults.AspNet;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
+using Norse.Infrastructure.Web.Server.Json;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
+using Norse.Infrastructure.Web.Server.OpenApi;
+using Norse.Infrastructure.Web.Server.Xml;
 using Norse.Reference;
 using Norse.Reference.Web.Server;
 using ProtoBuf.Grpc.Server;
@@ -62,6 +66,22 @@ builder
 	// reflection hands out the full service/message catalog to anyone who can reach the endpoint.
 	.AddCodeFirstGrpcReflection();
 
+// Futhark's REST ambassador layer (../Glitnir/docs/Platform/specs/2026-08-01-opinionated-xml-serialization-design.md):
+// content-negotiated JSON/XML for hand-authored GrpcControllerBase facade controllers, plus the OpenAPI
+// document those same controllers author. OutcomeServerInterceptor sat designed, tested, and unwired
+// for a full release before the platform's own audit caught it — this is the line where that mistake
+// does not repeat for the REST fold and the two OpenAPI union-unwrap transformers (spec §10.4).
+builder.Services
+	.AddControllers()
+	.AddNorseJson()
+	.AddNorseXml(XmlCaseStyle.CamelCase, NorseXmlShapeRegistration.Build());
+builder.Services.AddOpenApi(options =>
+{
+	options.AddSchemaTransformer<ResultSchemaTransformer>();
+	options.AddSchemaTransformer<XmlMetadataTransformer>();
+	options.AddDocumentTransformer<UnionLeakGuardTransformer>();
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -88,6 +108,9 @@ app.MapRazorComponents<App>()
 	.AddAdditionalAssemblies(typeof(Routes).Assembly, typeof(Login).Assembly, typeof(Logout).Assembly, typeof(ExternalLogin).Assembly);
 
 app.MapAdditionalIdentityEndpoints();
+
+app.MapControllers();
+app.MapOpenApi();
 
 app.MapNorseGrpcServices();
 app.MapDefaultEndpoints();
