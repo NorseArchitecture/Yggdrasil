@@ -14,7 +14,7 @@
 		<SvartalfheimVersion>0.0.9</SvartalfheimVersion>
 		<UrdarbrunnrVersion>0.0.9</UrdarbrunnrVersion>
 		<!-- 3rd party versions -->
-		<BlazingStoryVersion>1.0.0-preview.89</BlazingStoryVersion>
+		<BlazingStoryVersion>1.0.0-preview.91</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
 		<DotNetVersion>11.0.0-preview.6.26359.118</DotNetVersion>
 		<FluentUIVersion>5.0.0-rc.4-26180.1</FluentUIVersion>
@@ -49,11 +49,7 @@
 		<PackageVersion Include="Norse.Abstractions.Migrations" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Web.Server" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Worker" Version="$(AsgardVersion)" />
-		<!-- Urdarbrunnr — widened from the old single Norse.EntityFramework.Migrations.PostgreSQL into
-		     a provider-agnostic base plus per-provider design/runtime siblings (2026-07-22 rename).
-		     v0.0.8 consolidates the design-time factory into one neutral Design package and moves
-		     EfMigrationContributor<T>/MigrationConnectionStringAttribute into the new Migrations
-		     package; the old Design.PostgreSQL/.SqlServer packages are deleted. -->
+		<!-- Urdarbrunnr -->
 		<PackageVersion Include="Norse.Persistence.EntityFramework" Version="$(UrdarbrunnrVersion)" />
 		<PackageVersion Include="Norse.Persistence.EntityFramework.Design" Version="$(UrdarbrunnrVersion)" />
 		<PackageVersion Include="Norse.Persistence.EntityFramework.Migrations" Version="$(UrdarbrunnrVersion)" />
@@ -69,14 +65,7 @@
 		<PackageVersion Include="Norse.Infrastructure.Web.Grpc" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Persistence.EntityFramework" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Server" Version="$(MidgardVersion)" />
-		<!-- Himinbjorg — base Identity project was deleted, folded into Identity.Web.Server. Base
-		     Identity.Migrations is still packable (provider-agnostic migration tooling) alongside its
-		     provider siblings, not superseded by them — corrected 2026-07-27, previously logged here
-		     as IsPackable=false, which the shipped csproj does not support. Identity.EntityFramework
-		     (the entity model + NorseIdentityDbContext) is a distinct, still-live packable project —
-		     the "base Identity project was deleted" note above refers to a different, now-removed
-		     project, not this one; added 2026-08-01, a genuine pre-existing gap found sweeping every
-		     submodule's src/ against this file. -->
+		<!-- Himinbjorg -->
 		<PackageVersion Include="Norse.Identity.EntityFramework" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations.PostgreSQL" Version="$(HiminbjorgVersion)" />
@@ -92,13 +81,12 @@
 		<!-- Mimir -->
 		<PackageVersion Include="Norse.Reference.Contracts" Version="$(MimirVersion)" />
 		<PackageVersion Include="Norse.Reference.Web.Server" Version="$(MimirVersion)" />
-		<!-- Heimdall — was entirely absent; HeimdallVersion prop existed but nothing consumed it. -->
+		<!-- Heimdall -->
 		<PackageVersion Include="Norse.AuthN.Components" Version="$(HeimdallVersion)" />
 		<PackageVersion Include="Norse.AuthN.Components.FluentUI" Version="$(HeimdallVersion)" />
 		<PackageVersion Include="Norse.AuthN.Services" Version="$(HeimdallVersion)" />
 		<!-- Naglfar / Bragi -->
 		<PackageVersion Include="Norse.DesignSystem.Stories" Version="$(BragiVersion)" />
 		<PackageVersion Include="Norse.DesignSystem.Tokens" Version="$(NaglfarVersion)" />
-
 	</ItemGroup>
 </Project>
