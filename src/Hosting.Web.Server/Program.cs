@@ -52,11 +52,12 @@ var norseIdentityConnectionString = builder.Configuration.GetConnectionString("n
 	?? throw new InvalidOperationException("Connection string 'norse_identity' is not configured.");
 var norseReferenceConnectionString = builder.Configuration.GetConnectionString("norse_reference")
 	?? throw new InvalidOperationException("Connection string 'norse_reference' is not configured.");
-builder.Services
+builder
+	.AddNorseAuthenticationService(norseIdentityConnectionString)
+	.Services
+	.AddNorseReferenceService(norseReferenceConnectionString)
 	.AddNorsePipeline() // Midgard: behaviors in law order, PrincipalAccessor, Sender
 	.AddNorseCodeFirstGrpc() // Midgard: Unhandled -> Seeding -> Outcome interceptor stack
-	.AddNorseAuthenticationService(norseIdentityConnectionString)
-	.AddNorseReferenceService(norseReferenceConnectionString)
 	.AddDeferredSignIn()
 	// Dev-only: lets Postman/grpcurl discover IAuthenticationService and call it directly, proving the
 	// protobuf-net.Grpc wire lifecycle independent of the Blazor UI. Never mapped outside Development —
@@ -75,7 +76,6 @@ else
 		.UseExceptionHandler("/Error", createScopeForErrors: true)
 		.UseHsts();
 }
-
 app
 	.UseHttpsRedirection()
 	.UseAuthentication()
