@@ -1,6 +1,7 @@
 using Grpc.Net.Client;
 using Grpc.Net.Client.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Norse.AuthN.Components.FluentUI;
 using Norse.Hosting.Web.Client;
 using Norse.Hosting.Web.Components;
 using Norse.Infrastructure.Components.Theme.FluentUI;
@@ -30,10 +31,13 @@ builder.Services
 	.AddAuthenticationStateDeserialization()
 	.AddNorseFluentUiTheme();
 
-// This project hosts no components of its own (see the architecture note above), so it has
-// no additional assemblies to contribute beyond Routes' own — unlike Hosting.Web.Server, which
-// contributes its own assembly for the server-only Identity/Account pages.
-builder.Services.AddSingleton(new RoutesAdditionalAssemblies([]));
+// This project hosts no components of its own (see the architecture note above), but it does
+// reference Heimdall's AuthN.Components.FluentUI (Login/Register) — those pages ship inside this
+// WASM binary, so the client-side Router needs to be told about that assembly too, or InteractiveAuto's
+// hand-off from the server circuit to WASM can't resolve /Account/Login and falls back to NotFound.
+// Logout (AuthN.Components, headless) and ExternalLogin/Manage (Himinbjorg's Identity.Web.Server) stay
+// excluded — neither assembly is referenced here, sealed server-side per Himinbjorg's own CLAUDE.md.
+builder.Services.AddSingleton(new RoutesAdditionalAssemblies([typeof(Login).Assembly]));
 
 // gRPC-Web rides ordinary HTTP/1.1 — no HTTP/2-specific channel configuration needed in the browser.
 // One channel, not one per service: every Norse gRPC service this client talks to (IAuthenticationService,
