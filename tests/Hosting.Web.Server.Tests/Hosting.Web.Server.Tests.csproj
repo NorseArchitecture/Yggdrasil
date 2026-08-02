@@ -1,4 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<!-- AddOpenApi's bundled XML-doc-comment source generator (Task 13's SwoopHostFixture is this
+		     project's first AddOpenApi call) emits interceptors; needs this opt-in explicitly, mirroring
+		     Midgard's own Infrastructure.Web.Server.Tests.csproj fix for the identical generator. -->
+		<InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.OpenApi.Generated</InterceptorsNamespaces>
+	</PropertyGroup>
 	<PropertyGroup Condition="'$(UseProjectReferences)' == 'true'">
 		<!-- NU1605 local-dev-mode false positive: from Bifrost root, UseProjectReferences=true turns
 		     every NorseRef this project reaches transitively (Hosting.Web.Server to Identity.Web.Server
@@ -13,6 +19,12 @@
 		<NoWarn>$(NoWarn);NU1605</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
+		<!-- The Futhark XML shape generator must run in this compilation, not Hosting.Web.Server's own —
+		     Parity/ParityController.cs (the one real GrpcControllerBase descendant on the platform today)
+		     lives here, per Futhark's "facade controllers are host-compilation source" law. -->
+		<NorseGeneratorRef Include="Infrastructure.Web.Server.Xml.Generator">
+			<Repo>Midgard</Repo>
+		</NorseGeneratorRef>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*-*" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.*-*" />
 		<!-- NorseRef never belongs in tests/ (CPM is deliberately off here) — Norse package
