@@ -93,14 +93,18 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 		circuitHandlers.OfType<LoggingCircuitHandler>().ShouldNotBeEmpty();
 	}
 
-	[Theory]
-	[InlineData(HealthEndpoints.Liveness)]
-	[InlineData(HealthEndpoints.Readiness)]
-	async Task MapDefaultEndpoints_answers_the_probe_with_a_bare_healthy_body(string path)
+	// Liveness only -- MapDefaultEndpoints() maps /livez to just the live-tagged checks and /readyz to
+	// every registered check (Midgard's own doc comment on the extension), and this fixture's fake,
+	// unreachable ConnectionStrings__norse_identity/norse_reference (this file's static ctor) exist
+	// precisely so nothing here opens a real connection. DbContextHealthCheck isn't live-tagged, so
+	// /livez upholds that; /readyz would genuinely try to reach Postgres and hang on the timeout --
+	// that's real infrastructure reachability, out of scope for a composition/wiring fixture.
+	[Fact]
+	async Task MapDefaultEndpoints_answers_the_liveness_probe_with_a_bare_healthy_body()
 	{
 		using var client = factory.CreateClient();
 
-		var response = await client.GetAsync(new Uri(path, UriKind.Relative), TestContext.Current.CancellationToken);
+		var response = await client.GetAsync(new Uri(HealthEndpoints.Liveness, UriKind.Relative), TestContext.Current.CancellationToken);
 
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
