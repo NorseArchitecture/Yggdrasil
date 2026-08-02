@@ -48,12 +48,10 @@ builder.Services.AddAuthorizationBuilder()
 	.AddPolicy(AuthNPolicies.Public, policy => policy.RequireAssertion(_ => true))
 	.AddPolicy(ReferencePolicies.Public, policy => policy.RequireAssertion(_ => true));
 
-var norseIdentityConnectionString = builder.Configuration.GetConnectionString("norse_identity")
-	?? throw new InvalidOperationException("Connection string 'norse_identity' is not configured.");
 var norseReferenceConnectionString = builder.Configuration.GetConnectionString("norse_reference")
 	?? throw new InvalidOperationException("Connection string 'norse_reference' is not configured.");
 builder
-	.AddNorseAuthenticationService(norseIdentityConnectionString)
+	.AddNorseAuthenticationService("norse_identity")
 	.Services
 	.AddNorseReferenceService(norseReferenceConnectionString)
 	.AddNorsePipeline() // Midgard: behaviors in law order, PrincipalAccessor, Sender

@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
-using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
@@ -20,6 +19,7 @@ using Norse.Primitives.Identifiers;
 using Norse.Reference;
 using Norse.Reference.Data.EntityFramework;
 using Norse.Reference.Data.EntityFramework.Migrations;
+using Norse.Reference.Data.EntityFramework.Migrations.PostgreSQL;
 using Norse.Reference.Web.Server;
 using ProtoBuf.Grpc.Client;
 using Testcontainers.PostgreSql;
@@ -49,7 +49,7 @@ public sealed class CountryLookupPostgresFixture : IAsyncLifetime
 
 		DbContextOptionsBuilder<ReferenceDbContext> optionsBuilder = new();
 		optionsBuilder.ApplyNorseProviderOptions(NorsePostgresEfProvider.Instance,
-			ConnectionString, typeof(NorseReferenceMigrationContributor).Assembly.GetName().Name);
+			ConnectionString, typeof(ReferenceDbContextFactory).Assembly.GetName().Name);
 		await using ReferenceDbContext context = new(optionsBuilder.Options);
 
 		await new NorseReferenceMigrationContributor(context).MigrateAsync(CancellationToken.None);
@@ -107,6 +107,7 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 				webHost.Configure(app =>
 				{
 					app.UseRouting();
+					app.UseAuthorization();
 					app.UseEndpoints(endpoints => endpoints.MapGrpcService<ReferenceService>());
 				});
 			})
@@ -147,13 +148,15 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 		var cancellationToken = TestContext.Current.CancellationToken;
 		using var host = await CreateHostAsync(fixture.ConnectionString, cancellationToken);
 
-		var exception = await Should.ThrowAsync<RpcException>(async () =>
-			await CreateWireClient(host).GetCountry(new() { Code = "banana" }, cancellationToken));
+		// OutcomeClientInterceptor decodes the InvalidArgument RpcException (ToRpcException's status
+		// mapping for ErrorCategory.Validation) back into a normal Outcome<CountryResponse>.Err by
+		// design -- GetCountry returns Outcome<T> on the wire, so a Failed outcome never reaches the
+		// caller as a thrown RpcException. Asserting the decoded Problem, not a thrown exception.
+		var outcome = await CreateWireClient(host).GetCountry(new() { Code = "banana" }, cancellationToken);
 
-		exception.StatusCode.ShouldBe(StatusCode.InvalidArgument);
-		var problem = exception.DecodeProblem();
-		problem.Category.ShouldBe(ErrorCategory.Validation);
-		problem.Errors["code"].ShouldContain("banana");
+		outcome.TryGetValue(out Failed failed).ShouldBeTrue();
+		failed.Problem.Category.ShouldBe(ErrorCategory.Validation);
+		failed.Problem.Errors["code"].ShouldContain("banana");
 	}
 }
 
