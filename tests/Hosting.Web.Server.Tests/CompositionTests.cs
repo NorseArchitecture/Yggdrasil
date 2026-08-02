@@ -31,8 +31,11 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 	// The real norse_identity connection string comes from Aspire at runtime; this only needs to be
 	// syntactically valid Npgsql for AddNorseAuthenticationService's DI-time registration -- nothing
 	// exercised by these tests ever opens a connection.
-	static CompositionTests() =>
+	static CompositionTests()
+	{
 		Environment.SetEnvironmentVariable("ConnectionStrings__norse_identity", "Host=localhost;Database=norse_identity_composition_tests;Username=test;Password=test");
+		Environment.SetEnvironmentVariable("ConnectionStrings__norse_reference", "Host=localhost;Database=norse_reference_composition_tests;Username=test;Password=test");
+	}
 
 	[Fact]
 	void AddNorsePipeline_registers_ISender_resolvable_in_a_scope()

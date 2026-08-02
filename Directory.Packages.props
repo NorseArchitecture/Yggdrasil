@@ -67,11 +67,17 @@
 		<PackageVersion Include="Norse.Infrastructure.ServiceDefaults.AspNet" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Client" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Grpc" Version="$(MidgardVersion)" />
+		<PackageVersion Include="Norse.Infrastructure.Persistence.EntityFramework" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Server" Version="$(MidgardVersion)" />
 		<!-- Himinbjorg — base Identity project was deleted, folded into Identity.Web.Server. Base
 		     Identity.Migrations is still packable (provider-agnostic migration tooling) alongside its
 		     provider siblings, not superseded by them — corrected 2026-07-27, previously logged here
-		     as IsPackable=false, which the shipped csproj does not support. -->
+		     as IsPackable=false, which the shipped csproj does not support. Identity.EntityFramework
+		     (the entity model + NorseIdentityDbContext) is a distinct, still-live packable project —
+		     the "base Identity project was deleted" note above refers to a different, now-removed
+		     project, not this one; added 2026-08-01, a genuine pre-existing gap found sweeping every
+		     submodule's src/ against this file. -->
+		<PackageVersion Include="Norse.Identity.EntityFramework" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations.PostgreSQL" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Migrations.SqlServer" Version="$(HiminbjorgVersion)" />
@@ -82,6 +88,10 @@
 		<PackageVersion Include="Norse.Reference.Data.Migrations" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.Migrations.PostgreSQL" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.Migrations.SqlServer" Version="$(MimisbrunnrVersion)" />
+		<!-- Mimir -->
+		<PackageVersion Include="Norse.Reference.Contracts" Version="$(MimirVersion)" />
+		<PackageVersion Include="Norse.Reference.Seeds" Version="$(MimirVersion)" />
+		<PackageVersion Include="Norse.Reference.Web.Server" Version="$(MimirVersion)" />
 		<!-- Heimdall — was entirely absent; HeimdallVersion prop existed but nothing consumed it. -->
 		<PackageVersion Include="Norse.AuthN.Components" Version="$(HeimdallVersion)" />
 		<PackageVersion Include="Norse.AuthN.Components.FluentUI" Version="$(HeimdallVersion)" />
