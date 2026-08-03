@@ -29,4 +29,10 @@
 		<_ParentProps>$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))</_ParentProps>
 	</PropertyGroup>
 	<Import Project="$(_ParentProps)" Condition="Exists('$(_ParentProps)')" />
+	<!--
+		The Law of the Realms delivery does NOT live here: CPM's ManagePackageVersionsCentrally is
+		defined by Directory.Packages.props, which imports after this file — a props-level Choose
+		cannot see it and misfires under CPM (NU1008, proven live 2026-08-03). It lives in the
+		realm-root Directory.Build.targets, scattered beside this file.
+	-->
 </Project>
