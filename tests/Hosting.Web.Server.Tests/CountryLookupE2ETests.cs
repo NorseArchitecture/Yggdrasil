@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
+using Norse.Infrastructure.Persistence.EntityFramework;
 using Norse.Infrastructure.Web.Client.Grpc;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
@@ -93,11 +94,14 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 					services.AddNorseCodeFirstGrpc();
 					services.AddRouting();
 
-					// The real composition-root extension (Task 13) -- AddDbContextFactory<ReferenceDbContext>,
-					// AddWell<ReferenceDbContext>(), the generated handler/dispatch registration, and
-					// IReferenceService itself -- against the migrated, seeded container above. No stub
-					// handler anywhere: this is the actual read path, over a real database.
+					// The real realm extension -- AddDbContextFactory<ReferenceDbContext>, the generated
+					// handler/dispatch registration, and IReferenceService itself -- against the migrated,
+					// seeded container above. No stub handler anywhere: this is the actual read path, over
+					// a real database. Since the Midgard excision (NORSE071, 2026-08-03), the well is the
+					// composition root's call to make -- and this fixture IS its own composition root, so
+					// it makes the same call Program.cs does.
 					services.AddNorseReferenceService(connectionString);
+					services.AddWell<ReferenceDbContext>();
 
 					// Mirrors MediatorParityTests: AuthorizationBehavior needs a principal to ask about,
 					// and this suite has neither a circuit nor a cookie scheme to seed one for real.
