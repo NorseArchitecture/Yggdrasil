@@ -18,7 +18,7 @@
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
 		<DotNetVersion>11.0.0-preview.6.26359.118</DotNetVersion>
 		<FluentUIVersion>5.0.0-rc.4-26180.1</FluentUIVersion>
-		<GrpcVersion>2.80.0</GrpcVersion>
+		<GrpcVersion>2.83.0</GrpcVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="BlazingStory" Version="$(BlazingStoryVersion)" />
@@ -57,6 +57,7 @@
 		<PackageVersion Include="Norse.Persistence.EntityFramework.PostgreSQL" Version="$(UrdarbrunnrVersion)" />
 		<PackageVersion Include="Norse.Persistence.EntityFramework.SqlServer" Version="$(UrdarbrunnrVersion)" />
 		<!-- Midgard -->
+		<PackageVersion Include="Norse.Infrastructure.Backend" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Components.Theme" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Components.Theme.FluentUI" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Migrations" Version="$(MidgardVersion)" />
