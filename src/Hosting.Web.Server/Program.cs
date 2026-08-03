@@ -73,7 +73,7 @@ builder
 // does not repeat for the REST fold and the two OpenAPI union-unwrap transformers (spec §10.4).
 builder.Services
 	.AddControllers()
-	.AddNorseJson()
+	.AddNorseJson(NorseEnumNameRegistration.Build())
 	.AddNorseXml(XmlCaseStyle.CamelCase, NorseXmlShapeRegistration.Build());
 builder.Services.AddOpenApi(options =>
 {

@@ -50,6 +50,7 @@ sealed class ParityRequestValidator : AbstractValidator<ParityRequest>
 		RuleFor(x => x.EffectiveDate).ResultRequired().OverridePropertyName("parityRequest/@effectiveDate");
 		RuleFor(x => x.StartTime).ResultRequired().OverridePropertyName("parityRequest/@startTime");
 		RuleFor(x => x.Duration).ResultRequired().OverridePropertyName("parityRequest/@duration");
+		RuleFor(x => x.Status).ResultRequiredEnum().OverridePropertyName("parityRequest/@status");
 	}
 }
 
@@ -79,7 +80,7 @@ sealed class EchoParityHandler : IRequestHandler<EchoParityCommand, ParityReport
 			EffectiveDate = Unwrap(wire.EffectiveDate),
 			StartTime = Unwrap(wire.StartTime),
 			Duration = Unwrap(wire.Duration),
-			Status = ParityStatus.Active,
+			Status = Unwrap(wire.Status),
 			Tags = [.. wire.Tags.Select(tag => new ParityReportTag { Value = Unwrap(tag.Value) })]
 		};
 		return ValueTask.FromResult(Outcome<ParityReport>.Ok(report));

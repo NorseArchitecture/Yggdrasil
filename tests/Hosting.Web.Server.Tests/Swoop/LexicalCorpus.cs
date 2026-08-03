@@ -12,11 +12,10 @@ namespace Norse.Hosting.Web.Server.Tests.Swoop;
 /// asserted identical across both text channels against the live <see cref="SwoopHostFixture.App"/>.
 /// Every case starts from a fully valid <see cref="TriProtocolSwoopTests"/>-shaped request and
 /// overrides exactly one field's raw wire text, so an accept/reject verdict is attributable to that one
-/// lexeme, never a side effect of a different field. Coverage: every §7 row except enums — the enum
-/// row lives response-side only (<see cref="Parity.ParityReport.Status"/>) because <c>Result&lt;TEnum&gt;</c>
-/// has no JSON request funnel yet (Midgard's <c>ResultJsonConverterFactory</c> refuses it with a named
-/// error; the name-table design for the JSON channel is an open design question), so no request field
-/// exists to drive an enum lexeme through both channels.
+/// lexeme, never a side effect of a different field. Coverage: all 13 of 13 §7 rows, including the enum
+/// row (<see cref="Parity.ParityStatus"/>, live request-side as of Task 11) — governed names only
+/// (<c>active</c>/<c>inactive</c>); wrong case, unmapped tokens, and a bare number all reject identically
+/// on both channels.
 /// </summary>
 [Collection(SwoopCollection.Name)]
 public sealed class LexicalCorpus(SwoopHostFixture fixture)
@@ -38,7 +37,8 @@ public sealed class LexicalCorpus(SwoopHostFixture fixture)
 		("timestampOffset", "2026-08-01T14:30:00.0000000+02:00", "2026-08-01T14:30:00.0000000+02:00"),
 		("effectiveDate", "2026-08-01", "2026-08-01"),
 		("startTime", "14:30:00.0000000", "14:30:00.0000000"),
-		("duration", "P1DT2H3M4S", "P1DT2H3M4S")
+		("duration", "P1DT2H3M4S", "P1DT2H3M4S"),
+		("status", "active", "active")
 	];
 
 	static string BuildJson(string fieldName, JsonNode? overrideValue)
@@ -135,7 +135,14 @@ public sealed class LexicalCorpus(SwoopHostFixture fixture)
 			// TimeOnly (§7 row: TimeOnly, "O") -- the rejected lexeme is shape-valid but value-invalid
 			// (there is no hour 25), sharper than a plain not-a-time string.
 			{ "startTime", "08:15:30.0000000", "08:15:30.0000000", true },
-			{ "startTime", "25:00:00.0000000", "25:00:00.0000000", false }
+			{ "startTime", "25:00:00.0000000", "25:00:00.0000000", false },
+
+			// enum (§7 row: ParityStatus, live request-side as of Task 11) -- governed names only;
+			// wrong case, an unmapped token, and a bare number all reject identically on both channels.
+			{ "status", "inactive", "inactive", true },
+			{ "status", "Active", "Active", false },
+			{ "status", "99", "99", false },
+			{ "status", "not-a-status", "not-a-status", false }
 		};
 		return data;
 	}

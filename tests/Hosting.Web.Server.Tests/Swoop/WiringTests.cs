@@ -21,7 +21,7 @@ public sealed class WiringTests(SwoopHostFixture fixture)
 		// If AddNorseXml's formatter pair were never inserted, an "Accept: application/xml" request
 		// would 406 (no formatter can produce it) instead of rendering XML -- this is the live-host
 		// proof the registration actually took, not merely that the source line exists.
-		const string Body = """<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="A" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" />""";
+		const string Body = """<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="A" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" status="active" />""";
 
 		using var client = fixture.App.GetTestClient();
 		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(Body, Encoding.UTF8, "application/xml") };
@@ -90,4 +90,40 @@ public sealed class WiringTests(SwoopHostFixture fixture)
 		schemaName == "Result" || schemaName == "Outcome" ||
 		schemaName.StartsWith("ResultOf", StringComparison.Ordinal) ||
 		schemaName.StartsWith("OutcomeOf", StringComparison.Ordinal);
+
+	[Fact]
+	async Task Probe_3_the_live_document_governs_the_enum_row_on_both_the_request_and_response_projections()
+	{
+		// spec §6.5/§7's twentieth taxonomy row, live end to end as of Task 11 -- EnumSchemaTransformer
+		// governs the raw (response-side) ParityStatus component; ResultSchemaTransformer's Result<TEnum>
+		// branch governs the inline request-side projection. Same governed table, same case style, both
+		// stamped through EnumSchemaTransformer.ApplyGovernedList -- this is the live-host proof neither
+		// registration was ever dropped, mirroring Probe_2's own live-document-fetch pattern.
+		using var client = fixture.App.GetTestClient();
+		using var response = await client.GetAsync(new Uri("/openapi/v1.json", UriKind.Relative), TestContext.Current.CancellationToken);
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+		var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+		var document = JsonNode.Parse(json)!;
+		var schemas = document["components"]?["schemas"]?.AsObject()
+			?? throw new InvalidOperationException("document carries no components.schemas");
+
+		// The response-side raw enum: EnumSchemaTransformer's own governed component, referenced by
+		// ParityReport.Status's $ref -- AspNetCore.OpenApi names an enum's shared component schema after
+		// the CLR type.
+		var statusComponent = schemas["ParityStatus"] ?? throw new InvalidOperationException("no ParityStatus component schema in the live document");
+		statusComponent["type"]!.GetValue<string>().ShouldBe("string");
+		statusComponent["enum"]!.AsArray().Select(n => n!.GetValue<string>()).ShouldBe(["active", "inactive"]);
+		statusComponent["readOnly"]!.GetValue<bool>().ShouldBeTrue();
+
+		// The request-side Result<ParityStatus> projection: ResultSchemaTransformer's own inline schema,
+		// never a $ref -- same governed list, writeOnly instead of readOnly.
+		var requestStatus = schemas["ParityRequest"]!["properties"]!["status"]!;
+		requestStatus["type"]!.GetValue<string>().ShouldBe("string");
+		requestStatus["enum"]!.AsArray().Select(n => n!.GetValue<string>()).ShouldBe(["active", "inactive"]);
+		requestStatus["writeOnly"]!.GetValue<bool>().ShouldBeTrue();
+
+		json.ShouldNotContain("\"Outcome\"");
+		schemas.Select(kvp => kvp.Key).Any(IsReservedUnionName).ShouldBeFalse();
+	}
 }
