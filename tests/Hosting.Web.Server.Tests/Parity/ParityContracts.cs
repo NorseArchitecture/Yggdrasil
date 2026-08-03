@@ -40,7 +40,12 @@ public sealed record ParityRequest
 	/// <summary>
 	/// The §4a binding shadow, proven end-to-end: undecorated, so under the opt-in law it does not
 	/// exist to protobuf-net, STJ, or the XML closure walker — no NORSE022, no wire presence, no
-	/// second door. get derives from the union (Failure round-trips its Input); set runs the funnel.
+	/// second door. get derives from the union (Failure round-trips its Input); set runs a test-local
+	/// <c>nameof</c>-comparison stand-in for the real parse funnel — the production pattern lives in
+	/// <c>EnumLexical</c> over the generated per-enum name tables, never a form binder's own name
+	/// comparison; this shadow exists only to prove the union round-trips through a form-bound property,
+	/// the same way <c>ParityStatusTestJsonConverter</c> (Swoop) stands in for the server's governed
+	/// JSON converter rather than being it.
 	/// </summary>
 	public string StatusText
 	{

@@ -78,6 +78,7 @@ builder.Services
 builder.Services.AddOpenApi(options =>
 {
 	options.AddSchemaTransformer<ResultSchemaTransformer>();
+	options.AddSchemaTransformer<EnumSchemaTransformer>();
 	options.AddSchemaTransformer<XmlMetadataTransformer>();
 	options.AddDocumentTransformer<UnionLeakGuardTransformer>();
 });
