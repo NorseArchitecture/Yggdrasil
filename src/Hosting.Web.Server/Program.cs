@@ -11,6 +11,7 @@ using Norse.Hosting.Web.Server.NorseXmlShapes;
 using Norse.Identity.Web.Server;
 using Norse.Identity.Web.Server.Components.Pages;
 using Norse.Infrastructure.Components.Theme.FluentUI;
+using Norse.Infrastructure.Persistence.EntityFramework;
 using Norse.Infrastructure.ServiceDefaults.AspNet;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
 using Norse.Infrastructure.Web.Server.Json;
@@ -19,6 +20,7 @@ using Norse.Infrastructure.Web.Server.Mediator.Grpc;
 using Norse.Infrastructure.Web.Server.OpenApi;
 using Norse.Infrastructure.Web.Server.Xml;
 using Norse.Reference;
+using Norse.Reference.Data.EntityFramework;
 using Norse.Reference.Web.Server;
 using ProtoBuf.Grpc.Server;
 
@@ -58,6 +60,9 @@ builder
 	.AddNorseAuthenticationService("norse_identity")
 	.Services
 	.AddNorseReferenceService(norseReferenceConnectionString)
+	// Mímir stays Midgard-blind (NORSE071 remediation): the well itself --
+	// IReadRepository<CountryOrAreaView> -- is the composition root's own call, not Mímir's.
+	.AddWell<ReferenceDbContext>()
 	.AddNorsePipeline() // Midgard: behaviors in law order, PrincipalAccessor, Sender
 	.AddNorseCodeFirstGrpc() // Midgard: Unhandled -> Seeding -> Outcome interceptor stack
 	.AddDeferredSignIn()

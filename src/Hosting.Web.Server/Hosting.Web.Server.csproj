@@ -23,6 +23,11 @@
 		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<!-- Midgard-blind Mímir (NORSE071 remediation): AddWell<ReferenceDbContext>() is the
+		     composition root's own call now, right after AddNorseReferenceService in Program.cs. -->
+		<NorseRef Include="Infrastructure.Persistence.EntityFramework">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<NorseRef Include="Infrastructure.ServiceDefaults.AspNet">
 			<Repo>Midgard</Repo>
 		</NorseRef>
@@ -32,6 +37,9 @@
 		<NorseGeneratorRef Include="Infrastructure.Web.Server.Xml.Generator">
 			<Repo>Midgard</Repo>
 		</NorseGeneratorRef>
+		<NorseRef Include="Reference.Data.EntityFramework">
+			<Repo>Mimisbrunnr</Repo>
+		</NorseRef>
 		<NorseRef Include="Reference.Web.Server">
 			<Repo>Mimir</Repo>
 		</NorseRef>
