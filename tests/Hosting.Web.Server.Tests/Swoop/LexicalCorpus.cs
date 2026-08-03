@@ -12,7 +12,11 @@ namespace Norse.Hosting.Web.Server.Tests.Swoop;
 /// asserted identical across both text channels against the live <see cref="SwoopHostFixture.App"/>.
 /// Every case starts from a fully valid <see cref="TriProtocolSwoopTests"/>-shaped request and
 /// overrides exactly one field's raw wire text, so an accept/reject verdict is attributable to that one
-/// lexeme, never a side effect of a different field.
+/// lexeme, never a side effect of a different field. Coverage: every §7 row except enums — the enum
+/// row lives response-side only (<see cref="Parity.ParityReport.Status"/>) because <c>Result&lt;TEnum&gt;</c>
+/// has no JSON request funnel yet (Midgard's <c>ResultJsonConverterFactory</c> refuses it with a named
+/// error; the name-table design for the JSON channel is an open design question), so no request field
+/// exists to drive an enum lexeme through both channels.
 /// </summary>
 [Collection(SwoopCollection.Name)]
 public sealed class LexicalCorpus(SwoopHostFixture fixture)
@@ -106,7 +110,32 @@ public sealed class LexicalCorpus(SwoopHostFixture fixture)
 
 			// integral (§7 row: integral types)
 			{ "count", -7, "-7", true },
-			{ "count", "not-a-number", "not-a-number", false }
+			{ "count", "not-a-number", "not-a-number", false },
+
+			// char (§7 row: char) -- exactly one character; anything longer is malformed.
+			{ "initial", "Z", "Z", true },
+			{ "initial", "ZZ", "ZZ", false },
+
+			// string (§7 row: string) -- verbatim (channel-escaped) wire form: every present lexeme is
+			// content, including the empty string (present-empty is distinct from absent, spec §8.2), so
+			// this row has accepted cases only -- no rejectable lexeme exists. The XML side proves the
+			// channel-escaping half: BuildXml routes the raw text through XElement, so '&' rides as
+			// '&amp;' on the wire and still lands verbatim.
+			{ "name", "Æsir & Vanir", "Æsir & Vanir", true },
+			{ "name", "", "", true },
+
+			// DateTime (§7 row: DateTime, "O" round-trip)
+			{ "timestamp", "2026-01-15T08:00:00.0000000Z", "2026-01-15T08:00:00.0000000Z", true },
+			{ "timestamp", "not-a-timestamp", "not-a-timestamp", false },
+
+			// DateTimeOffset (§7 row: DateTimeOffset, "O" round-trip)
+			{ "timestampOffset", "2026-01-15T08:00:00.0000000-05:00", "2026-01-15T08:00:00.0000000-05:00", true },
+			{ "timestampOffset", "not-an-offset", "not-an-offset", false },
+
+			// TimeOnly (§7 row: TimeOnly, "O") -- the rejected lexeme is shape-valid but value-invalid
+			// (there is no hour 25), sharper than a plain not-a-time string.
+			{ "startTime", "08:15:30.0000000", "08:15:30.0000000", true },
+			{ "startTime", "25:00:00.0000000", "25:00:00.0000000", false }
 		};
 		return data;
 	}

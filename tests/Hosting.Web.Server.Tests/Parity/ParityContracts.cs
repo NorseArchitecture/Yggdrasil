@@ -8,8 +8,9 @@ namespace Norse.Hosting.Web.Server.Tests.Parity;
 /// covering every non-enum row of the Futhark spec §7 lexical table, plus a collection of
 /// <see cref="ParityTag"/> (Futhark's "collection items are complex types only" law, §5.8). The enum
 /// row (<see cref="ParityStatus"/>) is deliberately absent from this request closure — see the remark
-/// on <see cref="ParityReport.Status"/> for why: it is a real, confirmed platform gap this task found,
-/// not an oversight here.
+/// on <see cref="ParityReport.Status"/> for the current accounting: the gRPC half of that gap is
+/// fixed (<c>ResultEnumSerializer&lt;TEnum&gt;</c>); the JSON request funnel for enums remains an open
+/// design, so the row stays response-side.
 /// </summary>
 [DataContract]
 public sealed record ParityRequest
@@ -62,20 +63,18 @@ public sealed record ParityReport
 
 	/// <summary>
 	/// §7's enum row — carried here, response-side only, raw (never <c>Result&lt;ParityStatus&gt;</c>).
-	/// <b>Cross-task finding (Task 13):</b> Midgard's <c>Infrastructure.Web.Grpc/ResultSerializers.cs</c>
-	/// registers a protobuf-net surrogate for <c>Result&lt;T&gt;</c> over exactly the BCL half of §7's
-	/// taxonomy (<c>RegisterScalar&lt;T&gt;</c> is constrained <c>where T : notnull, ISpanParsable&lt;T&gt;</c>,
-	/// and <c>ResultSerializer&lt;T&gt;</c>'s own <c>ReadScalar</c>/<c>WriteScalar</c> are closed
-	/// <c>typeof</c> branches over the same 13 BCL types) — no branch exists for an enum, and a plain
-	/// enum cannot satisfy <c>ISpanParsable&lt;T&gt;</c>, so <c>Result&lt;TEnum&gt;</c> has no gRPC wire
-	/// law at all today, even though spec §5.3/§7 list enums as a full member of the same closed scalar
-	/// taxonomy every other row of this file wraps in <c>Result&lt;T&gt;</c> on the request side. Putting
-	/// <c>Result&lt;ParityStatus&gt;</c> on <see cref="ParityRequest"/> would make this swoop's gRPC leg
-	/// fail on a gap outside this task's remit to fix (Midgard's <c>ResultSerializers</c>/
-	/// <c>ResultSerializer&lt;T&gt;</c>) — so the enum row is proven end-to-end here, response-side,
-	/// where it needs no <c>Result&lt;T&gt;</c> surrogate at all (protobuf-net serializes a bare enum
-	/// natively), and via the XML/JSON generated shapes' own enum name-table (spec §6.5), independent of
-	/// protobuf. See the Task 13 report for the full writeup.
+	/// The Task 13 cross-task finding that used to pin it here — <c>Result&lt;TEnum&gt;</c> having no
+	/// gRPC wire law at all — is fixed: Midgard's <c>ResultEnumSerializer&lt;TEnum&gt;</c> now gives
+	/// every contract-declared <c>Result&lt;TEnum&gt;</c>/<c>Result&lt;TEnum&gt;?</c> member a
+	/// discovery-registered varint wire law (undefined values funnel to the platform's typed
+	/// <c>Failure</c>, mirroring the text channels' undefined-enum-name accumulable). What still keeps
+	/// the enum row off <see cref="ParityRequest"/> is the JSON channel: <c>ResultJsonConverter&lt;T&gt;</c>
+	/// is constrained to <c>ISpanParsable&lt;T&gt;</c>, which no enum satisfies, and the case-styled
+	/// name tables (spec §6.5/§7) live in the generated XML shapes with no JSON-side equivalent
+	/// designed — <c>ResultJsonConverterFactory</c> refuses <c>Result&lt;TEnum&gt;</c> with a named
+	/// <c>NotSupportedException</c> until that design lands. Until then the row is proven end-to-end
+	/// response-side, where scalars never wrap (spec §5.4): protobuf-net serializes a bare enum
+	/// natively, and the XML leg rides the generated shapes' own enum name-table.
 	/// </summary>
 	[DataMember(Order = 14)] public ParityStatus Status { get; init; }
 

@@ -71,19 +71,12 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		// Task 13 research) -- so a real host composing a Result<T>-bearing gRPC contract (ParityRequest)
 		// must call this itself. No prior task's own composition root does this because no prior facade
 		// controller's request type crossed the gRPC leg carrying Result<T> members until now.
+		// ResultSerializers.Register also carries the general wire law for bare (non-Result-wrapped)
+		// DateTimeOffset fields (Midgard's DateTimeOffsetSerializer) -- the Task 13 cross-task finding
+		// that used to force a test-local stopgap serializer here, fixed for real in
+		// Infrastructure.Web.Grpc in the postmortem gap pass: ParityReport.TimestampOffset (response
+		// scalars never wrap, spec §5.4) now rides the production registration, order-independent.
 		ResultSerializers.Register(model);
-		// Task 13 cross-task finding: protobuf-net has no native wire representation for a bare
-		// (non-Result-wrapped) System.DateTimeOffset -- confirmed via RuntimeTypeModel.Default.
-		// CompileInPlace() throwing "No serializer defined for type: System.DateTimeOffset" for
-		// ParityReport.TimestampOffset. Infrastructure.Web.Grpc's DateTimeOffsetWire exists, but only as
-		// a private helper ResultSerializer<T>'s own typeof-branch calls directly -- it was never
-		// registered as a general RuntimeTypeModel serializer for the bare type, because no response
-		// contract carried a raw DateTimeOffset before this task (response scalars never wrap, spec
-		// §5.4, so DateTimeOffsetWire's Result<T>-only reach leaves this row of §7 with no gRPC wire
-		// law on the response side). Registered here, test-locally, since Infrastructure.Web.Grpc is
-		// outside this task's remit to fix.
-		if (!model.IsDefined(typeof(DateTimeOffset)))
-			model.Add(typeof(DateTimeOffset), applyDefaultBehaviour: false).SerializerType = typeof(TestDateTimeOffsetSerializer);
 
 		if (!model.IsDefined(typeof(Outcome<ParityReport>)))
 			model.Add(typeof(Outcome<ParityReport>), applyDefaultBehaviour: false).SetSurrogate(typeof(ParityReport));
@@ -191,29 +184,16 @@ sealed class IsoDurationTestJsonConverter : System.Text.Json.Serialization.JsonC
 		writer.WriteStringValue(System.Xml.XmlConvert.ToString(value));
 }
 
-/// <summary>The bare-<see cref="DateTimeOffset"/> gRPC wire law stopgap -- see <see cref="SwoopHostFixture.InitializeAsync"/>'s remarks for the Task 13 finding this exists to work around.</summary>
-sealed class TestDateTimeOffsetSerializer : ProtoBuf.Serializers.ISerializer<DateTimeOffset>
-{
-	public ProtoBuf.Serializers.SerializerFeatures Features =>
-		ProtoBuf.Serializers.SerializerFeatures.CategoryScalar | ProtoBuf.Serializers.SerializerFeatures.WireTypeString;
-
-	public DateTimeOffset Read(ref ProtoReader.State state, DateTimeOffset value) =>
-		DateTimeOffset.Parse(state.ReadString(), System.Globalization.CultureInfo.InvariantCulture);
-
-	public void Write(ref ProtoWriter.State state, DateTimeOffset value) =>
-		state.WriteString(value.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-}
-
 /// <summary>
 /// The plain-field mirror of <see cref="ParityRequest"/> — same field numbers (<c>[DataMember(Order=N)]</c>
 /// on the real type, confirmed 1:1 against protobuf field numbers via <c>RuntimeTypeModel.GetSchema</c>
 /// earlier in this task), raw types instead of <c>Result&lt;T&gt;</c>, so it can actually serialize
 /// (<c>ResultSerializer&lt;T&gt;.Write</c> throws unconditionally on the real type now). Mirrors
 /// <c>ResultSerializerTests.PlainEnvelope&lt;T&gt;</c>'s exact idiom. <see cref="TimestampOffset"/>
-/// works here specifically because <see cref="TestDateTimeOffsetSerializer"/> is registered generally
-/// for bare <see cref="DateTimeOffset"/> on the same <see cref="RuntimeTypeModel.Default"/> (needed
-/// anyway for <see cref="ParityReport.TimestampOffset"/>) — its wire form (a plain "O"-format string)
-/// is exactly what <c>ResultSerializer&lt;DateTimeOffset&gt;.Read</c> expects.
+/// works here because Midgard's <c>DateTimeOffsetSerializer</c> — registered by
+/// <c>ResultSerializers.Register</c>, production-owned — writes the §7 "O"-format wire string that
+/// <c>ResultSerializer&lt;DateTimeOffset&gt;.Read</c> consumes: one wire form by construction, pinned
+/// byte-level by <c>ResultSerializerTests</c>, no registration-order dependence left in this fixture.
 /// </summary>
 [ProtoContract]
 sealed class ParityRequestWireFixture
@@ -469,17 +449,14 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 				.Select(item => (item.Elements().First(x => x.Name.LocalName == "path").Value, item.Elements().First(x => x.Name.LocalName == "detail").Value))];
 		}
 
-		// Task 13 finding: the XML channel's InputFormatterResult.Failure() (Task 9) leaves the
-		// [FromBody] ParityRequest parameter null, which [ApiController]'s OWN implicit
-		// non-nullable-reference-type validation then ALSO flags as "The request field is required"
-		// under the parameter's own name ("request") -- an extra ModelState entry layered on top of the
-		// formatter's real accumulated failures, never exercised end-to-end before this task (Midgard's
-		// own formatter-level tests call ReadRequestBodyAsync directly, never through the full
-		// [ApiController] pipeline). JSON never hits this path at all: its 400s come from the mediator's
-		// ValidationBehavior AFTER binding already succeeded, so the parameter is never null. Filtered
-		// here so the failure-parity comparison is about the REAL accumulated errors, not this MVC-native
-		// artifact; reported as a Task 13 cross-task finding either way.
-		return [.. errors.Where(e => e.Path != "request")];
+		// The Task 13 finding that used to force a filter here -- [ApiController]'s implicit
+		// non-nullable-reference-type [Required] double-firing as an extra "request" ModelState entry
+		// whenever the XML input formatter returned Failure -- is fixed at the law level:
+		// AddNorseXml sets SuppressImplicitRequiredAttributeForNonNullableReferenceTypes, since
+		// required-ness on Futhark contracts is carried by Result<T> presence semantics plus
+		// ResultRules validation, never MVC's DataAnnotations layer. Unfiltered on purpose: if the
+		// artifact ever comes back, the failure-parity assertions below go loudly asymmetric again.
+		return errors;
 	}
 
 	[Fact]
