@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json; // Authored deliberately: the SDK's implicit using is removed platform-wide (NORSE070 carrier); tests are law-exempt and re-add it explicitly.
 using System.Security.Claims;
 using System.Text;
 using FluentValidation;
