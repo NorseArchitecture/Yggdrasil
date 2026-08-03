@@ -61,7 +61,7 @@ builder
 	.AddNorseReferenceService(norseReferenceConnectionString)
 	.AddNorsePipeline() // Midgard: behaviors in law order, PrincipalAccessor, Sender
 	.AddNorseCodeFirstGrpc() // Midgard: Unhandled -> Seeding -> Outcome interceptor stack
-	.AddNorseSerialization() // Midgard: JSON/XML serialization and content negotiation
+	.AddNorseSerialization() // Midgard: the serialization seam — naming-strategy-keyed ISerializerProvider (STJ-backed)
 	.AddDeferredSignIn()
 	// Dev-only: lets Postman/grpcurl discover IAuthenticationService and call it directly, proving the
 	// protobuf-net.Grpc wire lifecycle independent of the Blazor UI. Never mapped outside Development —
