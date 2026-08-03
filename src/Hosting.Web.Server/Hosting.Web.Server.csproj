@@ -20,10 +20,10 @@
 		<NorseRef Include="Identity.Web.Server">
 			<Repo>Himinbjorg</Repo>
 		</NorseRef>
-		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
+		<NorseRef Include="Infrastructure.Backend">
 			<Repo>Midgard</Repo>
 		</NorseRef>
-		<NorseRef Include="Infrastructure.Serialization">
+		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
 		<NorseRef Include="Infrastructure.ServiceDefaults.AspNet">

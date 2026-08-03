@@ -57,10 +57,10 @@
 		<PackageVersion Include="Norse.Persistence.EntityFramework.PostgreSQL" Version="$(UrdarbrunnrVersion)" />
 		<PackageVersion Include="Norse.Persistence.EntityFramework.SqlServer" Version="$(UrdarbrunnrVersion)" />
 		<!-- Midgard -->
+		<PackageVersion Include="Norse.Infrastructure.Backend" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Components.Theme" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Components.Theme.FluentUI" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Migrations" Version="$(MidgardVersion)" />
-		<PackageVersion Include="Norse.Infrastructure.Serialization" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.ServiceDefaults" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.ServiceDefaults.AspNet" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Client" Version="$(MidgardVersion)" />
