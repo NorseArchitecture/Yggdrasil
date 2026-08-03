@@ -23,7 +23,7 @@ using Norse.Infrastructure.Web.Server.Mediator.Grpc;
 using Norse.Infrastructure.Web.Server.OpenApi;
 using Norse.Infrastructure.Web.Server.Xml;
 using Norse.Primitives;
-using ProtoBuf;
+using ProtoBuf.Grpc.Client;
 using ProtoBuf.Meta;
 
 namespace Norse.Hosting.Web.Server.Tests.Swoop;
@@ -104,11 +104,12 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 
 		builder.Services
 			.AddControllers()
-			.AddNorseJson()
+			.AddNorseJson(Norse.Hosting.Web.Server.Tests.NorseXmlShapes.NorseEnumNameRegistration.Build())
 			.AddNorseXml(XmlCaseStyle.CamelCase, Norse.Hosting.Web.Server.Tests.NorseXmlShapes.NorseXmlShapeRegistration.Build());
 		builder.Services.AddOpenApi(options =>
 		{
 			options.AddSchemaTransformer<ResultSchemaTransformer>();
+			options.AddSchemaTransformer<EnumSchemaTransformer>();
 			options.AddSchemaTransformer<XmlMetadataTransformer>();
 			options.AddDocumentTransformer<UnionLeakGuardTransformer>();
 		});
@@ -128,17 +129,34 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 	}
 
 	/// <summary>
+	/// The real typed client proxy — <c>ProtoBuf.Grpc.Client.GrpcClientFactory</c> over a plain
+	/// unencrypted <see cref="TestServer"/> channel, mirrors <c>Hosting.Web.Client</c>'s own gRPC wiring
+	/// idiom and <c>CountryLookupE2ETests</c>/<c>MediatorParityTests</c>' established test-host pattern.
+	/// The mirror-contract era (a hand-built plain-field twin of <c>ParityRequest</c> serialized through
+	/// the normal model, because <c>ResultSerializer&lt;T&gt;.Write</c> once threw unconditionally on
+	/// every state) is over — Task 1's success-unwrap ruling
+	/// (<c>../Glitnir/docs/Platform/specs/2026-08-02-result-success-unwrap-on-serialize-design.md</c>
+	/// §2) restored a legal write for the <see cref="Success{T}"/> case on every channel, so a real
+	/// <c>ParityRequest</c> built through the implicit <c>T → Result&lt;T&gt;</c> conversion now
+	/// serializes for real. <see cref="EchoRawAsync"/> below is the one deliberate survivor: an omitting
+	/// client (every field genuinely absent) can never be authored through a proxy that throws on
+	/// default, so the honest fixture for that one case is still hand-built raw bytes, per the spec's
+	/// named exception.
+	/// </summary>
+	public IParityService CreateClient()
+	{
+		var channel = GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = App.GetTestServer().CreateHandler() });
+		var invoker = channel.Intercept(new OutcomeClientInterceptor());
+		return GrpcClientFactory.CreateGrpcService<IParityService>(invoker);
+	}
+
+	/// <summary>
 	/// Invokes <see cref="IParityService.EchoAsync"/> with hand-built wire bytes for the request,
 	/// decoding <see cref="Outcome{T}"/> failures via <see cref="OutcomeClientInterceptor"/> exactly as
-	/// the type-safe client proxy would. Never goes through <c>ParityRequest</c>'s own protobuf-net
-	/// contract writer -- <c>ResultSerializer&lt;T&gt;.Write</c> throws unconditionally now
-	/// (<c>Result&lt;T&gt;</c> is deserialization-only on every channel, Midgard commit
-	/// <c>08e1357</c>/<c>1e31d9a</c>/<c>f175275</c>), so the type-safe proxy can never legally construct
-	/// a <c>ParityRequest</c> message again, for any state, valid or not. <paramref name="requestBytes"/>
-	/// is instead built by the caller via a plain-field mirror contract serialized through the normal
-	/// model (<see cref="ParityRequestWireFixture"/>) — Midgard's own established idiom for this exact
-	/// problem, per <c>ResultSerializerTests.cs</c>'s <c>PlainEnvelope&lt;T&gt;</c> pattern, adapted here
-	/// to a real wire call rather than a local round trip.
+	/// <see cref="CreateClient"/>'s type-safe proxy would. The one surviving raw-bytes path (see
+	/// <see cref="CreateClient"/>'s remarks): <paramref name="requestBytes"/> is caller-supplied wire
+	/// bytes, used only for <c>Required_absent_detail_wording…</c>'s zero-byte "every field genuinely
+	/// absent" case, which no client proxy can express by construction.
 	/// </summary>
 	public async Task<Outcome<ParityReport>> EchoRawAsync(byte[] requestBytes, CancellationToken cancellationToken)
 	{
@@ -185,40 +203,25 @@ sealed class IsoDurationTestJsonConverter : System.Text.Json.Serialization.JsonC
 }
 
 /// <summary>
-/// The plain-field mirror of <see cref="ParityRequest"/> — same field numbers (<c>[DataMember(Order=N)]</c>
-/// on the real type, confirmed 1:1 against protobuf field numbers via <c>RuntimeTypeModel.GetSchema</c>
-/// earlier in this task), raw types instead of <c>Result&lt;T&gt;</c>, so it can actually serialize
-/// (<c>ResultSerializer&lt;T&gt;.Write</c> throws unconditionally on the real type now). Mirrors
-/// <c>ResultSerializerTests.PlainEnvelope&lt;T&gt;</c>'s exact idiom. <see cref="TimestampOffset"/>
-/// works here because Midgard's <c>DateTimeOffsetSerializer</c> — registered by
-/// <c>ResultSerializers.Register</c>, production-owned — writes the §7 "O"-format wire string that
-/// <c>ResultSerializer&lt;DateTimeOffset&gt;.Read</c> consumes: one wire form by construction, pinned
-/// byte-level by <c>ResultSerializerTests</c>, no registration-order dependence left in this fixture.
+/// The test client's own governed-name reader/writer for <see cref="ParityStatus"/> -- see
+/// <see cref="TriProtocolSwoopTests.CreateFutharkTestJsonOptions"/>'s remarks. Plain STJ's built-in
+/// enum handling reads/writes the CLR member name (<c>"Active"</c>), not the governed CamelCase wire
+/// name (<c>"active"</c>) the server's <c>PlainEnumJsonConverter&lt;TEnum&gt;</c> produces, so a
+/// Futhark-aware consumer configures its own name mapping, mirroring
+/// <see cref="TriProtocolSwoopTests.ParseStatus"/>'s hand-rolled XML-side lookup.
 /// </summary>
-[ProtoContract]
-sealed class ParityRequestWireFixture
+sealed class ParityStatusTestJsonConverter : System.Text.Json.Serialization.JsonConverter<ParityStatus>
 {
-	[ProtoMember(1)] public bool IsActive { get; set; }
-	[ProtoMember(2)] public int Count { get; set; }
-	[ProtoMember(3)] public decimal Amount { get; set; }
-	[ProtoMember(4)] public float Ratio { get; set; }
-	[ProtoMember(5)] public double Measurement { get; set; }
-	[ProtoMember(6)] public char Initial { get; set; }
-	[ProtoMember(7)] public string Name { get; set; } = "";
-	[ProtoMember(8)] public Guid Identifier { get; set; }
-	[ProtoMember(9)] public DateTime Timestamp { get; set; }
-	[ProtoMember(10)] public DateTimeOffset TimestampOffset { get; set; }
-	[ProtoMember(11)] public DateOnly EffectiveDate { get; set; }
-	[ProtoMember(12)] public TimeOnly StartTime { get; set; }
-	[ProtoMember(13)] public TimeSpan Duration { get; set; }
-	[ProtoMember(14)] public List<ParityTagWireFixture> Tags { get; set; } = [];
-}
+	public override ParityStatus Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert, System.Text.Json.JsonSerializerOptions options) =>
+		reader.GetString() switch
+		{
+			"active" => ParityStatus.Active,
+			"inactive" => ParityStatus.Inactive,
+			var other => throw new System.Text.Json.JsonException($"'{other}' is not a governed ParityStatus name.")
+		};
 
-/// <summary>The plain-field mirror of <see cref="ParityTag"/> — same technique, same reason.</summary>
-[ProtoContract]
-sealed class ParityTagWireFixture
-{
-	[ProtoMember(1)] public string Value { get; set; } = "";
+	public override void Write(System.Text.Json.Utf8JsonWriter writer, ParityStatus value, System.Text.Json.JsonSerializerOptions options) =>
+		writer.WriteStringValue(value == ParityStatus.Active ? "active" : "inactive");
 }
 
 [CollectionDefinition(SwoopCollection.Name)]
@@ -249,14 +252,12 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 	static readonly TimeSpan _duration = new(1, 2, 3, 4);
 
 	/// <summary>
-	/// Builds real wire bytes for a valid <see cref="ParityRequest"/> via the plain-field mirror
-	/// technique (see <see cref="ParityRequestWireFixture"/>'s remarks) — never touches
-	/// <see cref="Result{T}"/> as a CLR type, never calls the type-safe client proxy's own serialization
-	/// path, since that path throws unconditionally now.
+	/// A valid <see cref="ParityRequest"/>, constructed directly through Task 0's implicit
+	/// <c>T → Result&lt;T&gt;</c> conversion — the real type-safe shape <see cref="SwoopHostFixture.CreateClient"/>'s
+	/// proxy can now legally serialize, mirror-contract era over (see that method's remarks).
 	/// </summary>
-	static byte[] BuildValidRequestBytes(string name = "Alice")
-	{
-		ParityRequestWireFixture fixture = new()
+	static ParityRequest ValidRequest(string name = "Alice") =>
+		new()
 		{
 			IsActive = true,
 			Count = 42,
@@ -271,13 +272,9 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 			EffectiveDate = _effectiveDate,
 			StartTime = _startTime,
 			Duration = _duration,
-			Tags = [new ParityTagWireFixture { Value = "tag-one" }, new ParityTagWireFixture { Value = "tag-two" }]
+			Status = ParityStatus.Active,
+			Tags = [new() { Value = "tag-one" }, new() { Value = "tag-two" }]
 		};
-
-		using MemoryStream stream = new();
-		RuntimeTypeModel.Default.Serialize(stream, fixture);
-		return stream.ToArray();
-	}
 
 	const string JsonBody = """
 		{
@@ -294,13 +291,14 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 			"effectiveDate": "2026-08-01",
 			"startTime": "14:30:00.0000000",
 			"duration": "P1DT2H3M4S",
+			"status": "active",
 			"tags": [ { "value": "tag-one" }, { "value": "tag-two" } ]
 		}
 		""";
 
 	const string XmlBody = """
 		<?xml version="1.0" encoding="utf-8"?>
-		<parityRequest isActive="true" count="42" amount="1234.56" ratio="1.5" measurement="2.25" initial="A" name="Alice" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T14:30:00.0000000Z" timestampOffset="2026-08-01T14:30:00.0000000+02:00" effectiveDate="2026-08-01" startTime="14:30:00.0000000" duration="P1DT2H3M4S">
+		<parityRequest isActive="true" count="42" amount="1234.56" ratio="1.5" measurement="2.25" initial="A" name="Alice" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T14:30:00.0000000Z" timestampOffset="2026-08-01T14:30:00.0000000+02:00" effectiveDate="2026-08-01" startTime="14:30:00.0000000" duration="P1DT2H3M4S" status="active">
 			<parityTag value="tag-one" />
 			<parityTag value="tag-two" />
 		</parityRequest>
@@ -311,13 +309,16 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 	static System.Text.Json.JsonSerializerOptions CreateFutharkTestJsonOptions()
 	{
 		// Midgard's own DateTimeLexicalJsonConverter/DateTimeOffsetLexicalJsonConverter/
-		// TimeOnlyLexicalJsonConverter/TimeSpanLexicalJsonConverter (Infrastructure.Web.Server.Json)
-		// are internal, no InternalsVisibleTo grant to this assembly -- and plain STJ already reads
-		// DateTime/DateTimeOffset/TimeOnly's "O"-format text natively (matches spec §7's pinned form
-		// byte-for-byte), so only TimeSpan (ISO 8601 duration, not STJ's default "c" format) needs a
-		// stand-in converter here, matching how a real Futhark-aware JSON consumer would configure one.
+		// TimeOnlyLexicalJsonConverter/TimeSpanLexicalJsonConverter/PlainEnumJsonConverter<TEnum>
+		// (Infrastructure.Web.Server.Json) are internal, no InternalsVisibleTo grant to this assembly --
+		// and plain STJ already reads DateTime/DateTimeOffset/TimeOnly's "O"-format text natively
+		// (matches spec §7's pinned form byte-for-byte), so only TimeSpan (ISO 8601 duration, not STJ's
+		// default "c" format) and ParityStatus (STJ's default enum converter reads/writes the CLR member
+		// name, not the governed CamelCase wire name) need stand-in converters here, matching how a real
+		// Futhark-aware JSON consumer would configure its own.
 		System.Text.Json.JsonSerializerOptions options = new() { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
 		options.Converters.Add(new IsoDurationTestJsonConverter());
+		options.Converters.Add(new ParityStatusTestJsonConverter());
 		return options;
 	}
 
@@ -336,6 +337,7 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		report.EffectiveDate.ShouldBe(_effectiveDate);
 		report.StartTime.ShouldBe(_startTime);
 		report.Duration.ShouldBe(_duration);
+		report.Status.ShouldBe(ParityStatus.Active);
 		report.Tags.Select(t => t.Value).ShouldBe(["tag-one", "tag-two"]);
 	}
 
@@ -344,7 +346,7 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 	{
 		var cancellationToken = TestContext.Current.CancellationToken;
 
-		var grpcOutcome = await fixture.EchoRawAsync(BuildValidRequestBytes(), cancellationToken);
+		var grpcOutcome = await fixture.CreateClient().EchoAsync(ValidRequest(), cancellationToken);
 		grpcOutcome.TryGetValue(out Success<ParityReport> grpcSuccess).ShouldBeTrue();
 		var grpcReport = grpcSuccess.Value;
 
@@ -397,10 +399,18 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 			EffectiveDate = DateOnly.Parse(root.Attribute("effectiveDate")!.Value, System.Globalization.CultureInfo.InvariantCulture),
 			StartTime = TimeOnly.Parse(root.Attribute("startTime")!.Value, System.Globalization.CultureInfo.InvariantCulture),
 			Duration = System.Xml.XmlConvert.ToTimeSpan(root.Attribute("duration")!.Value),
-			Status = ParityStatus.Active,
+			Status = ParseStatus(root.Attribute("status")!.Value),
 			Tags = [.. root.Elements().Select(e => new ParityReportTag { Value = e.Attribute("value")!.Value })]
 		};
 	}
+
+	/// <summary>Hand-rolled governed-name lookup, mirroring the generated shapes' own table -- CamelCase style, §7.4.</summary>
+	static ParityStatus ParseStatus(string text) => text switch
+	{
+		"active" => ParityStatus.Active,
+		"inactive" => ParityStatus.Inactive,
+		_ => throw new FormatException($"'{text}' is not a governed ParityStatus name.")
+	};
 
 	[Fact]
 	async Task Failure_parity_three_malformed_scalars_render_identical_errors_arrays_on_json_and_xml()
@@ -412,12 +422,13 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 				"isActive": true, "count": 42, "amount": 1234.56, "ratio": 1.5, "measurement": 2.25,
 				"initial": "A", "name": "Alice", "identifier": "0b917371-0000-0000-0000-000000000001",
 				"timestamp": "2026-08-01T14:30:00.0000000Z", "timestampOffset": "2026-08-01T14:30:00.0000000+02:00",
-				"effectiveDate": "not-a-date", "startTime": "not-a-time", "duration": "not-a-duration"
+				"effectiveDate": "not-a-date", "startTime": "not-a-time", "duration": "not-a-duration",
+				"status": "active"
 			}
 			""";
 		const string MalformedXml = """
 			<?xml version="1.0" encoding="utf-8"?>
-			<parityRequest isActive="true" count="42" amount="1234.56" ratio="1.5" measurement="2.25" initial="A" name="Alice" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T14:30:00.0000000Z" timestampOffset="2026-08-01T14:30:00.0000000+02:00" effectiveDate="not-a-date" startTime="not-a-time" duration="not-a-duration" />
+			<parityRequest isActive="true" count="42" amount="1234.56" ratio="1.5" measurement="2.25" initial="A" name="Alice" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T14:30:00.0000000Z" timestampOffset="2026-08-01T14:30:00.0000000+02:00" effectiveDate="not-a-date" startTime="not-a-time" duration="not-a-duration" status="active" />
 			""";
 
 		var jsonErrors = await PostAndReadProblemErrorsAsync(MalformedJson, "application/json", cancellationToken);
@@ -495,16 +506,52 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 	{
 		// Spec §8.2: "" is present-legitimately-empty content for a required Result<string> -- distinct
 		// from absence -- and must succeed, never route through the "required missing" funnel. Proven
-		// here via real wire bytes (Name field present, explicitly empty) -- ResultSerializerTests.
+		// here via the real typed client (Name field present, explicitly empty) -- ResultSerializerTests.
 		// Round_trips_Result_of_an_empty_string proves protobuf-net itself writes a present-but-empty
 		// string field distinctly from an absent one, the same presence/emptiness law Futhark's own
 		// generated shapes enforce on the text channels.
 		var cancellationToken = TestContext.Current.CancellationToken;
 
-		var outcome = await fixture.EchoRawAsync(BuildValidRequestBytes(name: ""), cancellationToken);
+		var outcome = await fixture.CreateClient().EchoAsync(ValidRequest(name: ""), cancellationToken);
 
 		outcome.TryGetValue(out Success<ParityReport> success).ShouldBeTrue();
 		success.Value.Name.ShouldBe("");
+	}
+
+	[Fact]
+	async Task Opt_in_law_the_undecorated_binding_shadow_is_invisible_on_every_channel()
+	{
+		// spec §4b: StatusText is undecorated, so under the opt-in law it does not exist to STJ's
+		// membership definition or the XML closure walker -- naming it inbound is the same "member not
+		// on the contract" violation JsonUnmappedMemberHandling.Disallow already rejects for any
+		// stranger key (Futhark spec §8.1's strictness-parity ratchet), and it can never appear
+		// outbound because no writer walk (protobuf-net, STJ, the generated XML writer) ever discovers
+		// an undecorated member in the first place.
+		var cancellationToken = TestContext.Current.CancellationToken;
+
+		const string BodyNamingTheShadow = """
+			{
+				"isActive": true, "count": 42, "amount": 1234.56, "ratio": 1.5, "measurement": 2.25,
+				"initial": "A", "name": "Alice", "identifier": "0b917371-0000-0000-0000-000000000001",
+				"timestamp": "2026-08-01T14:30:00.0000000Z", "timestampOffset": "2026-08-01T14:30:00.0000000+02:00",
+				"effectiveDate": "2026-08-01", "startTime": "14:30:00.0000000", "duration": "P1DT2H3M4S",
+				"status": "active", "statusText": "Active"
+			}
+			""";
+
+		using var jsonClient = fixture.App.GetTestClient();
+		using var jsonRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(BodyNamingTheShadow, Encoding.UTF8, "application/json") };
+		jsonRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+		using var jsonResponse = await jsonClient.SendAsync(jsonRequest, cancellationToken);
+		jsonResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		using var xmlClient = fixture.App.GetTestClient();
+		using var xmlRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(XmlBody, Encoding.UTF8, "application/xml") };
+		xmlRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
+		using var xmlResponse = await xmlClient.SendAsync(xmlRequest, cancellationToken);
+		xmlResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var xmlText = await xmlResponse.Content.ReadAsStringAsync(cancellationToken);
+		xmlText.ShouldNotContain("statusText");
 	}
 
 	[Fact]
@@ -530,14 +577,16 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		builder.Services.AddScoped<IValidator<EchoParityCommand>, CommandRequestValidator<EchoParityCommand, ParityRequest, ParityReport>>();
 		builder.Services.AddScoped<IParityService, ParityService>();
 		builder.Services.AddScoped<IPrincipalAccessor>(_ => new SwoopPrincipalAccessor(new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"))));
-		builder.Services.AddControllers().AddNorseJson().AddNorseXml(XmlCaseStyle.CamelCase, Norse.Hosting.Web.Server.Tests.NorseXmlShapes.NorseXmlShapeRegistration.Build());
+		builder.Services.AddControllers()
+			.AddNorseJson(Norse.Hosting.Web.Server.Tests.NorseXmlShapes.NorseEnumNameRegistration.Build())
+			.AddNorseXml(XmlCaseStyle.CamelCase, Norse.Hosting.Web.Server.Tests.NorseXmlShapes.NorseXmlShapeRegistration.Build());
 
 		await using var app = builder.Build();
 		app.MapControllers();
 		await app.StartAsync(cancellationToken);
 
 		var padding = new string('a', 1_100_000);
-		var oversized = $"""<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="{padding}" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" />""";
+		var oversized = $"""<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="{padding}" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" status="active" />""";
 
 		using HttpClient client = new() { BaseAddress = new Uri(app.Urls.First()) };
 		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(oversized, Encoding.UTF8, "application/xml") };
