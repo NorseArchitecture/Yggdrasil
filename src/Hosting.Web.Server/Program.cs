@@ -11,6 +11,7 @@ using Norse.Hosting.Web.Server.NorseXmlShapes;
 using Norse.Identity.Web.Server;
 using Norse.Identity.Web.Server.Components.Pages;
 using Norse.Infrastructure.Components.Theme.FluentUI;
+using Norse.Infrastructure.Serialization;
 using Norse.Infrastructure.ServiceDefaults.AspNet;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
 using Norse.Infrastructure.Web.Server.Json;
@@ -60,6 +61,7 @@ builder
 	.AddNorseReferenceService(norseReferenceConnectionString)
 	.AddNorsePipeline() // Midgard: behaviors in law order, PrincipalAccessor, Sender
 	.AddNorseCodeFirstGrpc() // Midgard: Unhandled -> Seeding -> Outcome interceptor stack
+	.AddNorseSerialization() // Midgard: JSON/XML serialization and content negotiation
 	.AddDeferredSignIn()
 	// Dev-only: lets Postman/grpcurl discover IAuthenticationService and call it directly, proving the
 	// protobuf-net.Grpc wire lifecycle independent of the Blazor UI. Never mapped outside Development —

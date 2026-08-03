@@ -23,6 +23,9 @@
 		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseRef Include="Infrastructure.Serialization">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<NorseRef Include="Infrastructure.ServiceDefaults.AspNet">
 			<Repo>Midgard</Repo>
 		</NorseRef>
