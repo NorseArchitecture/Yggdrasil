@@ -29,11 +29,11 @@ using ProtoBuf.Grpc.Server;
 Console.Title = "Norse Web Server";
 var builder = WebApplication.CreateBuilder(args);
 builder.AddAspNetServiceDefaults();
-
 builder.Services
 	.AddRazorComponents()
 	.AddInteractiveServerComponents()
-	.AddInteractiveWebAssemblyComponents();
+	.AddInteractiveWebAssemblyComponents()
+	.AddAuthenticationStateSerialization();
 
 // Logout lives in AuthN.Components (headless -- no FluentUI markup); Login/Register stay in
 // AuthN.Components.FluentUI; the Account pages (ExternalLogin, Manage, etc.) live in Himinbjorg's
