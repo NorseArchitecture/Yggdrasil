@@ -10,6 +10,7 @@ using Norse.Hosting.Web.Server.Components;
 using Norse.Hosting.Web.Server.NorseXmlShapes;
 using Norse.Identity.Web.Server;
 using Norse.Identity.Web.Server.Components.Pages;
+using Norse.Infrastructure.Backend.Keys;
 using Norse.Infrastructure.Backend.Serialization;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.Persistence.EntityFramework;
@@ -49,17 +50,25 @@ builder.Services
 // AuthN.Public/Reference.Public are satisfied by any principal, anonymous-role cookie included
 // (Norse.AuthN.Services.AuthNPolicies / Norse.Reference.ReferencePolicies) — every
 // AuthenticationService/ReferenceService method still declares one per decided law item 4 (NORSE011),
-// so both must exist here even though neither imposes a real requirement. Composition root's job:
-// Heimdall/Mimir stay policy-name-only, never register policies themselves.
+// so both must exist here even though neither imposes a real requirement. IdentityPolicies.Self and
+// .MaskedDisclosure are real policies, not placeholders: Self requires any authenticated user (the
+// disclosure subject reading their own data), MaskedDisclosure requires the system role (a caller
+// reading someone else's data back masked). Composition root's job: Heimdall/Mimir stay
+// policy-name-only, never register policies themselves.
 builder.Services.AddAuthorizationBuilder()
 	.AddPolicy(AuthNPolicies.Public, policy => policy.RequireAssertion(_ => true))
-	.AddPolicy(ReferencePolicies.Public, policy => policy.RequireAssertion(_ => true));
+	.AddPolicy(ReferencePolicies.Public, policy => policy.RequireAssertion(_ => true))
+	.AddPolicy(IdentityPolicies.Self, policy => policy.RequireAuthenticatedUser())
+	.AddPolicy(IdentityPolicies.MaskedDisclosure, policy => policy.RequireRole(IdentityPolicies.SystemRole));
 
 var norseReferenceConnectionString = builder.Configuration.GetConnectionString("norse_reference")
 	?? throw new InvalidOperationException("Connection string 'norse_reference' is not configured.");
 builder
 	.AddNorseAuthenticationService("norse_identity")
 	.Services
+	// Dev-grade only: rooted content-root-relative so subject identities survive process restarts
+	// without ever naming a machine-absolute path. The production seam is a vault-backed provider.
+	.AddNorseDevelopmentKeys(Path.Combine(builder.Environment.ContentRootPath, "norse-dev-keys"))
 	.AddNorseReferenceService(norseReferenceConnectionString)
 	// Mímir stays Midgard-blind (NORSE071 remediation): the well itself --
 	// IReadRepository<CountryOrAreaView> -- is the composition root's own call, not Mímir's.

@@ -498,3 +498,8 @@ coverage-report/
 /*.png
 /*.jpg
 /*.jpeg
+
+# Dev-grade subject key seam (AddNorseDevelopmentKeys): unwrapped key material and destruction
+# receipts resting on local disk, content-root-relative under each host. Never a production path,
+# never checked in.
+norse-dev-keys/
