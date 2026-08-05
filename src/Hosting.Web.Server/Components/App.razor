@@ -34,6 +34,17 @@
     [CascadingParameter]
     HttpContext HttpContext { get; set; } = null!;
 
+    @*
+        /Account/* pins to InteractiveServer, not Auto: Heimdall's identity components never declare a
+        render mode (the host chooses — that's the contract), and the WASM half of Auto cannot run them
+        yet — the server never serializes auth state to the client, and the generated gRPC-Web client
+        does not dispatch from the WASM renderer (both tracked for feature/hosting-web-server-authn).
+        Auto's day-two behavior (cached runtime → WASM) turned every identity page silently inert.
+        Himinbjörg's scaffold pages are unaffected: they opt out of interactive routing entirely, so
+        they take the null/static branch before the path check matters.
+    *@
     IComponentRenderMode? PageRenderMode =>
-        HttpContext.AcceptsInteractiveRouting() ? InteractiveAuto : null;
+        !HttpContext.AcceptsInteractiveRouting() ? null :
+        HttpContext.Request.Path.StartsWithSegments("/Account") ? InteractiveServer :
+        InteractiveAuto;
 }
