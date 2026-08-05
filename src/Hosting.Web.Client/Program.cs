@@ -1,6 +1,4 @@
 using FluentValidation;
-using Grpc.Net.Client;
-using Grpc.Net.Client.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Norse.AuthN.Components;
 using Norse.AuthN.Components.FluentUI;
@@ -8,6 +6,7 @@ using Norse.AuthN.Services;
 using Norse.Hosting.Web.Client;
 using Norse.Hosting.Web.Components;
 using Norse.Infrastructure.Components.Theme.FluentUI;
+using Norse.Infrastructure.Web.Client.Grpc;
 
 // <summary>
 // ARCHITECTURE NOTE — READ BEFORE ADDING CODE HERE
@@ -50,25 +49,26 @@ builder.Services
 // excluded — neither assembly is referenced here, sealed server-side per Himinbjorg's own CLAUDE.md.
 builder.Services.AddSingleton(new RoutesAdditionalAssemblies([typeof(Login).Assembly]));
 
-// gRPC-Web rides ordinary HTTP/1.1 — no HTTP/2-specific channel configuration needed in the browser.
-// One channel, not one per service: every Norse gRPC service this client talks to (IAuthenticationService,
-// IReferenceService) is hosted in the same Hosting.Web.Server process at the same base address, and
-// AddNorseGrpcClients (Midgard's generated client wiring) registers a proxy for every contract it
-// discovers in this compilation over the single channel handed to it — there is no per-contract channel
-// parameter to plumb.
+// gRPC-Web rides ordinary HTTP/1.1 — no HTTP/2-specific configuration needed in the browser.
+// One invoker, not one per service: every Norse gRPC service this client talks to (IAuthenticationService,
+// IIdentityService, IReferenceService) is hosted in the same Hosting.Web.Server process at the same base
+// address, and AddNorseGrpcClients (Midgard's generated client wiring) registers a proxy for every
+// contract it discovers in this compilation over the single invoker handed to it.
 //
-// KNOWN BROKEN ON net11 PREVIEW WASM (root-caused 2026-08-05): Grpc.Net.Client's BalancerHttpHandler/
-// Subchannel.ConnectTransportAsync calls SemaphoreSlim.Wait(0) on first connect; the net11-preview
-// single-threaded WASM runtime throws PlatformNotSupportedException from that non-blocking try-acquire
-// (guard sits ahead of the acquire path — dotnet/runtime SemaphoreSlim.WaitCore), the exception dies
-// inside grpc-dotnet's fire-and-forget connect task, and every call parks forever without dispatching.
-// The identical stack (same packages) works on desktop .NET, and a raw gRPC-Web POST via plain
-// HttpClient works from this very WASM runtime — the fault is exclusively this library/runtime pairing.
-var norseChannel = GrpcChannel.ForAddress(builder.HostEnvironment.BaseAddress, new GrpcChannelOptions
+// GrpcWebCallInvoker (Midgard) instead of GrpcChannel, deliberately: Grpc.Net.Client's
+// BalancerHttpHandler/Subchannel connect path performs a SemaphoreSlim.Wait(0) that the net11-preview
+// single-threaded WASM runtime rejects with PlatformNotSupportedException inside a fire-and-forget
+// task — every channel-based call parks forever without dispatching (root-caused 2026-08-05).
+// EXIT CONDITION: at each .NET 11 preview/RC/GA bump and each GrpcVersion bump, swap this back to
+// GrpcChannel.ForAddress(...).CreateCallInvoker() and run the Playwright smoke — the day it
+// dispatches, delete GrpcWebCallInvoker and this note.
+#pragma warning disable CA2000 // The invoker owns the HttpClient for the application's lifetime — WASM hosts never tear it down.
+GrpcWebCallInvoker norseInvoker = new(new HttpClient(new BrowserCredentialsHandler { InnerHandler = new HttpClientHandler() })
 {
-	HttpHandler = new GrpcWebHandler { InnerHandler = new BrowserCredentialsHandler { InnerHandler = new HttpClientHandler() } },
+	BaseAddress = new Uri(builder.HostEnvironment.BaseAddress),
 });
-builder.Services.AddNorseGrpcClients(norseChannel); // generated, Task 14
+#pragma warning restore CA2000
+builder.Services.AddNorseGrpcClients(norseInvoker); // generated, Task 14
 
 await builder
 	.Build()
