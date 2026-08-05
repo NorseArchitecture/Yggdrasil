@@ -50,8 +50,11 @@ builder.Services
 // AuthN.Public/Reference.Public are satisfied by any principal, anonymous-role cookie included
 // (Norse.AuthN.Services.AuthNPolicies / Norse.Reference.ReferencePolicies) — every
 // AuthenticationService/ReferenceService method still declares one per decided law item 4 (NORSE011),
-// so both must exist here even though neither imposes a real requirement. Composition root's job:
-// Heimdall/Mimir stay policy-name-only, never register policies themselves.
+// so both must exist here even though neither imposes a real requirement. IdentityPolicies.Self and
+// .MaskedDisclosure are real policies, not placeholders: Self requires any authenticated user (the
+// disclosure subject reading their own data), MaskedDisclosure requires the system role (a caller
+// reading someone else's data back masked). Composition root's job: Heimdall/Mimir stay
+// policy-name-only, never register policies themselves.
 builder.Services.AddAuthorizationBuilder()
 	.AddPolicy(AuthNPolicies.Public, policy => policy.RequireAssertion(_ => true))
 	.AddPolicy(ReferencePolicies.Public, policy => policy.RequireAssertion(_ => true))

@@ -4,8 +4,8 @@
 		<!-- Norse versions -->
 		<AsgardVersion>0.0.20</AsgardVersion>
 		<BragiVersion>0.0.3</BragiVersion>
-		<HeimdallVersion>0.0.9</HeimdallVersion>
-		<HiminbjorgVersion>0.0.15</HiminbjorgVersion>
+		<HeimdallVersion>0.0.9</HeimdallVersion> <!-- PREDICTED next tag — verify at ship gate -->
+		<HiminbjorgVersion>0.0.15</HiminbjorgVersion> <!-- PREDICTED next tag — verify at ship gate -->
 		<MidgardVersion>0.0.19</MidgardVersion>
 		<MimirVersion>0.0.3</MimirVersion>
 		<MimisbrunnrVersion>0.0.10</MimisbrunnrVersion>
