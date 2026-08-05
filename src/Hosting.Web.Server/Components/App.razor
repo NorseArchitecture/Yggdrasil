@@ -21,9 +21,9 @@
         PageRenderMode is null for requests that don't support interactive routing (e.g. direct API/non-navigation
         requests), so those stay static instead of forcing an interactive render mode on them.
     *@
-    <NorseFluentDesignTheme />
+    <NorseFluentDesignTheme @rendermode="PageRenderMode" />
     <Routes @rendermode="PageRenderMode" />
-    <ReconnectModal/>
+    <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["Components/Shared/PasskeySubmit.razor.js"]" type="module"></script>
 </body>
