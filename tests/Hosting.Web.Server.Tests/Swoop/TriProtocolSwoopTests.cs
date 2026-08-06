@@ -57,6 +57,23 @@ namespace Norse.Hosting.Web.Server.Tests.Swoop;
 /// </remarks>
 public sealed class SwoopHostFixture : IAsyncLifetime
 {
+	// Blocking, not check-then-act: this fixture is constructed once per test CLASS (IClassFixture),
+	// and xUnit runs different classes' fixtures concurrently by default -- two SwoopHostFixture
+	// instances racing IsDefined/Add against the shared RuntimeTypeModel.Default is the identical
+	// TOCTOU shape Midgard's own guards were just hardened against
+	// (../../../../Glitnir/docs/Midgard/2026-08-03-surrogate-guard-race-filing.md), just hand-rolled
+	// here instead of behind IdentifierSerializers/ResultSerializers. A second racing caller used to
+	// observe IsDefined() still false and call Add() again, throwing "type already added" mid-registration
+	// and leaving the shared model in whatever partial state protobuf-net's own Add() left it in --
+	// exactly the failure class this platform has already chased once.
+	static readonly Lazy<bool> _parityReportSurrogateRegistered = new(() =>
+	{
+		var model = RuntimeTypeModel.Default;
+		if (!model.IsDefined(typeof(Outcome<ParityReport>)))
+			model.Add(typeof(Outcome<ParityReport>), applyDefaultBehaviour: false).SetSurrogate(typeof(ParityReport));
+		return true;
+	}, LazyThreadSafetyMode.ExecutionAndPublication);
+
 	public WebApplication App { get; private set; } = null!;
 
 	public async ValueTask InitializeAsync()
@@ -79,8 +96,7 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		// scalars never wrap, spec §5.4) now rides the production registration, order-independent.
 		ResultSerializers.Register(model);
 
-		if (!model.IsDefined(typeof(Outcome<ParityReport>)))
-			model.Add(typeof(Outcome<ParityReport>), applyDefaultBehaviour: false).SetSurrogate(typeof(ParityReport));
+		_ = _parityReportSurrogateRegistered.Value;
 
 		var principal = new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"));
 
