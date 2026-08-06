@@ -19,6 +19,9 @@
 		<NorseRef Include="Infrastructure.Web.Client" Generator="true">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
+			<Repo>Midgard</Repo>
+		</NorseGeneratorRef>
 		<NorseRef Include="Reference.Contracts">
 			<Repo>Mimir</Repo>
 		</NorseRef>

@@ -40,6 +40,9 @@
 		<NorseGeneratorRef Include="Infrastructure.Web.Server.Xml.Generator">
 			<Repo>Midgard</Repo>
 		</NorseGeneratorRef>
+		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
+			<Repo>Midgard</Repo>
+		</NorseGeneratorRef>
 		<NorseRef Include="Reference.Data.EntityFramework">
 			<Repo>Mimisbrunnr</Repo>
 		</NorseRef>

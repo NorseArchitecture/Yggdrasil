@@ -25,6 +25,9 @@
 		<NorseGeneratorRef Include="Infrastructure.Web.Server.Xml.Generator">
 			<Repo>Midgard</Repo>
 		</NorseGeneratorRef>
+		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
+			<Repo>Midgard</Repo>
+		</NorseGeneratorRef>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*-*" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.*-*" />
 		<!-- NorseRef never belongs in tests/ (CPM is deliberately off here) — Norse package
