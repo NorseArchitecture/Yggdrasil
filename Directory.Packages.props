@@ -65,6 +65,7 @@
 		<PackageVersion Include="Norse.Infrastructure.ServiceDefaults.AspNet" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Client" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Grpc" Version="$(MidgardVersion)" />
+		<PackageVersion Include="Norse.Infrastructure.Web.Grpc.Analyzers" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Persistence.EntityFramework" Version="$(MidgardVersion)" />
 		<PackageVersion Include="Norse.Infrastructure.Web.Server" Version="$(MidgardVersion)" />
 		<!-- Himinbjorg -->

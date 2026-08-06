@@ -57,14 +57,6 @@ namespace Norse.Hosting.Web.Server.Tests.Swoop;
 /// </remarks>
 public sealed class SwoopHostFixture : IAsyncLifetime
 {
-	// This fixture is constructed once per test CLASS (IClassFixture), and xUnit runs different
-	// classes' fixtures concurrently by default -- two SwoopHostFixture instances racing registration
-	// against the shared RuntimeTypeModel.Default is the identical TOCTOU shape filed in
-	// ../../../../Glitnir/docs/Midgard/2026-08-03-surrogate-guard-race-filing.md, found live here on
-	// 2026-08-06 and now closed the same way as every other site: through the shared, tested guard
-	// (../../../../Glitnir/docs/Midgard/specs/2026-08-06-wire-model-registration-guard-design.md)
-	// rather than a fixture-local Lazy<bool>.
-
 	public WebApplication App { get; private set; } = null!;
 
 	public async ValueTask InitializeAsync()
@@ -87,6 +79,13 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		// scalars never wrap, spec §5.4) now rides the production registration, order-independent.
 		ResultSerializers.Register(model);
 
+		// This fixture is constructed once per test CLASS (IClassFixture), and xUnit runs different
+		// classes' fixtures concurrently by default -- two SwoopHostFixture instances racing registration
+		// against the shared RuntimeTypeModel.Default is the identical TOCTOU shape filed in
+		// ../../../../Glitnir/docs/Midgard/2026-08-03-surrogate-guard-race-filing.md, found live here on
+		// 2026-08-06 and now closed the same way as every other site: through the shared, tested guard
+		// (../../../../Glitnir/docs/Midgard/specs/2026-08-06-wire-model-registration-guard-design.md)
+		// rather than a fixture-local Lazy<bool>.
 		model.EnsureRegistered(typeof(Outcome<ParityReport>), () =>
 		{
 			if (!model.IsDefined(typeof(Outcome<ParityReport>)))
