@@ -35,6 +35,21 @@
 		     below. VersionOverride="*" floats to each package's latest published version, so a sub-realm
 		     release never needs a hand edit here — unlike the third-party pin below, there's no
 		     compatibility-matrix reason to hold these back. -->
+		<!-- Direct reference (CI-mode attachment) so NORSE080's bundled analyzer isn't stripped by
+		     NuGet's default transitive exclude — it only reaches this project through
+		     Hosting.Web.Server, which doesn't survive the trip in standalone/package mode. Plain
+		     PackageReference + VersionOverride, not NorseRef, per the "NorseRef never belongs in
+		     tests/" rule immediately above; the NorseGeneratorRef Infrastructure.Web.Grpc.Analyzers
+		     item above (in the first ItemGroup) covers dev-mode attachment.
+		     Condition="UseProjectReferences != true" is load-bearing, not decorative: in Bifröst
+		     dev-mode this project already reaches a FRESH Infrastructure.Web.Grpc transitively via
+		     the ProjectReference to Hosting.Web.Server below (ordinary type resolution propagates
+		     transitively through ProjectReferences, unlike analyzer attachment) — VersionOverride="*"
+		     floats to the latest PUBLISHED package, which predates WireModelRegistrationGuard's
+		     existence until Midgard actually releases, and un-conditioned this collides with the
+		     fresh project reference and breaks the local build (CS1061: EnsureRegistered not found).
+		     Scoped to standalone/CI mode only, where no such transitive project reference exists. -->
+		<PackageReference Include="Norse.Infrastructure.Web.Grpc" VersionOverride="*" Condition="'$(UseProjectReferences)' != 'true'" />
 		<PackageReference Include="Norse.Persistence.EntityFramework.PostgreSQL" VersionOverride="*" />
 		<!-- Migrations.PostgreSQL marks its NorseDesignRef to the Design chassis PrivateAssets="all",
 		     which blocks it from flowing here transitively; needed directly because
