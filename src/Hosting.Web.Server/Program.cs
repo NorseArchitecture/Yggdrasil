@@ -1,15 +1,12 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Norse.Abstractions.Components.Primitives;
-using Norse.AuthN.Components;
-using Norse.AuthN.Components.FluentUI;
 using Norse.AuthN.Services;
 using Norse.Hosting.Web.Components;
 using Norse.Hosting.Web.Server;
 using Norse.Hosting.Web.Server.Components;
 using Norse.Hosting.Web.Server.NorseXmlShapes;
 using Norse.Identity.Web.Server;
-using Norse.Identity.Web.Server.Components.Pages;
 using Norse.Infrastructure.Backend.Keys;
 using Norse.Infrastructure.Backend.Serialization;
 using Norse.Infrastructure.Components.Theme.FluentUI;
@@ -35,11 +32,15 @@ builder.Services
 	.AddInteractiveWebAssemblyComponents()
 	.AddAuthenticationStateSerialization();
 
-// Logout lives in AuthN.Components (headless -- no FluentUI markup); Login/Register stay in
-// AuthN.Components.FluentUI; the Account pages (ExternalLogin, Manage, etc.) live in Himinbjorg's
-// Identity.Web.Server. Three distinct assemblies, all need to be discoverable by the router.
+// AddNorseClientComponents() (Midgard's generated server-side discovery, Task 14) replaces the
+// hand-rolled RoutesAdditionalAssemblies singleton this block used to carry: Logout (AuthN.Components,
+// headless), Login/Register (AuthN.Components.FluentUI), and the Account pages (ExternalLogin, Manage,
+// etc., Himinbjorg's Identity.Web.Server) are all discovered at compile time from what this project
+// actually references -- adding a validator or a routed component anywhere upstream needs no edit
+// here anymore. The endpoint half of composition (AddAdditionalAssemblies) is chained onto
+// MapRazorComponents<App>() below via the generated AddNorseComponentAssemblies().
 builder.Services
-	.AddSingleton(new RoutesAdditionalAssemblies([typeof(Program).Assembly, typeof(Login).Assembly, typeof(Logout).Assembly, typeof(ExternalLogin).Assembly]))
+	.AddNorseClientComponents()
 	.AddSingleton<IAppShellLayout, AppShellLayout>()
 	.AddNorseFluentUiTheme()
 	.AddCascadingAuthenticationState()
@@ -122,7 +123,7 @@ app.MapStaticAssets().DisableHttpMetrics();
 app.MapRazorComponents<App>()
 	.AddInteractiveServerRenderMode()
 	.AddInteractiveWebAssemblyRenderMode()
-	.AddAdditionalAssemblies(typeof(Routes).Assembly, typeof(Login).Assembly, typeof(Logout).Assembly, typeof(ExternalLogin).Assembly);
+	.AddNorseComponentAssemblies();
 
 app.MapAdditionalIdentityEndpoints();
 

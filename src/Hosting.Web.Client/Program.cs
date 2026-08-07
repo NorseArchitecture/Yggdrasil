@@ -1,10 +1,5 @@
-using FluentValidation;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Norse.AuthN.Components;
-using Norse.AuthN.Components.FluentUI;
-using Norse.AuthN.Services;
 using Norse.Hosting.Web.Client;
-using Norse.Hosting.Web.Components;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.Web.Client.Grpc;
 
@@ -27,27 +22,18 @@ using Norse.Infrastructure.Web.Client.Grpc;
 // </summary>
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
+// AddNorseClientComponents() (Midgard's generated client-side discovery, Task 14) replaces the
+// hand-rolled AddScoped<IValidator<...>> registrations and the RoutesAdditionalAssemblies singleton
+// this block used to carry: Heimdall's wire-request validators and the routable Login/Register
+// assembly (AuthN.Components.FluentUI) are both discovered at compile time from what this project
+// actually references — adding a validator or a routed component anywhere upstream needs no edit
+// here anymore.
 builder.Services
 	.AddAuthorizationCore()
 	.AddCascadingAuthenticationState()
 	.AddAuthenticationStateDeserialization()
-	.AddNorseFluentUiTheme();
-
-// Heimdall's wire-request validators, registered for the WASM circuit so Blazilla's FluentValidator
-// resolves them client-side — the same classes the server runs again through the generated
-// CommandRequestValidator adapter (single source of validation truth, run twice by design).
-builder.Services
-	.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>()
-	.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>()
-	.AddScoped<IValidator<GetMaskedPersonalDataRequest>, GetMaskedPersonalDataRequestValidator>();
-
-// This project hosts no components of its own (see the architecture note above), but it does
-// reference Heimdall's AuthN.Components.FluentUI (Login/Register) — those pages ship inside this
-// WASM binary, so the client-side Router needs to be told about that assembly too, or InteractiveAuto's
-// hand-off from the server circuit to WASM can't resolve /Account/Login and falls back to NotFound.
-// Logout (AuthN.Components, headless) and ExternalLogin/Manage (Himinbjorg's Identity.Web.Server) stay
-// excluded — neither assembly is referenced here, sealed server-side per Himinbjorg's own CLAUDE.md.
-builder.Services.AddSingleton(new RoutesAdditionalAssemblies([typeof(Login).Assembly]));
+	.AddNorseFluentUiTheme()
+	.AddNorseClientComponents();
 
 // gRPC-Web rides ordinary HTTP/1.1 — no HTTP/2-specific configuration needed in the browser.
 // One invoker, not one per service: every Norse gRPC service this client talks to (IAuthenticationService,

@@ -73,6 +73,9 @@ sealed class TestAuthenticationService(ISender sender) : IAuthenticationService
 	public Task<Outcome<RegisterResult>> Register(RegisterRequest request, CancellationToken cancellationToken = default) =>
 		throw new NotSupportedException($"{nameof(Register)} is not exercised by {nameof(MediatorParityTests)}.");
 
+	public Task<Outcome<BoolResponse>> EmailExists(EmailExistsRequest request, CancellationToken cancellationToken = default) =>
+		throw new NotSupportedException($"{nameof(EmailExists)} is not exercised by {nameof(MediatorParityTests)}.");
+
 	public Task<Outcome<LogoutResult>> Logout(CancellationToken cancellationToken = default) =>
 		Task.FromResult(Outcome<LogoutResult>.Ok(new LogoutResult()));
 }
@@ -177,7 +180,7 @@ public sealed class MediatorParityTests
 			(_, _) =>
 			{
 				invoked = true;
-				return ValueTask.FromResult(Outcome<LoginResult>.Ok(new LoginResult { Succeeded = true }));
+				return ValueTask.FromResult(Outcome<LoginResult>.Ok(new LoginResult()));
 			},
 			cancellationToken);
 
