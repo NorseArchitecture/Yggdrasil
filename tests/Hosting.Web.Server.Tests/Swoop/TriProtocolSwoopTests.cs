@@ -17,7 +17,6 @@ using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
 using Norse.Hosting.Web.Server.Tests.Parity;
 using Norse.Infrastructure.Web.Client.Grpc;
-using Norse.Infrastructure.Web.Grpc;
 using Norse.Infrastructure.Web.Server.Json;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
@@ -65,32 +64,11 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		// MediatorParityTests/WirePathAuthorizationTests' identical opt-in for a plain "http://" gRPC call.
 		AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
-		var model = RuntimeTypeModel.Default;
-		IdentifierSerializers.Register(model);
-		// Result<T> has no automatic wire law anywhere in the generated wiring -- AddNorseCodeFirstGrpc()
-		// only registers the interceptor stack + health checks (verified directly against its source,
-		// Task 13 research) -- so a real host composing a Result<T>-bearing gRPC contract (ParityRequest)
-		// must call this itself. No prior task's own composition root does this because no prior facade
-		// controller's request type crossed the gRPC leg carrying Result<T> members until now.
-		// ResultSerializers.Register also carries the general wire law for bare (non-Result-wrapped)
-		// DateTimeOffset fields (Midgard's DateTimeOffsetSerializer) -- the Task 13 cross-task finding
-		// that used to force a test-local stopgap serializer here, fixed for real in
-		// Infrastructure.Web.Grpc in the postmortem gap pass: ParityReport.TimestampOffset (response
-		// scalars never wrap, spec §5.4) now rides the production registration, order-independent.
-		ResultSerializers.Register(model);
-
-		// This fixture is constructed once per test CLASS (IClassFixture), and xUnit runs different
-		// classes' fixtures concurrently by default -- two SwoopHostFixture instances racing registration
-		// against the shared RuntimeTypeModel.Default is the identical TOCTOU shape filed in
-		// ../../../../Glitnir/docs/Midgard/2026-08-03-surrogate-guard-race-filing.md, found live here on
-		// 2026-08-06 and now closed the same way as every other site: through the shared, tested guard
-		// (../../../../Glitnir/docs/Midgard/specs/2026-08-06-wire-model-registration-guard-design.md)
-		// rather than a fixture-local Lazy<bool>.
-		model.EnsureRegistered(typeof(Outcome<ParityReport>), () =>
-		{
-			if (!model.IsDefined(typeof(Outcome<ParityReport>)))
-				model.Add(typeof(Outcome<ParityReport>), applyDefaultBehaviour: false).SetSurrogate(typeof(ParityReport));
-		});
+		// IdentifierSerializers/ResultSerializers/the Outcome<ParityReport> surrogate are all warmed by
+		// WireModelFixture (an [assembly: AssemblyFixture], guaranteed complete before any test in this
+		// assembly runs) -- registering them again here, per fixture instance, is exactly the
+		// registration-vs-registration TOCTOU shape that used to live at this site and is now structurally
+		// impossible: nothing in this assembly can observe a half-registered RuntimeTypeModel.Default.
 
 		var principal = new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"));
 

@@ -76,9 +76,9 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 		AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 		// Real deployments reach this through MapNorseGrpcServices(), which calls it before mapping --
-		// this host maps ReferenceService directly (mirrors MediatorParityTests), so the payload
-		// surrogate (idempotent, generated) needs registering explicitly here instead.
-		NorseGrpcServerRegistration.RegisterNorseOutcomeSurrogates();
+		// this host maps ReferenceService directly (mirrors MediatorParityTests). No need to register the
+		// payload surrogate here: WireModelFixture (an [assembly: AssemblyFixture]) already did it,
+		// guaranteed complete before any test in this assembly runs.
 
 		var principal = new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"));
 
