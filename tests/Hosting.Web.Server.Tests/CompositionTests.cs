@@ -80,7 +80,7 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 		// observe it: once Outcome<LoginResult> is surrogated to LoginResult, the emitted .proto schema
 		// describes LoginResult's own shape (its DataMembers), not Outcome<T>'s private union layout.
 		var schema = RuntimeTypeModel.Default.GetSchema(typeof(Outcome<LoginResult>));
-		schema.ShouldContain(nameof(LoginResult.DeferredCompletionUrl));
+		schema.ShouldContain(nameof(LoginResult.NextUrl));
 	}
 
 	[Fact]

@@ -12,9 +12,11 @@ sealed class FakeAuthenticationService : IAuthenticationService
 {
 	// LoginResult.Succeeded was deleted platform-wide (ruled 2026-08-06, see the type's own doc
 	// comment) -- a rejected login is a Failed(Problem) instead, never a bare-success record with a
-	// false flag. This fake always reports success, so the record carries nothing further.
+	// false flag. This fake always reports success, with the next-hop URL always resolved to "/" --
+	// there is no real sign-in flow behind this story-host fake, so no 2FA challenge or deferred
+	// completion URL is ever produced.
 	public Task<Outcome<LoginResult>> Login(LoginRequest request, CancellationToken cancellationToken = default) =>
-		Task.FromResult(Outcome<LoginResult>.Ok(new LoginResult()));
+		Task.FromResult(Outcome<LoginResult>.Ok(new LoginResult { NextUrl = "/" }));
 
 	public Task<Outcome<RegisterResult>> Register(RegisterRequest request, CancellationToken cancellationToken = default) =>
 		Task.FromResult(Outcome<RegisterResult>.Ok(new RegisterResult { Succeeded = true }));
