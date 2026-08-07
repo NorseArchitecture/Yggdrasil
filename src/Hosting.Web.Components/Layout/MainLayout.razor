@@ -1,3 +1,4 @@
+@using System.Reflection
 @inherits LayoutComponentBase
 
 <FluentLayout>
@@ -23,17 +24,7 @@
     </FluentLayoutItem>
 
     <FluentLayoutItem Area="LayoutArea.Footer">
-        <div style="display: flex">
-            <FluentLink Href="https://www.fluentui-blazor.net" Target="LinkTarget.Blank"
-                        IconEnd="@(new Icons.Regular.Size16.ArrowExit())">
-                Documentation and demos
-            </FluentLink>
-            <FluentSpacer />
-            <FluentLink Href="https://learn.microsoft.com/en-us/aspnet/core/blazor" Target="LinkTarget.Blank"
-                        IconEnd="@(new Icons.Regular.Size16.ArrowExit())">
-                About Blazor
-            </FluentLink>
-        </div>
+        <span class="app-version" style="font-size: var(--font-size-xs); color: var(--color-neutral-500);">Norse Architecture · @_platformVersion</span>
     </FluentLayoutItem>
 </FluentLayout>
 
@@ -41,6 +32,22 @@
 
 @code {
 	ErrorBoundary? _errorBoundary;
+	string _platformVersion = GetInformationalVersion();
+
+	// The deployed host's version, not this RCL's — Assembly.GetExecutingAssembly() would report
+	// Hosting.Web.Components' own version, which can drift from the host's once packages float
+	// independently. Falls back to this assembly only when the entry assembly is null (e.g. bUnit).
+	static string GetInformationalVersion()
+	{
+		var assembly = Assembly.GetEntryAssembly() ?? typeof(MainLayout).Assembly;
+		var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+		if (string.IsNullOrEmpty(informationalVersion))
+			return "unknown";
+
+		var buildMetadataIndex = informationalVersion.IndexOf('+');
+		return buildMetadataIndex < 0 ? informationalVersion : informationalVersion[..buildMetadataIndex];
+	}
 }
 
 <div id="blazor-error-ui" data-nosnippet>

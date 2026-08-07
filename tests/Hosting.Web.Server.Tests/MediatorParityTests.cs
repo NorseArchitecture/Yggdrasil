@@ -92,9 +92,9 @@ public sealed class MediatorParityTests
 	{
 		// Real deployments reach this through MapNorseGrpcServices(), which calls it before mapping --
 		// this host maps TestAuthenticationService directly (the generator only ever saw Hosting.Web.
-		// Server's own compilation, never this test-local service), so the payload surrogates
-		// (idempotent, generated) need registering explicitly here instead.
-		NorseGrpcServerRegistration.RegisterNorseOutcomeSurrogates();
+		// Server's own compilation, never this test-local service). No need to register the payload
+		// surrogates here: WireModelFixture (an [assembly: AssemblyFixture]) already did it, guaranteed
+		// complete before any test in this assembly runs.
 
 		var principal = new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"));
 
