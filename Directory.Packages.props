@@ -2,14 +2,14 @@
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<!-- Norse versions -->
-		<AsgardVersion>0.0.20</AsgardVersion>
+		<AsgardVersion>0.0.21</AsgardVersion>
 		<BragiVersion>0.0.3</BragiVersion>
 		<HeimdallVersion>0.0.9</HeimdallVersion>
 		<HiminbjorgVersion>0.0.16</HiminbjorgVersion>
 		<MidgardVersion>0.0.22</MidgardVersion>
 		<MimirVersion>0.0.4</MimirVersion>
 		<MimisbrunnrVersion>0.0.11</MimisbrunnrVersion>
-		<NaglfarVersion>0.0.4</NaglfarVersion>
+		<NaglfarVersion>0.0.5</NaglfarVersion>
 		<RatatoskrVersion>0.0.0</RatatoskrVersion>
 		<SvartalfheimVersion>0.0.16</SvartalfheimVersion>
 		<UrdarbrunnrVersion>0.0.12</UrdarbrunnrVersion>
