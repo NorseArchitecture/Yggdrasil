@@ -87,3 +87,12 @@
         color: #c9cdcf;
     }
 }
+
+/* BlazingStory's PreviewFrame pushes an uncapped inline height onto this element every time the
+   embedded story's ResizeObserver fires (font swap, FluentUI hydration, focus-triggered validation
+   text, etc.), so the canvas keeps visibly growing after first paint. Cap it and let it scroll
+   instead -- !important is required because it must beat the element's own inline style. */
+.preview-frame-viewport {
+    max-height: 600px !important;
+    overflow-y: auto !important;
+}
