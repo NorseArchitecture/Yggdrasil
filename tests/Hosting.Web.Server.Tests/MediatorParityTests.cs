@@ -180,7 +180,7 @@ public sealed class MediatorParityTests
 			(_, _) =>
 			{
 				invoked = true;
-				return ValueTask.FromResult(Outcome<LoginResult>.Ok(new LoginResult()));
+				return ValueTask.FromResult(Outcome<LoginResult>.Ok(new LoginResult { NextUrl = "/" }));
 			},
 			cancellationToken);
 
