@@ -8,6 +8,22 @@
 		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
 			<Repo>Midgard</Repo>
 		</NorseGeneratorRef>
+		<!-- Task 14's proof-by-adding-one: whitelists Infrastructure.Web.Client.Generator so it is
+		     NOT stripped from this project's own compilation (the default for every generator
+		     forwarded transitively via the ProjectReference to Hosting.Web.Client below — see
+		     _NorseRemoveUnwantedGeneratorAnalyzers in Yggdrasil's Directory.Build.targets). Running it
+		     again here, with DiscoveryFixture also referenced (below), proves the generator composes
+		     correctly against a consumer other than the host project it was written for — the
+		     regression lock this fixture exists to carry. This mints a second
+		     NorseClientComponentRegistration.AddNorseClientComponents(), in this project's own
+		     Norse.Hosting.Web.Client.Tests namespace, alongside the one already compiled into
+		     Hosting.Web.Client.dll (namespace Norse.Hosting.Web.Client) — the two collide (CS0121) on
+		     an unqualified call because Tests is a dotted child of Client's own namespace, so C#
+		     treats the outer one as implicitly in scope too. DiscoveryFixtureCompositionTests.cs calls
+		     the freshly-generated one via its fully qualified name specifically to sidestep that. -->
+		<NorseGeneratorRef Include="Infrastructure.Web.Client.Generator">
+			<Repo>Midgard</Repo>
+		</NorseGeneratorRef>
 		<!-- Direct reference (CI-mode attachment) so NORSE080's bundled analyzer isn't stripped by
 		     NuGet's default transitive exclude — it only reaches this project through
 		     Hosting.Web.Client, which doesn't survive the trip in standalone/package mode. Plain
@@ -21,5 +37,7 @@
 		     reference and breaks the local build. Scoped to standalone/CI mode only. -->
 		<PackageReference Include="Norse.Infrastructure.Web.Grpc" VersionOverride="*" Condition="'$(UseProjectReferences)' != 'true'" />
 		<ProjectReference Include="..\..\src\Hosting.Web.Client\Hosting.Web.Client.csproj" />
+		<!-- Task 14's proof-by-adding-one fixture — never referenced by a host project itself. -->
+		<ProjectReference Include="..\DiscoveryFixture\DiscoveryFixture.csproj" />
 	</ItemGroup>
 </Project>

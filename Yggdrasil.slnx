@@ -26,6 +26,7 @@
 		<File Path="tests/Directory.Build.props" />
 		<File Path="tests/Directory.Build.targets" />
 		<File Path="tests/Directory.Packages.props" />
+		<Project Path="tests/DiscoveryFixture/DiscoveryFixture.csproj" />
 		<Project Path="tests/Hosting.Migrations.Service.Tests/Hosting.Migrations.Service.Tests.csproj" />
 		<Project Path="tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj" />
 		<Project Path="tests/Hosting.Web.Client.Tests/Hosting.Web.Client.Tests.csproj" />

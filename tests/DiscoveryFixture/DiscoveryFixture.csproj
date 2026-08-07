@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+	<PropertyGroup>
+		<!-- Not a test project: this is Task 14's proof-by-adding-one fixture — a minimal RCL,
+		     referenced only by Hosting.Web.Client.Tests (never by a host itself), carrying exactly
+		     one IValidator<T> and one @page-routed component so the generated client-side discovery
+		     (Midgard's Infrastructure.Web.Client.Generator) has a real, separately compiled assembly
+		     to prove referenced-RCL discovery against — the permanent regression lock for "adding a
+		     validator/component assembly requires zero host registration edits". Physically nested
+		     under tests/ per the plan, so it inherits tests/Directory.Build.props by MSBuild's
+		     directory-walk convention; every property/item below undoes a default that doesn't
+		     belong on a plain fixture library (xUnit/MTP package refs and usings, OutputType=Exe,
+		     IsTestProject) — the same override shape Svartalfheim's tests/smoke/Directory.Build.props
+		     already uses for its own non-xUnit console fixtures. -->
+		<OutputType>Library</OutputType>
+		<IsTestProject>false</IsTestProject>
+		<!-- The SDK forces OutputType=Exe whenever this is true, regardless of OutputType/
+		     IsTestProject overrides above (Microsoft.Testing.Platform's MSBuild integration, read
+		     directly off this property, not gated by the package refs Removed below) — a plain
+		     fixture library needs it off too. -->
+		<UseMicrosoftTestingPlatformRunner>false</UseMicrosoftTestingPlatformRunner>
+	</PropertyGroup>
+	<!-- tests/Directory.Build.targets hardcodes OutputType=Exe unconditionally (it's a .targets file,
+	     imported after this project's own body, so the PropertyGroup override above alone loses).
+	     Reasserting it inside a target that runs before CoreCompile is the only point left to win from
+	     — evaluation-time properties are already settled by the time targets execute. -->
+	<Target Name="_DiscoveryFixtureIsALibrary" BeforeTargets="CoreCompile">
+		<PropertyGroup>
+			<OutputType>Library</OutputType>
+		</PropertyGroup>
+	</Target>
+	<ItemGroup>
+		<PackageReference Remove="Microsoft.Testing.Extensions.CodeCoverage" />
+		<PackageReference Remove="Microsoft.Testing.Platform.MSBuild" />
+		<PackageReference Remove="NSubstitute" />
+		<PackageReference Remove="Shouldly" />
+		<PackageReference Remove="xunit.v3.mtp-v2" />
+		<Using Remove="NSubstitute" />
+		<Using Remove="NSubstitute.ExceptionExtensions" />
+		<Using Remove="Shouldly" />
+		<Using Remove="Xunit" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- CPM is off under tests/ (tests/Directory.Packages.props) — Version="*" floats to the
+		     latest published FluentValidation, same convention third-party test deps already use
+		     (e.g. Hosting.Web.Server.Tests's Testcontainers.PostgreSql). -->
+		<PackageReference Include="FluentValidation" Version="*" />
+		<!-- RouteAttribute/ComponentBase for FixturePage.razor — every src/ RCL on this platform gets
+		     this transitively from Asgard's Abstractions.Components (the one project that actually
+		     carries this PackageReference), but this fixture has no NorseRef chain to ride in on;
+		     11.*-* mirrors Hosting.Web.Server.Tests's identical preview-package pin
+		     (Microsoft.AspNetCore.Mvc.Testing) for the same reason: a plain "*" float does not
+		     reliably resolve a prerelease-only package. -->
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="11.*-*" />
+	</ItemGroup>
+</Project>
