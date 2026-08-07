@@ -19,7 +19,19 @@ public sealed class CompositionTests
 		ServiceCollection services = new();
 		using var channel = GrpcChannel.ForAddress("http://localhost");
 
-		services.AddNorseGrpcClients(channel);
+		// Fully qualified, not services.AddNorseGrpcClients(channel): DiscoveryFixtureCompositionTests'
+		// NorseGeneratorRef whitelist (Hosting.Web.Client.Tests.csproj) makes the client-side generator
+		// run again over THIS project's own compilation too, minting a second
+		// Norse.Hosting.Web.Client.Tests.NorseGrpcClientRegistration alongside the real one already
+		// compiled into Hosting.Web.Client.dll (Norse.Hosting.Web.Client). An unqualified call resolves
+		// to the nearer one (this project's own copy) with no compiler error or warning -- C#'s
+		// extension-method lookup walks outward from the innermost enclosing namespace and stops at the
+		// first non-empty candidate set, it does not consider both and reject as ambiguous. This test's
+		// entire point is asserting the REAL host's registration, so it has to name that copy explicitly
+		// or it silently stops testing what its own doc comment above claims it tests -- confirmed via IL
+		// inspection (call ... Norse.Hosting.Web.Client.Tests.NorseGrpcClientRegistration::AddNorseGrpcClients
+		// bound before this fix, not Norse.Hosting.Web.Client's).
+		Norse.Hosting.Web.Client.NorseGrpcClientRegistration.AddNorseGrpcClients(services, channel);
 
 		using var provider = services.BuildServiceProvider();
 		var authenticationService = provider.GetService<IAuthenticationService>();

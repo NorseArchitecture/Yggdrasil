@@ -28,8 +28,15 @@ public sealed class DiscoveryFixtureCompositionTests
 		// carries TWO same-named, same-signature extension methods once the generator runs here too —
 		// this one (namespace Norse.Hosting.Web.Client.Tests) and the one already compiled into
 		// Hosting.Web.Client.dll (namespace Norse.Hosting.Web.Client, an ancestor of this file's own
-		// namespace and therefore implicitly in scope with no using needed). An unqualified call is
-		// ambiguous (CS0121); naming the exact generated type sidesteps overload resolution entirely.
+		// namespace). An unqualified call is NOT ambiguous and does NOT fail to compile — C#'s
+		// extension-method lookup walks outward from the innermost enclosing namespace and stops at the
+		// first non-empty candidate set, so it silently and deterministically resolves to the nearer
+		// (.Tests) copy with zero compiler complaint (CompositionTests.cs in this same project hit
+		// exactly this: its unqualified services.AddNorseGrpcClients(channel) silently rebound to this
+		// project's own generated copy instead of Hosting.Web.Client's real one, and kept passing after
+		// the rebind). The point here is deliberately testing THIS project's own freshly generated copy
+		// (the proof-by-adding-one is about a consumer other than the two hosts), so the qualification
+		// exists to pin exactly which copy is under test, not to avoid a compile error.
 		Norse.Hosting.Web.Client.Tests.NorseClientComponentRegistration.AddNorseClientComponents(services);
 
 		using var provider = services.BuildServiceProvider();
