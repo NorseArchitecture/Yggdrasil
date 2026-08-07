@@ -19,6 +19,16 @@
 		<NorseRef Include="Infrastructure.Web.Client" Generator="true">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<!-- Direct reference (CI-mode attachment) so NORSE080's bundled analyzer isn't stripped by
+		     NuGet's default transitive exclude — it previously only reached this project through
+		     Infrastructure.Web.Client, which doesn't survive the trip in standalone/package mode. -->
+		<NorseRef Include="Infrastructure.Web.Grpc">
+			<Repo>Midgard</Repo>
+		</NorseRef>
+		<!-- Dev-mode attachment (UseProjectReferences=true) — the NorseRef above covers CI/standalone. -->
+		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
+			<Repo>Midgard</Repo>
+		</NorseGeneratorRef>
 		<NorseRef Include="Reference.Contracts">
 			<Repo>Mimir</Repo>
 		</NorseRef>

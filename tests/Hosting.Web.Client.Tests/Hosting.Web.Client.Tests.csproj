@@ -1,5 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
+		<!-- Dev-mode attachment (UseProjectReferences=true) for NORSE080. Reachable-but-unregistered
+		     gRPC service types (protobuf-net, Norse.Infrastructure.Web.Grpc) are resolvable in this
+		     project's compilation via Hosting.Web.Client even though no hand-written code touches
+		     them yet — exactly the "reachable but not yet gated" case NORSE080 exists to catch before
+		     code gets written here, mirroring how the original defect was found in a test fixture. -->
+		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
+			<Repo>Midgard</Repo>
+		</NorseGeneratorRef>
+		<!-- Direct reference (CI-mode attachment) so NORSE080's bundled analyzer isn't stripped by
+		     NuGet's default transitive exclude — it only reaches this project through
+		     Hosting.Web.Client, which doesn't survive the trip in standalone/package mode. Plain
+		     PackageReference + VersionOverride, not NorseRef — NorseRef never belongs in tests/
+		     (CPM is deliberately off here), same convention as Hosting.Web.Server.Tests.csproj.
+		     Condition="UseProjectReferences != true" is load-bearing, not decorative: in Bifröst
+		     dev-mode this project already reaches a FRESH Infrastructure.Web.Grpc transitively via
+		     the ProjectReference to Hosting.Web.Client below — VersionOverride="*" floats to the
+		     latest PUBLISHED package, which predates WireModelRegistrationGuard's existence until
+		     Midgard actually releases, and un-conditioned this collides with the fresh project
+		     reference and breaks the local build. Scoped to standalone/CI mode only. -->
+		<PackageReference Include="Norse.Infrastructure.Web.Grpc" VersionOverride="*" Condition="'$(UseProjectReferences)' != 'true'" />
 		<ProjectReference Include="..\..\src\Hosting.Web.Client\Hosting.Web.Client.csproj" />
 	</ItemGroup>
 </Project>

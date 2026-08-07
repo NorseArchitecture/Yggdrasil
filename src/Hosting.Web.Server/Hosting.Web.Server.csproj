@@ -34,10 +34,20 @@
 		<NorseRef Include="Infrastructure.ServiceDefaults.AspNet">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<!-- Direct reference (CI-mode attachment) so NORSE080's bundled analyzer isn't stripped by
+		     NuGet's default transitive exclude — it previously only reached this project through
+		     Infrastructure.Web.Server, which doesn't survive the trip in standalone/package mode. -->
+		<NorseRef Include="Infrastructure.Web.Grpc">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<NorseRef Include="Infrastructure.Web.Server" Generator="true">
 			<Repo>Midgard</Repo>
 		</NorseRef>
 		<NorseGeneratorRef Include="Infrastructure.Web.Server.Xml.Generator">
+			<Repo>Midgard</Repo>
+		</NorseGeneratorRef>
+		<!-- Dev-mode attachment (UseProjectReferences=true) — the NorseRef above covers CI/standalone. -->
+		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
 			<Repo>Midgard</Repo>
 		</NorseGeneratorRef>
 		<NorseRef Include="Reference.Data.EntityFramework">
