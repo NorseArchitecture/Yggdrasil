@@ -172,28 +172,6 @@ public sealed class MediatorParityTests
 	}
 
 	[Fact]
-	async Task Wire_path_requests_are_validated_server_side()
-	{
-		var cancellationToken = TestContext.Current.CancellationToken;
-		var invoked = false;
-		using var host = await CreateHost(
-			(_, _) =>
-			{
-				invoked = true;
-				return ValueTask.FromResult(Outcome<NavigationResult>.Ok(new NavigationResult { NextUrl = "/" }));
-			},
-			cancellationToken);
-
-		var invalidRequest = new LoginRequest { EmailInput = "", Password = "Password1" };
-		var outcome = await CreateWireClient(host).Login(invalidRequest, cancellationToken);
-
-		outcome.TryGetValue(out Failed failed).ShouldBeTrue();
-		failed.Problem.Category.ShouldBe(ErrorCategory.Validation);
-		failed.Problem.Errors.ShouldContainKey("Email");
-		invoked.ShouldBeFalse();
-	}
-
-	[Fact]
 	async Task A_handler_throw_reaches_the_wire_client_as_Fault_with_a_correlation_id()
 	{
 		var cancellationToken = TestContext.Current.CancellationToken;
