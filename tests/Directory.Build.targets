@@ -1,51 +1,8 @@
 <Project>
 	<PropertyGroup>
+		<!-- MTP requires an executable test host. -->
 		<OutputType>Exe</OutputType>
-		<!-- Import chains through the realm-root Directory.Build.targets (shared law: Using Remove,
-		     analyzer delivery), which itself chains up to Bifrost in workspace mode. The fallback
-		     condition below still probes for BIFROST specifically — the realm-root file always
-		     exists, so its existence stopped meaning "workspace". -->
-		<_ParentTargets>
-			$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))
-		</_ParentTargets>
-		<_BifrostTargets>
-			$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../../'))
-		</_BifrostTargets>
+		<_ParentTargets>$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))</_ParentTargets>
 	</PropertyGroup>
 	<Import Project="$(_ParentTargets)" Condition="Exists('$(_ParentTargets)')" />
-	<!-- No Version attribute here: Yggdrasil has ManagePackageVersionsCentrally=true (Directory.Packages.props), and CPM (NU1008) forbids a Version on PackageReference — the template's Version="*" is only correct for non-CPM realms. -->
-	<ItemGroup Condition="!Exists('$(_BifrostTargets)')">
-		<PackageReference Include="@(NorseRef->'Norse.%(Identity)')" />
-		<PackageReference Include="@(NorseDesignRef->'Norse.%(Identity)')">
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-	</ItemGroup>
-	<!--
-		Applies whether or not Bifrost is present — a generator forwarded transitively (NuGet's
-		package-analyzer propagation reaches through any ProjectReference to a project that opted
-		in via NorseRef Generator="true") also sees THIS project's own compilation and regenerates
-		its own copy of whatever it emits, colliding (CS0121) with the copy already compiled into
-		the project it was meant for. Only a project that itself declares the matching NorseRef
-		with Generator="true" should actually run that generator; everyone else strips it. Full
-		design: ../Glitnir/docs/Platform/specs/2026-07-01-norseref-generator-forwarding-design.md
-	-->
-	<Target Name="_NorseRemoveUnwantedGeneratorAnalyzers" BeforeTargets="CoreCompile" Condition="'@(Analyzer)' != ''">
-		<ItemGroup>
-			<_NorseWantedGeneratorAnalyzer Include="@(NorseRef->WithMetadataValue('Generator', 'true')->'Norse.%(Identity).Generator')" />
-			<!-- Gap 4 (2026-08-02): a second generator on the same NorseRef library, named via the
-			     separate NorseGeneratorRef item list (see Bifrost/Directory.Build.targets) rather than
-			     the Generator="true" boolean, since that convention only ever names one. -->
-			<_NorseWantedGeneratorAnalyzer Include="@(NorseGeneratorRef->'Norse.%(Identity)')" />
-		</ItemGroup>
-		<PropertyGroup>
-			<!-- Semicolon-joined so a per-Analyzer-item Condition can do a plain substring Contains check below. -->
-			<_NorseWantedGeneratorAnalyzerNames>;@(_NorseWantedGeneratorAnalyzer);</_NorseWantedGeneratorAnalyzerNames>
-		</PropertyGroup>
-		<ItemGroup>
-			<!-- Provenance-scoped (2026-07-31): only a NuGet-delivered analyzer is ever a strip candidate;
-			     a ProjectReference-wired one (a project's own sibling gen/ generator, or Bifrost's
-			     dev-mode Choose-block forwarding) is deliberate by construction. -->
-			<Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' != '' and $([System.Text.RegularExpressions.Regex]::IsMatch('%(Analyzer.Filename)', '^Norse\..+\.Generator$')) and !$(_NorseWantedGeneratorAnalyzerNames.Contains(';%(Analyzer.Filename);'))" />
-		</ItemGroup>
-	</Target>
 </Project>
