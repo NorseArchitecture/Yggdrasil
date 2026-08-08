@@ -28,16 +28,16 @@ namespace Norse.Hosting.Web.Server.Tests;
 /// platform law.
 /// </summary>
 [Authorize(Policy = AuthNPolicies.Public)]
-sealed record TestLoginCommand(LoginRequest Request) : CommandRequest<LoginRequest, LoginResult>(Request);
+sealed record TestLoginCommand(LoginRequest Request) : CommandRequest<LoginRequest, NavigationResult>(Request);
 
 /// <summary>
 /// A handler whose behavior each test controls via the injected delegate -- swapped per test instead
 /// of per assertion, so each test gets its own host with its own stub wired in from the start.
 /// </summary>
-sealed class StubLoginHandler(Func<LoginRequest, CancellationToken, ValueTask<Outcome<LoginResult>>> handle) :
-	IRequestHandler<TestLoginCommand, LoginResult>
+sealed class StubLoginHandler(Func<LoginRequest, CancellationToken, ValueTask<Outcome<NavigationResult>>> handle) :
+	IRequestHandler<TestLoginCommand, NavigationResult>
 {
-	public ValueTask<Outcome<LoginResult>> Handle(TestLoginCommand request, CancellationToken cancellationToken = default) =>
+	public ValueTask<Outcome<NavigationResult>> Handle(TestLoginCommand request, CancellationToken cancellationToken = default) =>
 		handle(request.Request, cancellationToken);
 }
 
@@ -67,17 +67,17 @@ sealed class TestPrincipalAccessor(ClaimsPrincipal principal) : IPrincipalAccess
 /// </summary>
 sealed class TestAuthenticationService(ISender sender) : IAuthenticationService
 {
-	public Task<Outcome<LoginResult>> Login(LoginRequest request, CancellationToken cancellationToken = default) =>
+	public Task<Outcome<NavigationResult>> Login(LoginRequest request, CancellationToken cancellationToken = default) =>
 		sender.Send(new TestLoginCommand(request), cancellationToken).AsTask();
 
-	public Task<Outcome<RegisterResult>> Register(RegisterRequest request, CancellationToken cancellationToken = default) =>
+	public Task<Outcome<NavigationResult>> Register(RegisterRequest request, CancellationToken cancellationToken = default) =>
 		throw new NotSupportedException($"{nameof(Register)} is not exercised by {nameof(MediatorParityTests)}.");
 
 	public Task<Outcome<BoolResponse>> EmailExists(EmailExistsRequest request, CancellationToken cancellationToken = default) =>
 		throw new NotSupportedException($"{nameof(EmailExists)} is not exercised by {nameof(MediatorParityTests)}.");
 
-	public Task<Outcome<LogoutResult>> Logout(CancellationToken cancellationToken = default) =>
-		Task.FromResult(Outcome<LogoutResult>.Ok(new LogoutResult()));
+	public Task<Outcome<NavigationResult>> Logout(CancellationToken cancellationToken = default) =>
+		Task.FromResult(Outcome<NavigationResult>.Ok(new NavigationResult { NextUrl = "/" }));
 }
 
 /// <summary>
@@ -91,7 +91,7 @@ sealed class TestAuthenticationService(ISender sender) : IAuthenticationService
 public sealed class MediatorParityTests
 {
 	static async Task<IHost> CreateHost(
-		Func<LoginRequest, CancellationToken, ValueTask<Outcome<LoginResult>>> handleLogin, CancellationToken cancellationToken)
+		Func<LoginRequest, CancellationToken, ValueTask<Outcome<NavigationResult>>> handleLogin, CancellationToken cancellationToken)
 	{
 		// Real deployments reach this through MapNorseGrpcServices(), which calls it before mapping --
 		// this host maps TestAuthenticationService directly (the generator only ever saw Hosting.Web.
@@ -116,10 +116,10 @@ public sealed class MediatorParityTests
 					// Mirrors exactly what Asgard's registration generator emits for a real handled
 					// request -- generated-emission correctness is already proven in Asgard/Himinbjörg's
 					// own suites; this proves the runtime matrix, hand-wired the same way.
-					services.AddScoped<IRequestHandler<TestLoginCommand, LoginResult>>(_ => new StubLoginHandler(handleLogin));
-					services.AddSingleton<ISenderDispatch, SenderDispatch<TestLoginCommand, LoginResult>>();
+					services.AddScoped<IRequestHandler<TestLoginCommand, NavigationResult>>(_ => new StubLoginHandler(handleLogin));
+					services.AddSingleton<ISenderDispatch, SenderDispatch<TestLoginCommand, NavigationResult>>();
 					services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
-					services.AddScoped<IValidator<TestLoginCommand>, CommandRequestValidator<TestLoginCommand, LoginRequest, LoginResult>>();
+					services.AddScoped<IValidator<TestLoginCommand>, CommandRequestValidator<TestLoginCommand, LoginRequest, NavigationResult>>();
 
 					services.AddScoped<IAuthenticationService, TestAuthenticationService>();
 					services.AddScoped<IPrincipalAccessor>(_ => new TestPrincipalAccessor(principal));
@@ -146,14 +146,14 @@ public sealed class MediatorParityTests
 	}
 
 	static LoginRequest ValidLoginRequest() =>
-		new() { Email = "user@example.com", Password = "Password1", RememberMe = false };
+		new() { EmailInput = "user@example.com", Password = "Password1", RememberMe = false };
 
 	[Fact]
 	async Task LockedOut_renders_identically_through_the_circuit_path_and_the_wire_path()
 	{
 		var cancellationToken = TestContext.Current.CancellationToken;
 		using var host = await CreateHost(
-			(_, _) => ValueTask.FromResult(Outcome<LoginResult>.Err(ErrorCategory.LockedOut, errors: new Dictionary<string, string[]> { [""] = ["locked"] })),
+			(_, _) => ValueTask.FromResult(Outcome<NavigationResult>.Err(ErrorCategory.LockedOut, errors: new Dictionary<string, string[]> { [""] = ["locked"] })),
 			cancellationToken);
 
 		using var scope = host.Services.CreateScope();
@@ -180,11 +180,11 @@ public sealed class MediatorParityTests
 			(_, _) =>
 			{
 				invoked = true;
-				return ValueTask.FromResult(Outcome<LoginResult>.Ok(new LoginResult { NextUrl = "/" }));
+				return ValueTask.FromResult(Outcome<NavigationResult>.Ok(new NavigationResult { NextUrl = "/" }));
 			},
 			cancellationToken);
 
-		var invalidRequest = new LoginRequest { Email = "", Password = "Password1" };
+		var invalidRequest = new LoginRequest { EmailInput = "", Password = "Password1" };
 		var outcome = await CreateWireClient(host).Login(invalidRequest, cancellationToken);
 
 		outcome.TryGetValue(out Failed failed).ShouldBeTrue();
@@ -218,7 +218,7 @@ public sealed class MediatorParityTests
 
 		var outcome = await CreateWireClient(host).Logout(cancellationToken);
 
-		outcome.TryGetValue(out Success<LogoutResult> success).ShouldBeTrue();
-		success.Value.ShouldBeOfType<LogoutResult>();
+		outcome.TryGetValue(out Success<NavigationResult> success).ShouldBeTrue();
+		success.Value.ShouldBeOfType<NavigationResult>();
 	}
 }

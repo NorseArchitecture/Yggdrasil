@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
-using Norse.AuthN.Services;
 using Norse.Infrastructure.ServiceDefaults.AspNet;
 using ProtoBuf.Meta;
 
@@ -73,14 +72,14 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 		// of whether a factory-booted host has already run app.MapNorseGrpcServices() itself.
 		NorseGrpcServerRegistration.RegisterNorseOutcomeSurrogates();
 
-		RuntimeTypeModel.Default.IsDefined(typeof(Outcome<LoginResult>)).ShouldBeTrue();
+		RuntimeTypeModel.Default.IsDefined(typeof(Outcome<NavigationResult>)).ShouldBeTrue();
 
 		// protobuf-net 2.4.8's MetaType exposes SetSurrogate as a write-only fluent method -- there is
 		// no public getter to read the configured surrogate back. GetSchema is the documented way to
-		// observe it: once Outcome<LoginResult> is surrogated to LoginResult, the emitted .proto schema
-		// describes LoginResult's own shape (its DataMembers), not Outcome<T>'s private union layout.
-		var schema = RuntimeTypeModel.Default.GetSchema(typeof(Outcome<LoginResult>));
-		schema.ShouldContain(nameof(LoginResult.NextUrl));
+		// observe it: once Outcome<NavigationResult> is surrogated to NavigationResult, the emitted .proto schema
+		// describes NavigationResult's own shape (its DataMembers), not Outcome<T>'s private union layout.
+		var schema = RuntimeTypeModel.Default.GetSchema(typeof(Outcome<NavigationResult>));
+		schema.ShouldContain(nameof(NavigationResult.NextUrl));
 	}
 
 	[Fact]
