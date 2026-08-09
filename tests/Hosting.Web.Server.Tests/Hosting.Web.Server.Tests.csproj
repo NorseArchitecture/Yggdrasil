@@ -22,7 +22,7 @@
 		<!-- The Futhark XML shape generator must run in this compilation, not Hosting.Web.Server's own —
 		     Parity/ParityController.cs (the one real GrpcControllerBase descendant on the platform today)
 		     lives here, per Futhark's "facade controllers are host-compilation source" law. -->
-		<NorseGeneratorRef Include="Infrastructure.Web.Server.Xml.Generator">
+		<NorseGeneratorRef Include="Infrastructure.Web.Server.Generator">
 			<Repo>Midgard</Repo>
 		</NorseGeneratorRef>
 		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
