@@ -74,13 +74,15 @@
 		<PackageVersion Include="Norse.Identity.Migrations.SqlServer" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Web.Server" Version="$(HiminbjorgVersion)" />
 		<!-- Mimisbrunnr -->
+		<PackageVersion Include="Norse.Reference.Data.Contracts" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.EntityFramework" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.EntityFramework.Migrations" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.EntityFramework.Migrations.PostgreSQL" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.EntityFramework.Migrations.SqlServer" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.Namespaces" Version="$(MimisbrunnrVersion)" />
-		<PackageVersion Include="Norse.Reference.Data.Primitives" Version="$(MimisbrunnrVersion)" />
 		<!-- Mimir -->
+		<PackageVersion Include="Norse.Reference.Components" Version="$(MimirVersion)" />
+		<PackageVersion Include="Norse.Reference.Components.FluentUI" Version="$(MimirVersion)" />
 		<PackageVersion Include="Norse.Reference.Contracts" Version="$(MimirVersion)" />
 		<PackageVersion Include="Norse.Reference.Web.Server" Version="$(MimirVersion)" />
 		<!-- Heimdall -->

@@ -135,7 +135,7 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 		var cancellationToken = TestContext.Current.CancellationToken;
 		using var host = await CreateHostAsync(fixture.ConnectionString, cancellationToken);
 
-		var outcome = await CreateWireClient(host).GetCountry(new() { Code = code }, cancellationToken);
+		var outcome = await CreateWireClient(host).GetCountry(new() { CodeInput = code }, cancellationToken);
 
 		var response = outcome.Match(static r => r, static p => throw new InvalidOperationException(p.Category.ToString()));
 
@@ -156,7 +156,7 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 		// mapping for ErrorCategory.Validation) back into a normal Outcome<CountryResponse>.Err by
 		// design -- GetCountry returns Outcome<T> on the wire, so a Failed outcome never reaches the
 		// caller as a thrown RpcException. Asserting the decoded Problem, not a thrown exception.
-		var outcome = await CreateWireClient(host).GetCountry(new() { Code = "banana" }, cancellationToken);
+		var outcome = await CreateWireClient(host).GetCountry(new() { CodeInput = "banana" }, cancellationToken);
 
 		outcome.TryGetValue(out Failed failed).ShouldBeTrue();
 		failed.Problem.Category.ShouldBe(ErrorCategory.Validation);
