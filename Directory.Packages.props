@@ -38,6 +38,7 @@
 		<PackageVersion Include="protobuf-net" Version="3.2.56" />
 		<PackageVersion Include="protobuf-net.Grpc" Version="1.2.5" />
 		<PackageVersion Include="protobuf-net.Grpc.AspNetCore.Reflection" Version="1.2.2" />
+		<PackageVersion Include="Scalar.AspNetCore" Version="2.16.18" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Architecture.Analyzers" Version="$(SvartalfheimVersion)" />
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />

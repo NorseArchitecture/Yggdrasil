@@ -21,6 +21,12 @@
             Auth Required
         </FluentNavItem>
     </FluentNavCategory>
+    <FluentNavCategory Title="Reference">
+        <FluentNavItem Href="reference/country-lookup" IconRest="@(new Icons.Regular.Size20.Globe())"
+                       IconActive="@(new Icons.Filled.Size20.Globe())">
+            Country Lookup
+        </FluentNavItem>
+    </FluentNavCategory>
     <AuthorizeView>
         <Authorized>
             <FluentNavItem Href="Account/Manage">@context.User.Identity?.Name</FluentNavItem>

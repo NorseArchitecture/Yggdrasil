@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json.Nodes;
 using Grpc.AspNetCore.Server;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Http.Metadata;
@@ -131,5 +133,102 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory)
 
 		endpoints.ShouldNotBeEmpty();
 		endpoints.ShouldAllBe(endpoint => endpoint.Metadata.GetMetadata<IDisableHttpMetricsMetadata>() != null);
+	}
+
+	[Fact]
+	async Task The_live_OpenAPI_document_carries_only_the_reference_facade()
+	{
+		// Everything else the host maps is deliberately absent: identity's account endpoints and the
+		// deferred sign-in door both carry ExcludeFromDescription() at their map sites, gRPC services
+		// and health probes never produce ApiDescriptions, and no other realm ships a controller. If a
+		// new path ever appears here, something started leaking into the public document -- rule on it,
+		// don't widen the assertion reflexively.
+		var document = await FetchOpenApiDocumentAsync();
+
+		var paths = document["paths"]?.AsObject()
+			?? throw new InvalidOperationException("document carries no paths");
+		paths.Select(static path => path.Key).ShouldBe(["/api/reference/countries/{code}"]);
+		paths["/api/reference/countries/{code}"]!.AsObject().Select(static op => op.Key).ShouldBe(["get"]);
+
+		// The symmetry law holds on the real host's document exactly as on the swoop fixture's: the
+		// underlying T renders, never the union.
+		var schemas = document["components"]?["schemas"]?.AsObject()
+			?? throw new InvalidOperationException("document carries no components.schemas");
+		schemas.ContainsKey("CountryResponse").ShouldBeTrue();
+		schemas.Select(static schema => schema.Key)
+			.Any(static name => name.Contains("Result", StringComparison.Ordinal) ||
+				name.Contains("Outcome", StringComparison.Ordinal))
+			.ShouldBeFalse();
+	}
+
+	[Fact]
+	async Task The_standard_response_codes_ride_the_facade_operation_in_declaration_order()
+	{
+		var document = await FetchOpenApiDocumentAsync();
+
+		var operation = document["paths"]!["/api/reference/countries/{code}"]!["get"]!;
+		var responses = operation["responses"]!.AsObject();
+
+		// The action's own 200 leads; StandardResponsesTransformer appends the idiomatic balance in
+		// its deliberate order -- {code} is a bound parameter, so both the 400 (untrusted input to
+		// reject) and the 404 (a resource to miss) apply to this operation.
+		responses.Select(static response => response.Key).ShouldBe(
+			["200", "400", "401", "403", "404", "406", "429", "500", "502", "503", "504"]);
+
+		// The 200 declares exactly the two channels the wire actually serves, JSON first -- never the
+		// formatter-union noise (text/plain, text/json, text/xml) ApiExplorer produces unaided, which
+		// sent Scalar's first-pick try-it request into an honest 406 for a media type the document
+		// should never have promised.
+		responses["200"]!["content"]!.AsObject().Select(static media => media.Key)
+			.ShouldBe(["application/json", "application/xml"]);
+
+		// The 400 negotiates both problem media types and references the Problem component the same
+		// transformer registers -- the platform's actual failure body, not a description-only stub.
+		var badRequestContent = responses["400"]!["content"]!.AsObject();
+		badRequestContent.Select(static media => media.Key)
+			.ShouldBe(["application/problem+json", "application/problem+xml"], ignoreOrder: true);
+		badRequestContent["application/problem+json"]!["schema"]!["$ref"]!.GetValue<string>()
+			.ShouldBe("#/components/schemas/Problem");
+		document["components"]!["schemas"]!["Problem"]!["properties"]!["errors"].ShouldNotBeNull();
+	}
+
+	[Fact]
+	async Task An_Accept_naming_neither_JSON_nor_XML_negotiates_to_406_on_the_live_host()
+	{
+		// ReturnHttpNotAcceptable, proven on the real composition root. The garbage code makes the
+		// handler answer its typed validation failure before any repository call, so the fake
+		// connection string is never dialed -- and the unmatched Accept then turns the would-be 400
+		// problem into an honest 406 at the negotiation seam.
+		using var client = factory.CreateClient();
+		using var request = new HttpRequestMessage(HttpMethod.Get, "/api/reference/countries/banana");
+		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/csv"));
+
+		using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.NotAcceptable);
+	}
+
+	[Fact]
+	async Task Scalar_serves_the_human_readable_reference_in_development()
+	{
+		// Same dev-only posture as gRPC reflection: the discovery surface exists at the bench, never in
+		// the deployed footprint. WebApplicationFactory boots the host in Development, so the map takes.
+		using var client = factory.CreateClient();
+
+		var response = await client.GetAsync(new Uri("/scalar/v1", UriKind.Relative),
+			TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		response.Content.Headers.ContentType!.MediaType.ShouldBe("text/html");
+	}
+
+	async Task<JsonNode> FetchOpenApiDocumentAsync()
+	{
+		using var client = factory.CreateClient();
+		var response = await client.GetAsync(new Uri("/openapi/v1.json", UriKind.Relative),
+			TestContext.Current.CancellationToken);
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+		return JsonNode.Parse(json)!;
 	}
 }

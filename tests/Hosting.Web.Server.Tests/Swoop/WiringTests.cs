@@ -40,6 +40,50 @@ public sealed class WiringTests(SwoopHostFixture fixture)
 	}
 
 	[Fact]
+	async Task Probe_1c_a_request_with_no_Accept_header_defaults_to_JSON()
+	{
+		// The default-channel law: a client that expresses no preference gets JSON, never XML -- the
+		// XML leg is opt-in by Accept header. This pins negotiation order independent of any
+		// controller-level media-type attribute (the Swashbuckle-era [Produces] pair is gone) and
+		// independent of formatter registration order in AddNorseJson/AddNorseXml.
+		const string Body =
+			"""<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="A" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" status="active" />""";
+
+		using var client = fixture.App.GetTestClient();
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+		{
+			Content = new StringContent(Body, Encoding.UTF8, "application/xml")
+		};
+
+		using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		response.Content.Headers.ContentType!.MediaType.ShouldBe("application/json");
+	}
+
+	[Fact]
+	async Task Probe_1a_an_Accept_naming_neither_JSON_nor_XML_negotiates_to_406()
+	{
+		// ReturnHttpNotAcceptable is the no-silent-fallbacks law on the negotiation seam: without it,
+		// MVC ignores an unmatched Accept and hands back the first formatter's rendering with a 200.
+		// The request itself is fully valid -- the action runs and succeeds -- so this proves the 406
+		// comes from output negotiation, not from any request-side rejection.
+		const string Body =
+			"""<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="A" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" status="active" />""";
+
+		using var client = fixture.App.GetTestClient();
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+		{
+			Content = new StringContent(Body, Encoding.UTF8, "application/xml")
+		};
+		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/csv"));
+
+		using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.NotAcceptable);
+	}
+
+	[Fact]
 	async Task Probe_1b_the_problem_writer_negotiates_for_Accept_application_problem_plus_xml()
 	{
 		// GrpcControllerBase's class-level [Produces("application/json", "application/xml")] once had a

@@ -97,7 +97,9 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		builder.Services.AddScoped<IPrincipalAccessor>(_ => new SwoopPrincipalAccessor(principal));
 
 		builder.Services
-			.AddControllers()
+			// Mirrors Program.cs's negotiation posture: unmatched Accept gets an honest 406, never the
+			// first formatter's best guess -- WiringTests carries the live-host probe.
+			.AddControllers(options => options.ReturnHttpNotAcceptable = true)
 			.AddNorseJson(NorseEnumNameRegistration.Build())
 			.AddNorseXml(XmlCaseStyle.CamelCase, NorseXmlShapeRegistration.Build());
 		builder.Services.AddOpenApi(options =>

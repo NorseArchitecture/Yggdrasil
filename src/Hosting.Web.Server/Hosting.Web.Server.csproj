@@ -49,6 +49,7 @@
 		     plain protobuf-net. -->
 		<PackageReference Include="protobuf-net" />
 		<PackageReference Include="protobuf-net.Grpc.AspNetCore.Reflection" />
+		<PackageReference Include="Scalar.AspNetCore" />
 		<ProjectReference Include="..\Hosting.Web.Client\Hosting.Web.Client.csproj" />
 	</ItemGroup>
 </Project>
