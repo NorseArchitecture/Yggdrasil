@@ -7,10 +7,10 @@ using Microsoft.AspNetCore.TestHost;
 namespace Norse.Hosting.Web.Server.Tests.Swoop;
 
 /// <summary>
-/// The spec §10.4 "wired, not just designed" probes — every assertion hits the live
-/// <see cref="SwoopHostFixture.App"/>, never DI inspection, per the Task 13 brief's explicit
-/// instruction: removing any one of these registrations from <c>SwoopHostFixture.InitializeAsync</c>
-/// must fail this suite.
+///     The spec §10.4 "wired, not just designed" probes — every assertion hits the live
+///     <see cref="SwoopHostFixture.App" />, never DI inspection, per the Task 13 brief's explicit
+///     instruction: removing any one of these registrations from <c>SwoopHostFixture.InitializeAsync</c>
+///     must fail this suite.
 /// </summary>
 [Collection(SwoopCollection.Name)]
 public sealed class WiringTests(SwoopHostFixture fixture)
@@ -21,10 +21,14 @@ public sealed class WiringTests(SwoopHostFixture fixture)
 		// If AddNorseXml's formatter pair were never inserted, an "Accept: application/xml" request
 		// would 406 (no formatter can produce it) instead of rendering XML -- this is the live-host
 		// proof the registration actually took, not merely that the source line exists.
-		const string Body = """<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="A" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" status="active" />""";
+		const string Body =
+			"""<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="A" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" status="active" />""";
 
 		using var client = fixture.App.GetTestClient();
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(Body, Encoding.UTF8, "application/xml") };
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+		{
+			Content = new StringContent(Body, Encoding.UTF8, "application/xml")
+		};
 		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
 
 		using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
@@ -43,7 +47,10 @@ public sealed class WiringTests(SwoopHostFixture fixture)
 		// application/problem+xml (Task 10 context) -- this is the live-host re-proof that the fix
 		// (explicit ContentTypes on the failure ObjectResult) still holds for this controller.
 		using var client = fixture.App.GetTestClient();
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent("<parityRequest />", Encoding.UTF8, "application/xml") };
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+		{
+			Content = new StringContent("<parityRequest />", Encoding.UTF8, "application/xml")
+		};
 		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/problem+xml"));
 
 		using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
@@ -61,7 +68,8 @@ public sealed class WiringTests(SwoopHostFixture fixture)
 		// asks: fetch the live document and show ParityRequest/ParityReport rendered unwrapped, not just
 		// "the pipeline ran clean with nothing to unwrap."
 		using var client = fixture.App.GetTestClient();
-		using var response = await client.GetAsync(new Uri("/openapi/v1.json", UriKind.Relative), TestContext.Current.CancellationToken);
+		using var response = await client.GetAsync(new Uri("/openapi/v1.json", UriKind.Relative),
+			TestContext.Current.CancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -100,7 +108,8 @@ public sealed class WiringTests(SwoopHostFixture fixture)
 		// stamped through EnumSchemaTransformer.ApplyGovernedList -- this is the live-host proof neither
 		// registration was ever dropped, mirroring Probe_2's own live-document-fetch pattern.
 		using var client = fixture.App.GetTestClient();
-		using var response = await client.GetAsync(new Uri("/openapi/v1.json", UriKind.Relative), TestContext.Current.CancellationToken);
+		using var response = await client.GetAsync(new Uri("/openapi/v1.json", UriKind.Relative),
+			TestContext.Current.CancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -111,7 +120,8 @@ public sealed class WiringTests(SwoopHostFixture fixture)
 		// The response-side raw enum: EnumSchemaTransformer's own governed component, referenced by
 		// ParityReport.Status's $ref -- AspNetCore.OpenApi names an enum's shared component schema after
 		// the CLR type.
-		var statusComponent = schemas["ParityStatus"] ?? throw new InvalidOperationException("no ParityStatus component schema in the live document");
+		var statusComponent = schemas["ParityStatus"] ??
+			throw new InvalidOperationException("no ParityStatus component schema in the live document");
 		statusComponent["type"]!.GetValue<string>().ShouldBe("string");
 		statusComponent["enum"]!.AsArray().Select(n => n!.GetValue<string>()).ShouldBe(["active", "inactive"]);
 		statusComponent["readOnly"]!.GetValue<bool>().ShouldBeTrue();

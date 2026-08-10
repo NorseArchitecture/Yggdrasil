@@ -38,12 +38,15 @@ public sealed class MainLayoutTests : BunitContext
 	static string ExpectedInformationalVersion()
 	{
 		var assembly = Assembly.GetEntryAssembly() ?? typeof(MainLayout).Assembly;
-		var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+		var informationalVersion =
+			assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
 		if (string.IsNullOrEmpty(informationalVersion))
 			return "unknown";
 
 		var buildMetadataIndex = informationalVersion.IndexOf('+');
-		return buildMetadataIndex < 0 ? informationalVersion : informationalVersion[..buildMetadataIndex];
+		return buildMetadataIndex < 0 ?
+			informationalVersion :
+			informationalVersion[..buildMetadataIndex];
 	}
 }

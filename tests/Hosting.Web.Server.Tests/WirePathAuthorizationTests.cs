@@ -52,7 +52,8 @@ public sealed class WirePathAuthorizationTests
 				webHost.ConfigureServices(services =>
 				{
 					services.AddNorseCodeFirstGrpc();
-					services.AddAuthorization(o => o.AddPolicy("Test.NeverSatisfied", p => p.RequireAssertion(_ => false)));
+					services.AddAuthorization(o =>
+						o.AddPolicy("Test.NeverSatisfied", p => p.RequireAssertion(_ => false)));
 					// Plain .AddCookie() redirects (302) on challenge/forbid, assuming a browser — exactly
 					// what would silently turn this rejection into a "Bad gRPC response" the client can't
 					// interpret as any real status code at all, defeating the point of this test. Real
@@ -86,7 +87,8 @@ public sealed class WirePathAuthorizationTests
 		var channel = GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = handler });
 		var client = channel.CreateGrpcService<IRestrictedService>();
 
-		var exception = await Should.ThrowAsync<RpcException>(async () => await client.Restricted(new RestrictedRequest()));
+		var exception =
+			await Should.ThrowAsync<RpcException>(async () => await client.Restricted(new RestrictedRequest()));
 
 		// Proves [Authorize] is discovered as real, enforced endpoint metadata under AddNorseCodeFirstGrpc
 		// — removing it entirely (verified locally, both from the interface and the mirror on

@@ -112,6 +112,7 @@ else
 		.UseExceptionHandler("/Error", createScopeForErrors: true)
 		.UseHsts();
 }
+
 app
 	.UseHttpsRedirection()
 	.UseAuthentication()

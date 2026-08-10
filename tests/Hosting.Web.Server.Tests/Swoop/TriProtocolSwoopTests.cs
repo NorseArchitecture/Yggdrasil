@@ -1,7 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json; // Authored deliberately: the SDK's implicit using is removed platform-wide (NORSE070 carrier); tests are law-exempt and re-add it explicitly.
+using
+	System.Net.Http.Json; // Authored deliberately: the SDK's implicit using is removed platform-wide (NORSE070 carrier); tests are law-exempt and re-add it explicitly.
 using System.Security.Claims;
 using System.Text;
 using FluentValidation;
@@ -9,12 +10,13 @@ using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
+using Norse.Hosting.Web.Server.Tests.NorseXmlShapes;
 using Norse.Hosting.Web.Server.Tests.Parity;
 using Norse.Infrastructure.Web.Client.Grpc;
 using Norse.Infrastructure.Web.Server.Json;
@@ -29,30 +31,30 @@ using ProtoBuf.Meta;
 namespace Norse.Hosting.Web.Server.Tests.Swoop;
 
 /// <summary>
-/// The tri-protocol swoop's shared live host (spec §15, Task 13 Step 1) — the one place gRPC, REST-JSON,
-/// REST-XML, and the OpenAPI document are all wired onto the SAME <see cref="ParityController"/>/
-/// <see cref="ParityService"/> pair, hand-registered exactly as the real registration generators would
-/// emit it (mirrors <c>MediatorParityTests.CreateHost</c>) since <see cref="ParityService"/> is
-/// test-local, never referenced by any generator's own compilation. Hits the real formatters, the real
-/// mediator pipeline, the real <c>NorseXmlShapeRegistration.Build()</c> generator output, and (for the
-/// gRPC leg) the real <c>Result&lt;T&gt;</c>/<c>Outcome&lt;T&gt;</c> protobuf surrogates.
+///     The tri-protocol swoop's shared live host (spec §15, Task 13 Step 1) — the one place gRPC, REST-JSON,
+///     REST-XML, and the OpenAPI document are all wired onto the SAME <see cref="ParityController" />/
+///     <see cref="ParityService" /> pair, hand-registered exactly as the real registration generators would
+///     emit it (mirrors <c>MediatorParityTests.CreateHost</c>) since <see cref="ParityService" /> is
+///     test-local, never referenced by any generator's own compilation. Hits the real formatters, the real
+///     mediator pipeline, the real <c>NorseXmlShapeRegistration.Build()</c> generator output, and (for the
+///     gRPC leg) the real <c>Result&lt;T&gt;</c>/<c>Outcome&lt;T&gt;</c> protobuf surrogates.
 /// </summary>
 /// <remarks>
-/// An earlier revision of this fixture carried a hand-written <c>ParityXmlShapes</c> stand-in instead of
-/// the generated registration, after an isolated repro appeared to show the Xml shape generator being
-/// starved of output whenever a second Roslyn generator (including <c>AddOpenApi</c>'s own bundled
-/// <c>XmlCommentGenerator</c>) shared the compilation. That repro was flawed — it never had Midgard's
-/// package-bundling path wired, so it was never actually exercising two generators against a correctly
-/// packaged Xml generator in the first place. The real root cause, found independently and fixed for
-/// real: <c>Infrastructure.Web.Server.csproj</c> never bundled the Xml generator into its shipped
-/// package at all (a gap Task 5's own report flagged and nobody picked up), and Bifröst's dev-mode
-/// forwarding had no way to name a second generator against one <c>NorseRef</c> identity. Both are fixed
-/// — Midgard commit <c>a1c1a87</c> (package bundling) and Bifröst's new <c>NorseGeneratorRef</c> item
-/// (Gap 4, <c>../Glitnir/docs/Platform/specs/2026-07-01-norseref-generator-forwarding-design.md</c>) —
-/// and this fixture now calls the real generated <c>NorseXmlShapeRegistration.Build()</c> and carries
-/// real <c>AddOpenApi</c>/<c>MapOpenApi</c> wiring, verified working with Midgard's Xml generator and
-/// Microsoft's own bundled <c>XmlCommentGenerator</c> both active in this compilation simultaneously —
-/// the exact pairing the earlier, flawed repro claimed was impossible.
+///     An earlier revision of this fixture carried a hand-written <c>ParityXmlShapes</c> stand-in instead of
+///     the generated registration, after an isolated repro appeared to show the Xml shape generator being
+///     starved of output whenever a second Roslyn generator (including <c>AddOpenApi</c>'s own bundled
+///     <c>XmlCommentGenerator</c>) shared the compilation. That repro was flawed — it never had Midgard's
+///     package-bundling path wired, so it was never actually exercising two generators against a correctly
+///     packaged Xml generator in the first place. The real root cause, found independently and fixed for
+///     real: <c>Infrastructure.Web.Server.csproj</c> never bundled the Xml generator into its shipped
+///     package at all (a gap Task 5's own report flagged and nobody picked up), and Bifröst's dev-mode
+///     forwarding had no way to name a second generator against one <c>NorseRef</c> identity. Both are fixed
+///     — Midgard commit <c>a1c1a87</c> (package bundling) and Bifröst's new <c>NorseGeneratorRef</c> item
+///     (Gap 4, <c>../Glitnir/docs/Platform/specs/2026-07-01-norseref-generator-forwarding-design.md</c>) —
+///     and this fixture now calls the real generated <c>NorseXmlShapeRegistration.Build()</c> and carries
+///     real <c>AddOpenApi</c>/<c>MapOpenApi</c> wiring, verified working with Midgard's Xml generator and
+///     Microsoft's own bundled <c>XmlCommentGenerator</c> both active in this compilation simultaneously —
+///     the exact pairing the earlier, flawed repro claimed was impossible.
 /// </remarks>
 public sealed class SwoopHostFixture : IAsyncLifetime
 {
@@ -76,7 +78,8 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		builder.WebHost.UseTestServer();
 		builder.Logging.ClearProviders();
 
-		builder.Services.AddAuthorizationBuilder().AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true));
+		builder.Services.AddAuthorizationBuilder()
+			.AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true));
 		builder.Services.AddNorsePipeline();
 		builder.Services.AddNorseCodeFirstGrpc();
 
@@ -87,14 +90,16 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		builder.Services.AddScoped<IRequestHandler<EchoParityCommand, ParityReport>, EchoParityHandler>();
 		builder.Services.AddSingleton<ISenderDispatch, SenderDispatch<EchoParityCommand, ParityReport>>();
 		builder.Services.AddScoped<IValidator<ParityRequest>, ParityRequestValidator>();
-		builder.Services.AddScoped<IValidator<EchoParityCommand>, CommandRequestValidator<EchoParityCommand, ParityRequest, ParityReport>>();
+		builder.Services
+			.AddScoped<IValidator<EchoParityCommand>,
+				CommandRequestValidator<EchoParityCommand, ParityRequest, ParityReport>>();
 		builder.Services.AddScoped<IParityService, ParityService>();
 		builder.Services.AddScoped<IPrincipalAccessor>(_ => new SwoopPrincipalAccessor(principal));
 
 		builder.Services
 			.AddControllers()
-			.AddNorseJson(Norse.Hosting.Web.Server.Tests.NorseXmlShapes.NorseEnumNameRegistration.Build())
-			.AddNorseXml(XmlCaseStyle.CamelCase, Norse.Hosting.Web.Server.Tests.NorseXmlShapes.NorseXmlShapeRegistration.Build());
+			.AddNorseJson(NorseEnumNameRegistration.Build())
+			.AddNorseXml(XmlCaseStyle.CamelCase, NorseXmlShapeRegistration.Build());
 		builder.Services.AddOpenApi(options =>
 		{
 			options.AddSchemaTransformer<ResultSchemaTransformer>();
@@ -118,38 +123,40 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 	}
 
 	/// <summary>
-	/// The real typed client proxy — <c>ProtoBuf.Grpc.Client.GrpcClientFactory</c> over a plain
-	/// unencrypted <see cref="TestServer"/> channel, mirrors <c>Hosting.Web.Client</c>'s own gRPC wiring
-	/// idiom and <c>CountryLookupE2ETests</c>/<c>MediatorParityTests</c>' established test-host pattern.
-	/// The mirror-contract era (a hand-built plain-field twin of <c>ParityRequest</c> serialized through
-	/// the normal model, because <c>ResultSerializer&lt;T&gt;.Write</c> once threw unconditionally on
-	/// every state) is over — Task 1's success-unwrap ruling
-	/// (<c>../Glitnir/docs/Platform/specs/2026-08-02-result-success-unwrap-on-serialize-design.md</c>
-	/// §2) restored a legal write for the <see cref="Success{T}"/> case on every channel, so a real
-	/// <c>ParityRequest</c> built through the implicit <c>T → Result&lt;T&gt;</c> conversion now
-	/// serializes for real. <see cref="EchoRawAsync"/> below is the one deliberate survivor: an omitting
-	/// client (every field genuinely absent) can never be authored through a proxy that throws on
-	/// default, so the honest fixture for that one case is still hand-built raw bytes, per the spec's
-	/// named exception.
+	///     The real typed client proxy — <c>ProtoBuf.Grpc.Client.GrpcClientFactory</c> over a plain
+	///     unencrypted <see cref="TestServer" /> channel, mirrors <c>Hosting.Web.Client</c>'s own gRPC wiring
+	///     idiom and <c>CountryLookupE2ETests</c>/<c>MediatorParityTests</c>' established test-host pattern.
+	///     The mirror-contract era (a hand-built plain-field twin of <c>ParityRequest</c> serialized through
+	///     the normal model, because <c>ResultSerializer&lt;T&gt;.Write</c> once threw unconditionally on
+	///     every state) is over — Task 1's success-unwrap ruling
+	///     (<c>../Glitnir/docs/Platform/specs/2026-08-02-result-success-unwrap-on-serialize-design.md</c>
+	///     §2) restored a legal write for the <see cref="Success{T}" /> case on every channel, so a real
+	///     <c>ParityRequest</c> built through the implicit <c>T → Result&lt;T&gt;</c> conversion now
+	///     serializes for real. <see cref="EchoRawAsync" /> below is the one deliberate survivor: an omitting
+	///     client (every field genuinely absent) can never be authored through a proxy that throws on
+	///     default, so the honest fixture for that one case is still hand-built raw bytes, per the spec's
+	///     named exception.
 	/// </summary>
 	public IParityService CreateClient()
 	{
-		var channel = GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = App.GetTestServer().CreateHandler() });
+		var channel = GrpcChannel.ForAddress("http://localhost",
+			new GrpcChannelOptions { HttpHandler = App.GetTestServer().CreateHandler() });
 		var invoker = channel.Intercept(new OutcomeClientInterceptor());
 		return GrpcClientFactory.CreateGrpcService<IParityService>(invoker);
 	}
 
 	/// <summary>
-	/// Invokes <see cref="IParityService.EchoAsync"/> with hand-built wire bytes for the request,
-	/// decoding <see cref="Outcome{T}"/> failures via <see cref="OutcomeClientInterceptor"/> exactly as
-	/// <see cref="CreateClient"/>'s type-safe proxy would. The one surviving raw-bytes path (see
-	/// <see cref="CreateClient"/>'s remarks): <paramref name="requestBytes"/> is caller-supplied wire
-	/// bytes, used only for <c>Required_absent_detail_wording…</c>'s zero-byte "every field genuinely
-	/// absent" case, which no client proxy can express by construction.
+	///     Invokes <see cref="IParityService.EchoAsync" /> with hand-built wire bytes for the request,
+	///     decoding <see cref="Outcome{T}" /> failures via <see cref="OutcomeClientInterceptor" /> exactly as
+	///     <see cref="CreateClient" />'s type-safe proxy would. The one surviving raw-bytes path (see
+	///     <see cref="CreateClient" />'s remarks): <paramref name="requestBytes" /> is caller-supplied wire
+	///     bytes, used only for <c>Required_absent_detail_wording…</c>'s zero-byte "every field genuinely
+	///     absent" case, which no client proxy can express by construction.
 	/// </summary>
 	public async Task<Outcome<ParityReport>> EchoRawAsync(byte[] requestBytes, CancellationToken cancellationToken)
 	{
-		var channel = GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = App.GetTestServer().CreateHandler() });
+		var channel = GrpcChannel.ForAddress("http://localhost",
+			new GrpcChannelOptions { HttpHandler = App.GetTestServer().CreateHandler() });
 		var invoker = channel.Intercept(new OutcomeClientInterceptor());
 
 		Method<byte[], Outcome<ParityReport>> method = new(
@@ -163,14 +170,18 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 			name: "Echo",
 			requestMarshaller: Marshallers.Create<byte[]>(static bytes => bytes, static bytes => bytes),
 			responseMarshaller: Marshallers.Create<Outcome<ParityReport>>(
-				serializer: static _ => throw new NotSupportedException($"{nameof(EchoRawAsync)} never serializes a response — this marshaller direction is client-inbound only."),
+				serializer: static _ =>
+					throw new NotSupportedException(
+						$"{nameof(EchoRawAsync)} never serializes a response — this marshaller direction is client-inbound only."),
 				deserializer: static bytes =>
 				{
 					using MemoryStream stream = new(bytes);
-					return (Outcome<ParityReport>)RuntimeTypeModel.Default.Deserialize(stream, null, typeof(Outcome<ParityReport>))!;
+					return (Outcome<ParityReport>)RuntimeTypeModel.Default.Deserialize(stream, null,
+						typeof(Outcome<ParityReport>))!;
 				}));
 
-		using var call = invoker.AsyncUnaryCall(method, host: null, new CallOptions(cancellationToken: cancellationToken), requestBytes);
+		using var call = invoker.AsyncUnaryCall(method, host: null,
+			new CallOptions(cancellationToken: cancellationToken), requestBytes);
 		return await call.ResponseAsync;
 	}
 }
@@ -181,27 +192,33 @@ sealed class SwoopPrincipalAccessor(ClaimsPrincipal principal) : IPrincipalAcces
 		ValueTask.FromResult(principal);
 }
 
-/// <summary>The test client's own ISO 8601 duration reader for <see cref="TimeSpan"/> -- see <see cref="TriProtocolSwoopTests.CreateFutharkTestJsonOptions"/>'s remarks.</summary>
+/// <summary>
+///     The test client's own ISO 8601 duration reader for <see cref="TimeSpan" /> -- see
+///     <see cref="TriProtocolSwoopTests.CreateFutharkTestJsonOptions" />'s remarks.
+/// </summary>
 sealed class IsoDurationTestJsonConverter : System.Text.Json.Serialization.JsonConverter<TimeSpan>
 {
-	public override TimeSpan Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert, System.Text.Json.JsonSerializerOptions options) =>
+	public override TimeSpan Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert,
+		System.Text.Json.JsonSerializerOptions options) =>
 		System.Xml.XmlConvert.ToTimeSpan(reader.GetString()!);
 
-	public override void Write(System.Text.Json.Utf8JsonWriter writer, TimeSpan value, System.Text.Json.JsonSerializerOptions options) =>
+	public override void Write(System.Text.Json.Utf8JsonWriter writer, TimeSpan value,
+		System.Text.Json.JsonSerializerOptions options) =>
 		writer.WriteStringValue(System.Xml.XmlConvert.ToString(value));
 }
 
 /// <summary>
-/// The test client's own governed-name reader/writer for <see cref="ParityStatus"/> -- see
-/// <see cref="TriProtocolSwoopTests.CreateFutharkTestJsonOptions"/>'s remarks. Plain STJ's built-in
-/// enum handling reads/writes the CLR member name (<c>"Active"</c>), not the governed CamelCase wire
-/// name (<c>"active"</c>) the server's <c>PlainEnumJsonConverter&lt;TEnum&gt;</c> produces, so a
-/// Futhark-aware consumer configures its own name mapping, mirroring
-/// <see cref="TriProtocolSwoopTests.ParseStatus"/>'s hand-rolled XML-side lookup.
+///     The test client's own governed-name reader/writer for <see cref="ParityStatus" /> -- see
+///     <see cref="TriProtocolSwoopTests.CreateFutharkTestJsonOptions" />'s remarks. Plain STJ's built-in
+///     enum handling reads/writes the CLR member name (<c>"Active"</c>), not the governed CamelCase wire
+///     name (<c>"active"</c>) the server's <c>PlainEnumJsonConverter&lt;TEnum&gt;</c> produces, so a
+///     Futhark-aware consumer configures its own name mapping, mirroring
+///     <see cref="TriProtocolSwoopTests.ParseStatus" />'s hand-rolled XML-side lookup.
 /// </summary>
 sealed class ParityStatusTestJsonConverter : System.Text.Json.Serialization.JsonConverter<ParityStatus>
 {
-	public override ParityStatus Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert, System.Text.Json.JsonSerializerOptions options) =>
+	public override ParityStatus Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert,
+		System.Text.Json.JsonSerializerOptions options) =>
 		reader.GetString() switch
 		{
 			"active" => ParityStatus.Active,
@@ -209,62 +226,32 @@ sealed class ParityStatusTestJsonConverter : System.Text.Json.Serialization.Json
 			var other => throw new System.Text.Json.JsonException($"'{other}' is not a governed ParityStatus name.")
 		};
 
-	public override void Write(System.Text.Json.Utf8JsonWriter writer, ParityStatus value, System.Text.Json.JsonSerializerOptions options) =>
-		writer.WriteStringValue(value == ParityStatus.Active ? "active" : "inactive");
+	public override void Write(System.Text.Json.Utf8JsonWriter writer, ParityStatus value,
+		System.Text.Json.JsonSerializerOptions options) =>
+		writer.WriteStringValue(value == ParityStatus.Active ?
+			"active" :
+			"inactive");
 }
 
-[CollectionDefinition(SwoopCollection.Name)]
-[SuppressMessage("Design", "CA1711:Identifiers should not have incorrect suffix", Justification = "xUnit collection fixture naming convention")]
+[CollectionDefinition(Name)]
+[SuppressMessage("Design", "CA1711:Identifiers should not have incorrect suffix",
+	Justification = "xUnit collection fixture naming convention")]
 public sealed class SwoopCollection : ICollectionFixture<SwoopHostFixture>
 {
 	public const string Name = "Swoop";
 }
 
 /// <summary>
-/// The tri-protocol swoop (spec §15) — one <see cref="ParityRequest"/>, driven through gRPC,
-/// REST-JSON, and REST-XML against the live <see cref="SwoopHostFixture.App"/>: success parity
-/// (structural equality of the resulting <see cref="ParityReport"/>), failure parity (identical
-/// <c>errors</c> payload shape on the two text channels, literal-equal required-missing wording on the
-/// gRPC leg), the required <c>Result&lt;string&gt;</c> = <c>""</c> round-trip spine, and the live-host
-/// body cap.
+///     The tri-protocol swoop (spec §15) — one <see cref="ParityRequest" />, driven through gRPC,
+///     REST-JSON, and REST-XML against the live <see cref="SwoopHostFixture.App" />: success parity
+///     (structural equality of the resulting <see cref="ParityReport" />), failure parity (identical
+///     <c>errors</c> payload shape on the two text channels, literal-equal required-missing wording on the
+///     gRPC leg), the required <c>Result&lt;string&gt;</c> = <c>""</c> round-trip spine, and the live-host
+///     body cap.
 /// </summary>
 [Collection(SwoopCollection.Name)]
 public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 {
-	// The one canonical, valid value set every channel's request body encodes -- §7's non-enum rows,
-	// each formatted per its channel's own pinned lexical form (XmlLexical.Format / spec §7 table).
-	static readonly Guid _identifier = Guid.Parse("0b917371-0000-0000-0000-000000000001");
-	static readonly DateTime _timestamp = new(2026, 8, 1, 14, 30, 0, DateTimeKind.Utc);
-	static readonly DateTimeOffset _timestampOffset = new(2026, 8, 1, 14, 30, 0, TimeSpan.FromHours(2));
-	static readonly DateOnly _effectiveDate = new(2026, 8, 1);
-	static readonly TimeOnly _startTime = new(14, 30, 0);
-	static readonly TimeSpan _duration = new(1, 2, 3, 4);
-
-	/// <summary>
-	/// A valid <see cref="ParityRequest"/>, constructed directly through Task 0's implicit
-	/// <c>T → Result&lt;T&gt;</c> conversion — the real type-safe shape <see cref="SwoopHostFixture.CreateClient"/>'s
-	/// proxy can now legally serialize, mirror-contract era over (see that method's remarks).
-	/// </summary>
-	static ParityRequest ValidRequest(string name = "Alice") =>
-		new()
-		{
-			IsActive = true,
-			Count = 42,
-			Amount = 1234.56m,
-			Ratio = 1.5f,
-			Measurement = 2.25d,
-			Initial = 'A',
-			Name = name,
-			Identifier = _identifier,
-			Timestamp = _timestamp,
-			TimestampOffset = _timestampOffset,
-			EffectiveDate = _effectiveDate,
-			StartTime = _startTime,
-			Duration = _duration,
-			Status = ParityStatus.Active,
-			Tags = [new() { Value = "tag-one" }, new() { Value = "tag-two" }]
-		};
-
 	const string JsonBody = """
 		{
 			"isActive": true,
@@ -293,7 +280,41 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		</parityRequest>
 		""";
 
+	// The one canonical, valid value set every channel's request body encodes -- §7's non-enum rows,
+	// each formatted per its channel's own pinned lexical form (XmlLexical.Format / spec §7 table).
+	static readonly Guid _identifier = Guid.Parse("0b917371-0000-0000-0000-000000000001");
+	static readonly DateTime _timestamp = new(2026, 8, 1, 14, 30, 0, DateTimeKind.Utc);
+	static readonly DateTimeOffset _timestampOffset = new(2026, 8, 1, 14, 30, 0, TimeSpan.FromHours(2));
+	static readonly DateOnly _effectiveDate = new(2026, 8, 1);
+	static readonly TimeOnly _startTime = new(14, 30, 0);
+	static readonly TimeSpan _duration = new(1, 2, 3, 4);
+
 	static readonly System.Text.Json.JsonSerializerOptions _futharkTestJsonOptions = CreateFutharkTestJsonOptions();
+
+	/// <summary>
+	///     A valid <see cref="ParityRequest" />, constructed directly through Task 0's implicit
+	///     <c>T → Result&lt;T&gt;</c> conversion — the real type-safe shape <see cref="SwoopHostFixture.CreateClient" />'s
+	///     proxy can now legally serialize, mirror-contract era over (see that method's remarks).
+	/// </summary>
+	static ParityRequest ValidRequest(string name = "Alice") =>
+		new()
+		{
+			IsActive = true,
+			Count = 42,
+			Amount = 1234.56m,
+			Ratio = 1.5f,
+			Measurement = 2.25d,
+			Initial = 'A',
+			Name = name,
+			Identifier = _identifier,
+			Timestamp = _timestamp,
+			TimestampOffset = _timestampOffset,
+			EffectiveDate = _effectiveDate,
+			StartTime = _startTime,
+			Duration = _duration,
+			Status = ParityStatus.Active,
+			Tags = [new() { Value = "tag-one" }, new() { Value = "tag-two" }]
+		};
 
 	static System.Text.Json.JsonSerializerOptions CreateFutharkTestJsonOptions()
 	{
@@ -305,7 +326,10 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		// default "c" format) and ParityStatus (STJ's default enum converter reads/writes the CLR member
 		// name, not the governed CamelCase wire name) need stand-in converters here, matching how a real
 		// Futhark-aware JSON consumer would configure its own.
-		System.Text.Json.JsonSerializerOptions options = new() { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+		System.Text.Json.JsonSerializerOptions options = new()
+		{
+			PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+		};
 		options.Converters.Add(new IsoDurationTestJsonConverter());
 		options.Converters.Add(new ParityStatusTestJsonConverter());
 		return options;
@@ -340,7 +364,10 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		var grpcReport = grpcSuccess.Value;
 
 		using var jsonClient = fixture.App.GetTestClient();
-		using var jsonRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(JsonBody, Encoding.UTF8, "application/json") };
+		using var jsonRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+		{
+			Content = new StringContent(JsonBody, Encoding.UTF8, "application/json")
+		};
 		jsonRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 		using var jsonResponse = await jsonClient.SendAsync(jsonRequest, cancellationToken);
 		jsonResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -348,10 +375,14 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		// forms (ISO 8601 duration for TimeSpan et al., spec §7) -- the server writes them correctly via
 		// AddNorseJson's converters, so the test client needs the same converters to read them back, the
 		// same way a real Futhark-aware consumer would configure its own JSON client.
-		var jsonReport = await jsonResponse.Content.ReadFromJsonAsync<ParityReport>(_futharkTestJsonOptions, cancellationToken);
+		var jsonReport =
+			await jsonResponse.Content.ReadFromJsonAsync<ParityReport>(_futharkTestJsonOptions, cancellationToken);
 
 		using var xmlClient = fixture.App.GetTestClient();
-		using var xmlRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(XmlBody, Encoding.UTF8, "application/xml") };
+		using var xmlRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+		{
+			Content = new StringContent(XmlBody, Encoding.UTF8, "application/xml")
+		};
 		xmlRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
 		using var xmlResponse = await xmlClient.SendAsync(xmlRequest, cancellationToken);
 		xmlResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -368,7 +399,10 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		xmlReport.ShouldBe(grpcReport with { Tags = xmlReport.Tags });
 	}
 
-	/// <summary>Hand-rolled: <see cref="ParityReport"/> carries no generated <em>reader</em> shape in this suite's own assertions -- only the host's registered <c>XmlContractOutputFormatter</c> needs one, which it has.</summary>
+	/// <summary>
+	///     Hand-rolled: <see cref="ParityReport" /> carries no generated <em>reader</em> shape in this suite's own
+	///     assertions -- only the host's registered <c>XmlContractOutputFormatter</c> needs one, which it has.
+	/// </summary>
 	static ParityReport ParseParityReportXml(string xml)
 	{
 		var doc = System.Xml.Linq.XDocument.Parse(xml);
@@ -377,16 +411,28 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		{
 			IsActive = bool.Parse(root.Attribute("isActive")!.Value),
 			Count = int.Parse(root.Attribute("count")!.Value, System.Globalization.CultureInfo.InvariantCulture),
-			Amount = decimal.Parse(root.Attribute("amount")!.Value, System.Globalization.CultureInfo.InvariantCulture),
+			Amount =
+				decimal.Parse(root.Attribute("amount")!.Value, System.Globalization.CultureInfo.InvariantCulture),
 			Ratio = float.Parse(root.Attribute("ratio")!.Value, System.Globalization.CultureInfo.InvariantCulture),
-			Measurement = double.Parse(root.Attribute("measurement")!.Value, System.Globalization.CultureInfo.InvariantCulture),
+			Measurement =
+				double.Parse(root.Attribute("measurement")!.Value,
+					System.Globalization.CultureInfo.InvariantCulture),
 			Initial = root.Attribute("initial")!.Value[0],
 			Name = root.Attribute("name")!.Value,
 			Identifier = Guid.Parse(root.Attribute("identifier")!.Value),
-			Timestamp = DateTime.Parse(root.Attribute("timestamp")!.Value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind),
-			TimestampOffset = DateTimeOffset.Parse(root.Attribute("timestampOffset")!.Value, System.Globalization.CultureInfo.InvariantCulture),
-			EffectiveDate = DateOnly.Parse(root.Attribute("effectiveDate")!.Value, System.Globalization.CultureInfo.InvariantCulture),
-			StartTime = TimeOnly.Parse(root.Attribute("startTime")!.Value, System.Globalization.CultureInfo.InvariantCulture),
+			Timestamp =
+				DateTime.Parse(root.Attribute("timestamp")!.Value,
+					System.Globalization.CultureInfo.InvariantCulture,
+					System.Globalization.DateTimeStyles.RoundtripKind),
+			TimestampOffset =
+				DateTimeOffset.Parse(root.Attribute("timestampOffset")!.Value,
+					System.Globalization.CultureInfo.InvariantCulture),
+			EffectiveDate =
+				DateOnly.Parse(root.Attribute("effectiveDate")!.Value,
+					System.Globalization.CultureInfo.InvariantCulture),
+			StartTime =
+				TimeOnly.Parse(root.Attribute("startTime")!.Value,
+					System.Globalization.CultureInfo.InvariantCulture),
 			Duration = System.Xml.XmlConvert.ToTimeSpan(root.Attribute("duration")!.Value),
 			Status = ParseStatus(root.Attribute("status")!.Value),
 			Tags = [.. root.Elements().Select(e => new ParityReportTag { Value = e.Attribute("value")!.Value })]
@@ -424,13 +470,19 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		var xmlErrors = await PostAndReadProblemErrorsAsync(MalformedXml, "application/xml", cancellationToken);
 
 		jsonErrors.Count.ShouldBe(3);
-		jsonErrors.OrderBy(e => e.Path, StringComparer.Ordinal).ShouldBe(xmlErrors.OrderBy(e => e.Path, StringComparer.Ordinal));
+		jsonErrors.OrderBy(e => e.Path, StringComparer.Ordinal)
+			.ShouldBe(xmlErrors.OrderBy(e => e.Path, StringComparer.Ordinal));
 	}
 
-	async Task<List<(string Path, string Detail)>> PostAndReadProblemErrorsAsync(string body, string mediaType, CancellationToken cancellationToken)
+	async Task<List<(string Path, string Detail)>> PostAndReadProblemErrorsAsync(string body, string mediaType,
+		CancellationToken cancellationToken)
 	{
 		using var client = fixture.App.GetTestClient();
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(body, Encoding.UTF8, mediaType) };
+		using var request =
+			new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+			{
+				Content = new StringContent(body, Encoding.UTF8, mediaType)
+			};
 		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(mediaType));
 		using var response = await client.SendAsync(request, cancellationToken);
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -440,13 +492,21 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		if (mediaType == "application/json")
 		{
 			var problem = System.Text.Json.Nodes.JsonNode.Parse(text)!;
-			errors = [.. problem["errors"]!.AsArray().Select(e => (e!["path"]!.GetValue<string>(), e["detail"]!.GetValue<string>()))];
+			errors =
+			[
+				.. problem["errors"]!.AsArray()
+					.Select(e => (e!["path"]!.GetValue<string>(), e["detail"]!.GetValue<string>()))
+			];
 		}
 		else
 		{
 			var doc = System.Xml.Linq.XDocument.Parse(text);
-			errors = [.. doc.Root!.Elements().Where(e => e.Name.LocalName == "errors").SelectMany(e => e.Elements())
-				.Select(item => (item.Elements().First(x => x.Name.LocalName == "path").Value, item.Elements().First(x => x.Name.LocalName == "detail").Value))];
+			errors =
+			[
+				.. doc.Root!.Elements().Where(e => e.Name.LocalName == "errors").SelectMany(e => e.Elements())
+					.Select(item => (item.Elements().First(x => x.Name.LocalName == "path").Value,
+						item.Elements().First(x => x.Name.LocalName == "detail").Value))
+			];
 		}
 
 		// The Task 13 finding that used to force a filter here -- [ApiController]'s implicit
@@ -477,7 +537,8 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		grpcFailed.Problem.Errors.Values.SelectMany(v => v).ShouldAllBe(detail => detail == "required value missing");
 
 		var xmlErrors = await PostAndReadProblemErrorsAsync(
-			"""<?xml version="1.0" encoding="utf-8"?><parityRequest name="" />""", "application/xml", cancellationToken);
+			body: """<?xml version="1.0" encoding="utf-8"?><parityRequest name="" />""", "application/xml",
+			cancellationToken);
 		xmlErrors.ShouldContain(e => e.Detail == "required value missing");
 		xmlErrors.Count.ShouldBeGreaterThan(1); // every other required attribute is likewise absent
 
@@ -529,13 +590,19 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 			""";
 
 		using var jsonClient = fixture.App.GetTestClient();
-		using var jsonRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(BodyNamingTheShadow, Encoding.UTF8, "application/json") };
+		using var jsonRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+		{
+			Content = new StringContent(BodyNamingTheShadow, Encoding.UTF8, "application/json")
+		};
 		jsonRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 		using var jsonResponse = await jsonClient.SendAsync(jsonRequest, cancellationToken);
 		jsonResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
 		using var xmlClient = fixture.App.GetTestClient();
-		using var xmlRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(XmlBody, Encoding.UTF8, "application/xml") };
+		using var xmlRequest = new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+		{
+			Content = new StringContent(XmlBody, Encoding.UTF8, "application/xml")
+		};
 		xmlRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
 		using var xmlResponse = await xmlClient.SendAsync(xmlRequest, cancellationToken);
 		xmlResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -558,27 +625,35 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		var builder = WebApplication.CreateBuilder();
 		builder.WebHost.UseUrls("http://127.0.0.1:0");
 		builder.Logging.ClearProviders();
-		builder.Services.AddAuthorizationBuilder().AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true));
+		builder.Services.AddAuthorizationBuilder()
+			.AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true));
 		builder.Services.AddNorsePipeline();
 		builder.Services.AddScoped<IRequestHandler<EchoParityCommand, ParityReport>, EchoParityHandler>();
 		builder.Services.AddSingleton<ISenderDispatch, SenderDispatch<EchoParityCommand, ParityReport>>();
 		builder.Services.AddScoped<IValidator<ParityRequest>, ParityRequestValidator>();
-		builder.Services.AddScoped<IValidator<EchoParityCommand>, CommandRequestValidator<EchoParityCommand, ParityRequest, ParityReport>>();
+		builder.Services
+			.AddScoped<IValidator<EchoParityCommand>,
+				CommandRequestValidator<EchoParityCommand, ParityRequest, ParityReport>>();
 		builder.Services.AddScoped<IParityService, ParityService>();
-		builder.Services.AddScoped<IPrincipalAccessor>(_ => new SwoopPrincipalAccessor(new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"))));
+		builder.Services.AddScoped<IPrincipalAccessor>(_ =>
+			new SwoopPrincipalAccessor(new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"))));
 		builder.Services.AddControllers()
-			.AddNorseJson(Norse.Hosting.Web.Server.Tests.NorseXmlShapes.NorseEnumNameRegistration.Build())
-			.AddNorseXml(XmlCaseStyle.CamelCase, Norse.Hosting.Web.Server.Tests.NorseXmlShapes.NorseXmlShapeRegistration.Build());
+			.AddNorseJson(NorseEnumNameRegistration.Build())
+			.AddNorseXml(XmlCaseStyle.CamelCase, NorseXmlShapeRegistration.Build());
 
 		await using var app = builder.Build();
 		app.MapControllers();
 		await app.StartAsync(cancellationToken);
 
 		var padding = new string('a', 1_100_000);
-		var oversized = $"""<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="{padding}" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" status="active" />""";
+		var oversized =
+			$"""<?xml version="1.0" encoding="utf-8"?><parityRequest isActive="true" count="1" amount="1" ratio="1" measurement="1" initial="A" name="{padding}" identifier="0b917371-0000-0000-0000-000000000001" timestamp="2026-08-01T00:00:00.0000000Z" timestampOffset="2026-08-01T00:00:00.0000000+00:00" effectiveDate="2026-08-01" startTime="00:00:00.0000000" duration="PT1S" status="active" />""";
 
 		using HttpClient client = new() { BaseAddress = new Uri(app.Urls.First()) };
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(oversized, Encoding.UTF8, "application/xml") };
+		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+		{
+			Content = new StringContent(oversized, Encoding.UTF8, "application/xml")
+		};
 		using var response = await client.SendAsync(request, cancellationToken);
 
 		response.StatusCode.ShouldBe(HttpStatusCode.RequestEntityTooLarge);

@@ -14,12 +14,13 @@ using ProtoBuf.Meta;
 namespace Norse.Hosting.Web.Server.Tests;
 
 /// <summary>
-/// Wired-not-designed composition assertions (plan §Step 3): each boots the real <c>Program.cs</c>
-/// composition root -- via <see cref="WebApplicationFactory{TEntryPoint}"/>, never a hand-rolled
-/// stand-in -- so every assertion here fails if the registration it checks is ever deleted from
-/// <c>Program.cs</c>, not just if the underlying library API changes shape.
+///     Wired-not-designed composition assertions (plan §Step 3): each boots the real <c>Program.cs</c>
+///     composition root -- via <see cref="WebApplicationFactory{TEntryPoint}" />, never a hand-rolled
+///     stand-in -- so every assertion here fails if the registration it checks is ever deleted from
+///     <c>Program.cs</c>, not just if the underlying library API changes shape.
 /// </summary>
-public sealed class CompositionTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public sealed class CompositionTests(WebApplicationFactory<Program> factory)
+	: IClassFixture<WebApplicationFactory<Program>>
 {
 	// Program.cs reads builder.Configuration.GetConnectionString(...) synchronously, before
 	// builder.Build() runs -- earlier than WebApplicationFactory's WithWebHostBuilder/
@@ -32,8 +33,10 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 	// exercised by these tests ever opens a connection.
 	static CompositionTests()
 	{
-		Environment.SetEnvironmentVariable("ConnectionStrings__norse_identity", "Host=localhost;Database=norse_identity_composition_tests;Username=test;Password=test");
-		Environment.SetEnvironmentVariable("ConnectionStrings__norse_reference", "Host=localhost;Database=norse_reference_composition_tests;Username=test;Password=test");
+		Environment.SetEnvironmentVariable("ConnectionStrings__norse_identity",
+			"Host=localhost;Database=norse_identity_composition_tests;Username=test;Password=test");
+		Environment.SetEnvironmentVariable("ConnectionStrings__norse_reference",
+			"Host=localhost;Database=norse_reference_composition_tests;Username=test;Password=test");
 	}
 
 	[Fact]
@@ -60,7 +63,7 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 		[
 			"Norse.Infrastructure.Web.Server.Mediator.Grpc.UnhandledExceptionInterceptor",
 			"Norse.Infrastructure.Web.Server.Mediator.Grpc.PrincipalSeedingInterceptor",
-			"Norse.Infrastructure.Web.Server.Mediator.Grpc.OutcomeServerInterceptor",
+			"Norse.Infrastructure.Web.Server.Mediator.Grpc.OutcomeServerInterceptor"
 		]);
 	}
 
@@ -103,7 +106,8 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 	{
 		using var client = factory.CreateClient();
 
-		var response = await client.GetAsync(new Uri(HealthEndpoints.Liveness, UriKind.Relative), TestContext.Current.CancellationToken);
+		var response = await client.GetAsync(new Uri(HealthEndpoints.Liveness, UriKind.Relative),
+			TestContext.Current.CancellationToken);
 
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -121,7 +125,8 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory) : I
 			.GetRequiredService<EndpointDataSource>()
 			.Endpoints
 			.OfType<RouteEndpoint>()
-			.Where(static endpoint => endpoint.RoutePattern.RawText?.StartsWith("/grpc.health.", StringComparison.Ordinal) == true)
+			.Where(static endpoint =>
+				endpoint.RoutePattern.RawText?.StartsWith("/grpc.health.", StringComparison.Ordinal) == true)
 			.ToList();
 
 		endpoints.ShouldNotBeEmpty();

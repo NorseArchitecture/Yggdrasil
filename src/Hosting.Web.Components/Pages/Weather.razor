@@ -8,17 +8,19 @@
 
 @if (_forecasts is null)
 {
-    <p><em>Loading...</em></p>
+    <p>
+        <em>Loading...</em>
+    </p>
 }
 else
 {
     <FluentDataGrid Id="weathergrid" Items="@_forecasts" GridTemplateColumns="1fr 1fr 1fr 2fr" TGridItem="WeatherForecast">
-        <PropertyColumn Title="Date" Property="@(c => c!.Date)" Sortable="true" Align="DataGridCellAlignment.Start" />
+        <PropertyColumn Title="Date" Property="@(c => c!.Date)" Sortable="true" Align="DataGridCellAlignment.Start"/>
         <PropertyColumn Title="Temp. (C)" Property="@(c => c!.TemperatureC)" Sortable="true"
-                        Align="DataGridCellAlignment.Center" />
+                        Align="DataGridCellAlignment.Center"/>
         <PropertyColumn Title="Temp. (F)" Property="@(c => c!.TemperatureF)" Sortable="true"
-                        Align="DataGridCellAlignment.Center" />
-        <PropertyColumn Title="Summary" Property="@(c => c!.Summary)" Sortable="true" Align="DataGridCellAlignment.End" />
+                        Align="DataGridCellAlignment.Center"/>
+        <PropertyColumn Title="Summary" Property="@(c => c!.Summary)" Sortable="true" Align="DataGridCellAlignment.End"/>
     </FluentDataGrid>
 }
 
@@ -48,4 +50,5 @@ else
         public string? Summary { get; init; }
         public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
     }
+
 }

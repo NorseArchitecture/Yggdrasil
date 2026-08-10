@@ -4,21 +4,29 @@
 
 <FluentNav Id="main-menu" Width="260px">
     <FluentNavItem Href="/" Match="NavLinkMatch.All" IconRest="@(new Icons.Regular.Size20.Home())"
-                   IconActive="@(new Icons.Filled.Size20.Home())">Home</FluentNavItem>
+                   IconActive="@(new Icons.Filled.Size20.Home())">
+        Home
+    </FluentNavItem>
     <FluentNavCategory Title="Template">
         <FluentNavItem Href="counter" IconRest="@(new Icons.Regular.Size20.NumberSymbolSquare())"
-                       IconActive="@(new Icons.Filled.Size20.NumberSymbolSquare())">Counter</FluentNavItem>
+                       IconActive="@(new Icons.Filled.Size20.NumberSymbolSquare())">
+            Counter
+        </FluentNavItem>
         <FluentNavItem Href="weather" IconRest="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())"
-                       IconActive="@(new Icons.Filled.Size20.WeatherPartlyCloudyDay())">Weather</FluentNavItem>
+                       IconActive="@(new Icons.Filled.Size20.WeatherPartlyCloudyDay())">
+            Weather
+        </FluentNavItem>
         <FluentNavItem Href="auth" IconRest="@(new Icons.Regular.Size20.LockClosedKey())"
-                       IconActive="@(new Icons.Filled.Size20.LockClosedKey())">Auth Required</FluentNavItem>
+                       IconActive="@(new Icons.Filled.Size20.LockClosedKey())">
+            Auth Required
+        </FluentNavItem>
     </FluentNavCategory>
     <AuthorizeView>
         <Authorized>
             <FluentNavItem Href="Account/Manage">@context.User.Identity?.Name</FluentNavItem>
             <form action="Account/Logout" method="post">
-                <AntiforgeryToken />
-                <input type="hidden" name="ReturnUrl" value="@_currentUrl" />
+                <AntiforgeryToken/>
+                <input type="hidden" name="ReturnUrl" value="@_currentUrl"/>
                 <FluentButton Type="ButtonType.Submit" Style="width: 100%;">Logout</FluentButton>
             </form>
         </Authorized>
@@ -42,6 +50,9 @@
     }
 
     /// <inheritdoc />
-    public void Dispose() =>
+    public void Dispose()
+    {
         NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
 }

@@ -49,10 +49,11 @@ builder.Services
 // GrpcChannel.ForAddress(...).CreateCallInvoker() and run the Playwright smoke — the day it
 // dispatches, delete GrpcWebCallInvoker and this note.
 #pragma warning disable CA2000 // The invoker owns the HttpClient for the application's lifetime — WASM hosts never tear it down.
-GrpcWebCallInvoker norseInvoker = new(new HttpClient(new BrowserCredentialsHandler { InnerHandler = new HttpClientHandler() })
-{
-	BaseAddress = new Uri(builder.HostEnvironment.BaseAddress),
-});
+GrpcWebCallInvoker norseInvoker =
+	new(new HttpClient(new BrowserCredentialsHandler { InnerHandler = new HttpClientHandler() })
+	{
+		BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
+	});
 #pragma warning restore CA2000
 builder.Services.AddNorseGrpcClients(norseInvoker); // generated, Task 14
 

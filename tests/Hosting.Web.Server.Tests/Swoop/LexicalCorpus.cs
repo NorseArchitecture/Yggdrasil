@@ -8,14 +8,14 @@ using Microsoft.AspNetCore.TestHost;
 namespace Norse.Hosting.Web.Server.Tests.Swoop;
 
 /// <summary>
-/// The lexical corpus test (spec §15) — a shared accepted/rejected lexeme set per §7 scalar row,
-/// asserted identical across both text channels against the live <see cref="SwoopHostFixture.App"/>.
-/// Every case starts from a fully valid <see cref="TriProtocolSwoopTests"/>-shaped request and
-/// overrides exactly one field's raw wire text, so an accept/reject verdict is attributable to that one
-/// lexeme, never a side effect of a different field. Coverage: all 13 of 13 §7 rows, including the enum
-/// row (<see cref="Parity.ParityStatus"/>, live request-side as of Task 11) — governed names only
-/// (<c>active</c>/<c>inactive</c>); wrong case, unmapped tokens, and a bare number all reject identically
-/// on both channels.
+///     The lexical corpus test (spec §15) — a shared accepted/rejected lexeme set per §7 scalar row,
+///     asserted identical across both text channels against the live <see cref="SwoopHostFixture.App" />.
+///     Every case starts from a fully valid <see cref="TriProtocolSwoopTests" />-shaped request and
+///     overrides exactly one field's raw wire text, so an accept/reject verdict is attributable to that one
+///     lexeme, never a side effect of a different field. Coverage: all 13 of 13 §7 rows, including the enum
+///     row (<see cref="Parity.ParityStatus" />, live request-side as of Task 11) — governed names only
+///     (<c>active</c>/<c>inactive</c>); wrong case, unmapped tokens, and a bare number all reject identically
+///     on both channels.
 /// </summary>
 [Collection(SwoopCollection.Name)]
 public sealed class LexicalCorpus(SwoopHostFixture fixture)
@@ -45,7 +45,9 @@ public sealed class LexicalCorpus(SwoopHostFixture fixture)
 	{
 		JsonObject obj = [];
 		foreach (var (name, value, _) in _baseFields)
-			obj[name] = name == fieldName ? overrideValue : JsonNode.Parse(value.ToJsonString());
+			obj[name] = name == fieldName ?
+				overrideValue :
+				JsonNode.Parse(value.ToJsonString());
 		return obj.ToJsonString();
 	}
 
@@ -53,25 +55,34 @@ public sealed class LexicalCorpus(SwoopHostFixture fixture)
 	{
 		XElement root = new("parityRequest");
 		foreach (var (name, _, xml) in _baseFields)
-			root.SetAttributeValue(name, name == fieldName ? overrideValue : xml);
+			root.SetAttributeValue(name, name == fieldName ?
+				overrideValue :
+				xml);
 		return new XDocument(root).ToString();
 	}
 
 	async Task<HttpStatusCode> PostAsync(string body, string mediaType, CancellationToken cancellationToken)
 	{
 		using var client = fixture.App.GetTestClient();
-		using var request = new HttpRequestMessage(HttpMethod.Post, "/api/parity") { Content = new StringContent(body, Encoding.UTF8, mediaType) };
+		using var request =
+			new HttpRequestMessage(HttpMethod.Post, "/api/parity")
+			{
+				Content = new StringContent(body, Encoding.UTF8, mediaType)
+			};
 		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(mediaType));
 		using var response = await client.SendAsync(request, cancellationToken);
 		return response.StatusCode;
 	}
 
-	async Task AssertSameVerdictAsync(string fieldName, JsonNode jsonValue, string xmlValue, bool expectAccepted, CancellationToken cancellationToken)
+	async Task AssertSameVerdictAsync(string fieldName, JsonNode jsonValue, string xmlValue, bool expectAccepted,
+		CancellationToken cancellationToken)
 	{
 		var jsonStatus = await PostAsync(BuildJson(fieldName, jsonValue), "application/json", cancellationToken);
 		var xmlStatus = await PostAsync(BuildXml(fieldName, xmlValue), "application/xml", cancellationToken);
 
-		var expected = expectAccepted ? HttpStatusCode.OK : HttpStatusCode.BadRequest;
+		var expected = expectAccepted ?
+			HttpStatusCode.OK :
+			HttpStatusCode.BadRequest;
 		jsonStatus.ShouldBe(expected, $"JSON channel for field '{fieldName}' lexeme '{jsonValue}'");
 		xmlStatus.ShouldBe(expected, $"XML channel for field '{fieldName}' lexeme '{xmlValue}'");
 	}
@@ -149,8 +160,8 @@ public sealed class LexicalCorpus(SwoopHostFixture fixture)
 
 	[Theory]
 	[MemberData(nameof(AcceptedAndRejectedLexemes))]
-	async Task Shared_lexeme_verdict_is_identical_on_both_text_channels(string fieldName, JsonNode jsonValue, string xmlValue, bool expectAccepted)
-	{
-		await AssertSameVerdictAsync(fieldName, jsonValue, xmlValue, expectAccepted, TestContext.Current.CancellationToken);
-	}
+	async Task Shared_lexeme_verdict_is_identical_on_both_text_channels(string fieldName, JsonNode jsonValue,
+		string xmlValue, bool expectAccepted) =>
+		await AssertSameVerdictAsync(fieldName, jsonValue, xmlValue, expectAccepted,
+			TestContext.Current.CancellationToken);
 }

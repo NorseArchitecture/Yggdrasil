@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
+using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
@@ -23,16 +24,17 @@ using Norse.Reference.Data.EntityFramework.Migrations;
 using Norse.Reference.Data.EntityFramework.Migrations.PostgreSQL;
 using Norse.Reference.Web.Server;
 using ProtoBuf.Grpc.Client;
+using ProtoBuf.Meta;
 using Testcontainers.PostgreSql;
 
 namespace Norse.Hosting.Web.Server.Tests;
 
 /// <summary>
-/// A real Postgres container, migrated and seeded through the exact same contributors the migrations
-/// service runs (<see cref="NorseReferenceMigrationContributor"/>/<see cref="ReferenceDataSeedContributor"/>),
-/// standing behind a real <see cref="TestServer"/>/HTTP-2 gRPC round trip -- the "Heimdall spike"
-/// pattern the plan names, transplanted onto the well-and-wire read path: real DB, real wire, no
-/// hand-wired stub handler anywhere in this fixture.
+///     A real Postgres container, migrated and seeded through the exact same contributors the migrations
+///     service runs (<see cref="NorseReferenceMigrationContributor" />/<see cref="ReferenceDataSeedContributor" />),
+///     standing behind a real <see cref="TestServer" />/HTTP-2 gRPC round trip -- the "Heimdall spike"
+///     pattern the plan names, transplanted onto the well-and-wire read path: real DB, real wire, no
+///     hand-wired stub handler anywhere in this fixture.
 /// </summary>
 public sealed class CountryLookupPostgresFixture : IAsyncLifetime
 {
@@ -62,7 +64,8 @@ public sealed class CountryLookupPostgresFixture : IAsyncLifetime
 }
 
 [CollectionDefinition("CountryLookupPostgres")]
-[SuppressMessage("Design", "CA1711:Identifiers should not have incorrect suffix", Justification = "xUnit collection fixture naming convention")]
+[SuppressMessage("Design", "CA1711:Identifiers should not have incorrect suffix",
+	Justification = "xUnit collection fixture naming convention")]
 public sealed class CountryLookupPostgresCollection : ICollectionFixture<CountryLookupPostgresFixture>;
 
 [Collection("CountryLookupPostgres")]
@@ -89,7 +92,8 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 				webHost.ConfigureServices(services =>
 				{
 					services.AddLogging();
-					services.AddAuthorizationBuilder().AddPolicy(ReferencePolicies.Public, p => p.RequireAssertion(_ => true));
+					services.AddAuthorizationBuilder()
+						.AddPolicy(ReferencePolicies.Public, p => p.RequireAssertion(_ => true));
 					services.AddNorsePipeline();
 					services.AddNorseCodeFirstGrpc();
 					services.AddRouting();
@@ -120,7 +124,8 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 
 	static IReferenceService CreateWireClient(IHost host)
 	{
-		var channel = GrpcChannel.ForAddress("http://localhost", new GrpcChannelOptions { HttpHandler = host.GetTestServer().CreateHandler() });
+		var channel = GrpcChannel.ForAddress("http://localhost",
+			new GrpcChannelOptions { HttpHandler = host.GetTestServer().CreateHandler() });
 		var invoker = channel.Intercept(new OutcomeClientInterceptor());
 		return GrpcClientFactory.CreateGrpcService<IReferenceService>(invoker);
 	}
@@ -137,7 +142,8 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 
 		var outcome = await CreateWireClient(host).GetCountry(new() { CodeInput = code }, cancellationToken);
 
-		var response = outcome.Match(static r => r, static p => throw new InvalidOperationException(p.Category.ToString()));
+		var response = outcome.Match(static r => r,
+			static p => throw new InvalidOperationException(p.Category.ToString()));
 
 		// Recompute client-side from the frozen name form -- Guid equality AND canonical string
 		// equality (byte-order settled law: this assertion is its only mention, per spec §1).
@@ -147,27 +153,85 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 	}
 
 	[Fact]
-	async Task Garbage_maps_to_invalid_argument_on_the_wire()
+	async Task Garbage_is_illegal_to_write_and_faults_client_side()
 	{
 		var cancellationToken = TestContext.Current.CancellationToken;
 		using var host = await CreateHostAsync(fixture.ConnectionString, cancellationToken);
 
-		// OutcomeClientInterceptor decodes the InvalidArgument RpcException (ToRpcException's status
-		// mapping for ErrorCategory.Validation) back into a normal Outcome<CountryResponse>.Err by
-		// design -- GetCountry returns Outcome<T> on the wire, so a Failed outcome never reaches the
-		// caller as a thrown RpcException. Asserting the decoded Problem, not a thrown exception.
+		// The wire-stamped request law (spec 2026-08-08-wire-stamped-request-scalars) plus the
+		// success-unwrap law (../Glitnir/docs/Platform/specs/2026-08-02-result-success-unwrap-on-serialize-design.md):
+		// a failed Result<T> is illegal to write, so "banana" never leaves this process --
+		// ResultEnumSerializer<IsoCountryCode>.Write throws inside the client marshaller, the call
+		// surfaces as a trailer-less RpcException, and DecodeProblem degrades it to the bare Fault.
+		// The null CorrelationId is the proof the fault is client-minted: every server-side Fault
+		// (ExceptionTranslationBehavior, UnhandledExceptionInterceptor) carries one by construction.
 		var outcome = await CreateWireClient(host).GetCountry(new() { CodeInput = "banana" }, cancellationToken);
 
 		outcome.TryGetValue(out Failed failed).ShouldBeTrue();
+		failed.Problem.Category.ShouldBe(ErrorCategory.Fault);
+		failed.Problem.CorrelationId.ShouldBeNull();
+		failed.Problem.Errors.ShouldBeEmpty();
+	}
+
+	[Fact]
+	async Task An_undefined_varint_maps_to_invalid_argument_on_the_wire()
+	{
+		var cancellationToken = TestContext.Current.CancellationToken;
+		using var host = await CreateHostAsync(fixture.ConnectionString, cancellationToken);
+
+		// The server's own verdict on the binary channel, which no typed client can author (a failed
+		// stamp and an undefined success are both illegal to write) -- hand-built wire bytes, the same
+		// surviving raw-bytes idiom as TriProtocolSwoopTests.EchoRawAsync: field 1 as varint 9999, a
+		// value no M49 member defines. ResultEnumSerializer<IsoCountryCode>.Read stamps
+		// Failure(Malformed, "9999") -- deserialization is the parse event; the server holds its own
+		// verdict -- and the handler answers the typed validation failure, echoing the failed input.
+		var outcome = await GetCountryRawAsync(host, [0x08, 0x8F, 0x4E], cancellationToken);
+
+		outcome.TryGetValue(out Failed failed).ShouldBeTrue();
 		failed.Problem.Category.ShouldBe(ErrorCategory.Validation);
-		failed.Problem.Errors["code"].ShouldContain("banana");
+		failed.Problem.Errors["code"].ShouldContain("9999");
+	}
+
+	/// <summary>
+	///     Invokes <see cref="IReferenceService.GetCountry" /> with hand-built wire bytes for the request,
+	///     decoding <see cref="Outcome{T}" /> failures via <see cref="OutcomeClientInterceptor" /> exactly as
+	///     <see cref="CreateWireClient" />'s type-safe proxy would -- the raw-bytes idiom
+	///     <c>TriProtocolSwoopTests.EchoRawAsync</c> established for wire states no client proxy can express
+	///     by construction.
+	/// </summary>
+	static async Task<Outcome<CountryResponse>> GetCountryRawAsync(IHost host, byte[] requestBytes,
+		CancellationToken cancellationToken)
+	{
+		var channel = GrpcChannel.ForAddress("http://localhost",
+			new GrpcChannelOptions { HttpHandler = host.GetTestServer().CreateHandler() });
+		var invoker = channel.Intercept(new OutcomeClientInterceptor());
+
+		Method<byte[], Outcome<CountryResponse>> method = new(
+			MethodType.Unary,
+			serviceName: "grpc.reference.v1.ReferenceService",
+			name: "GetCountry",
+			requestMarshaller: Marshallers.Create<byte[]>(static bytes => bytes, static bytes => bytes),
+			responseMarshaller: Marshallers.Create<Outcome<CountryResponse>>(
+				serializer: static _ =>
+					throw new NotSupportedException(
+						$"{nameof(GetCountryRawAsync)} never serializes a response — this marshaller direction is client-inbound only."),
+				deserializer: static bytes =>
+				{
+					using MemoryStream stream = new(bytes);
+					return (Outcome<CountryResponse>)RuntimeTypeModel.Default.Deserialize(stream, null,
+						typeof(Outcome<CountryResponse>))!;
+				}));
+
+		using var call = invoker.AsyncUnaryCall(method, host: null,
+			new CallOptions(cancellationToken: cancellationToken), requestBytes);
+		return await call.ResponseAsync;
 	}
 }
 
 /// <summary>
-/// Overrides <c>AddNorsePipeline()</c>'s own <see cref="IPrincipalAccessor"/> registration (DI resolves
-/// the last registration for a single-service ask) so <c>AuthorizationBehavior</c> always has a
-/// principal to ask about -- mirrors <c>MediatorParityTests.ReferenceTestPrincipalAccessor</c> exactly.
+///     Overrides <c>AddNorsePipeline()</c>'s own <see cref="IPrincipalAccessor" /> registration (DI resolves
+///     the last registration for a single-service ask) so <c>AuthorizationBehavior</c> always has a
+///     principal to ask about -- mirrors <c>MediatorParityTests.ReferenceTestPrincipalAccessor</c> exactly.
 /// </summary>
 sealed class ReferenceTestPrincipalAccessor(ClaimsPrincipal principal) : IPrincipalAccessor
 {
