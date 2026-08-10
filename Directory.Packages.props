@@ -17,7 +17,7 @@
 		<BlazingStoryVersion>1.0.0-preview.91</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
 		<DotNetVersion>11.0.0-preview.6.26359.118</DotNetVersion>
-		<FluentUIVersion>5.0.0-rc.4-26180.1</FluentUIVersion>
+		<FluentUIVersion>5.0.0-rc.5-26219.1</FluentUIVersion>
 		<GrpcVersion>2.83.0</GrpcVersion>
 	</PropertyGroup>
 	<ItemGroup>
@@ -38,6 +38,7 @@
 		<PackageVersion Include="protobuf-net" Version="3.2.56" />
 		<PackageVersion Include="protobuf-net.Grpc" Version="1.2.5" />
 		<PackageVersion Include="protobuf-net.Grpc.AspNetCore.Reflection" Version="1.2.2" />
+		<PackageVersion Include="Scalar.AspNetCore" Version="2.16.18" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Architecture.Analyzers" Version="$(SvartalfheimVersion)" />
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
@@ -74,13 +75,15 @@
 		<PackageVersion Include="Norse.Identity.Migrations.SqlServer" Version="$(HiminbjorgVersion)" />
 		<PackageVersion Include="Norse.Identity.Web.Server" Version="$(HiminbjorgVersion)" />
 		<!-- Mimisbrunnr -->
+		<PackageVersion Include="Norse.Reference.Data.Contracts" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.EntityFramework" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.EntityFramework.Migrations" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.EntityFramework.Migrations.PostgreSQL" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.EntityFramework.Migrations.SqlServer" Version="$(MimisbrunnrVersion)" />
 		<PackageVersion Include="Norse.Reference.Data.Namespaces" Version="$(MimisbrunnrVersion)" />
-		<PackageVersion Include="Norse.Reference.Data.Primitives" Version="$(MimisbrunnrVersion)" />
 		<!-- Mimir -->
+		<PackageVersion Include="Norse.Reference.Components" Version="$(MimirVersion)" />
+		<PackageVersion Include="Norse.Reference.Components.FluentUI" Version="$(MimirVersion)" />
 		<PackageVersion Include="Norse.Reference.Contracts" Version="$(MimirVersion)" />
 		<PackageVersion Include="Norse.Reference.Web.Server" Version="$(MimirVersion)" />
 		<!-- Heimdall -->

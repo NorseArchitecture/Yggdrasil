@@ -37,9 +37,6 @@
 		<NorseRef Include="Infrastructure.Web.Server" Generator="true">
 			<Repo>Midgard</Repo>
 		</NorseRef>
-		<NorseGeneratorRef Include="Infrastructure.Web.Server.Xml.Generator">
-			<Repo>Midgard</Repo>
-		</NorseGeneratorRef>
 		<NorseRef Include="Reference.Data.EntityFramework">
 			<Repo>Mimisbrunnr</Repo>
 		</NorseRef>
@@ -52,6 +49,7 @@
 		     plain protobuf-net. -->
 		<PackageReference Include="protobuf-net" />
 		<PackageReference Include="protobuf-net.Grpc.AspNetCore.Reflection" />
+		<PackageReference Include="Scalar.AspNetCore" />
 		<ProjectReference Include="..\Hosting.Web.Client\Hosting.Web.Client.csproj" />
 	</ItemGroup>
 </Project>

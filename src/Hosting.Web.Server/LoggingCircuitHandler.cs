@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Components.Server.Circuits;
 namespace Norse.Hosting.Web.Server;
 
 /// <summary>
-/// The circuit's lifecycle net (spec §2.9): logs open/close/connection-down with a correlation id in
-/// the platform's vocabulary, so a torn circuit is a traceable event, not a silent reconnect modal.
+///     The circuit's lifecycle net (spec §2.9): logs open/close/connection-down with a correlation id in
+///     the platform's vocabulary, so a torn circuit is a traceable event, not a silent reconnect modal.
 /// </summary>
 sealed partial class LoggingCircuitHandler(ILogger<LoggingCircuitHandler> logger) : CircuitHandler
 {

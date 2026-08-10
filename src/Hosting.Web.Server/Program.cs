@@ -6,6 +6,7 @@ using Norse.Hosting.Web.Components;
 using Norse.Hosting.Web.Server;
 using Norse.Hosting.Web.Server.Components;
 using Norse.Hosting.Web.Server.NorseXmlShapes;
+using Norse.Hosting.Web.Server.OpenApi;
 using Norse.Identity.Web.Server;
 using Norse.Infrastructure.Backend.Keys;
 using Norse.Infrastructure.Backend.Serialization;
@@ -22,6 +23,7 @@ using Norse.Reference;
 using Norse.Reference.Data.EntityFramework;
 using Norse.Reference.Web.Server;
 using ProtoBuf.Grpc.Server;
+using Scalar.AspNetCore;
 
 Console.Title = "Norse Web Server";
 var builder = WebApplication.CreateBuilder(args);
@@ -89,7 +91,10 @@ builder
 // for a full release before the platform's own audit caught it — this is the line where that mistake
 // does not repeat for the REST fold and the two OpenAPI union-unwrap transformers (spec §10.4).
 builder.Services
-	.AddControllers()
+	// No silent fallbacks on the negotiation seam: an Accept header naming neither JSON nor XML gets
+	// an honest 406, never the first formatter's best guess. (MVC-only — the gRPC leg negotiates
+	// nothing; protobuf rides its own routes.)
+	.AddControllers(options => options.ReturnHttpNotAcceptable = true)
 	.AddNorseJson(NorseEnumNameRegistration.Build())
 	.AddNorseXml(XmlCaseStyle.CamelCase, NorseXmlShapeRegistration.Build());
 builder.Services.AddOpenApi(options =>
@@ -98,6 +103,7 @@ builder.Services.AddOpenApi(options =>
 	options.AddSchemaTransformer<EnumSchemaTransformer>();
 	options.AddSchemaTransformer<XmlMetadataTransformer>();
 	options.AddDocumentTransformer<UnionLeakGuardTransformer>();
+	options.AddOperationTransformer<StandardResponsesTransformer>();
 });
 
 var app = builder.Build();
@@ -112,6 +118,7 @@ else
 		.UseExceptionHandler("/Error", createScopeForErrors: true)
 		.UseHsts();
 }
+
 app
 	.UseHttpsRedirection()
 	.UseAuthentication()
@@ -141,6 +148,9 @@ app.MapDeferredSignIn();
 if (app.Environment.IsDevelopment())
 {
 	app.MapCodeFirstGrpcReflectionService();
+	// The human-readable face of MapOpenApi's document -- dev-only, same posture as gRPC reflection:
+	// discovery surfaces are for developers at the bench, never the deployed footprint.
+	app.MapScalarApiReference();
 }
 
 await app

@@ -3,11 +3,11 @@
 
 <FluentLayout>
     <FluentLayoutItem Area="LayoutArea.Header">
-        <FluentLayoutHamburger />
+        <FluentLayoutHamburger/>
         Norse Architecture
     </FluentLayoutItem>
     <FluentLayoutItem Area="LayoutArea.Navigation">
-        <NavMenu />
+        <NavMenu/>
     </FluentLayoutItem>
     <FluentLayoutItem Area="LayoutArea.Content" Class="main">
         <div class="content">
@@ -28,26 +28,27 @@
     </FluentLayoutItem>
 </FluentLayout>
 
-<FluentProviders />
+<FluentProviders/>
 
 @code {
-	ErrorBoundary? _errorBoundary;
-	string _platformVersion = GetInformationalVersion();
+    ErrorBoundary? _errorBoundary;
+    readonly string _platformVersion = GetInformationalVersion();
 
-	// The deployed host's version, not this RCL's — Assembly.GetExecutingAssembly() would report
-	// Hosting.Web.Components' own version, which can drift from the host's once packages float
-	// independently. Falls back to this assembly only when the entry assembly is null (e.g. bUnit).
-	static string GetInformationalVersion()
-	{
-		var assembly = Assembly.GetEntryAssembly() ?? typeof(MainLayout).Assembly;
-		var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+    // The deployed host's version, not this RCL's — Assembly.GetExecutingAssembly() would report
+    // Hosting.Web.Components' own version, which can drift from the host's once packages float
+    // independently. Falls back to this assembly only when the entry assembly is null (e.g. bUnit).
+    static string GetInformationalVersion()
+    {
+        var assembly = Assembly.GetEntryAssembly() ?? typeof(MainLayout).Assembly;
+        var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
-		if (string.IsNullOrEmpty(informationalVersion))
-			return "unknown";
+        if (string.IsNullOrEmpty(informationalVersion))
+            return "unknown";
 
-		var buildMetadataIndex = informationalVersion.IndexOf('+');
-		return buildMetadataIndex < 0 ? informationalVersion : informationalVersion[..buildMetadataIndex];
-	}
+        var buildMetadataIndex = informationalVersion.IndexOf('+');
+        return buildMetadataIndex < 0 ? informationalVersion : informationalVersion[..buildMetadataIndex];
+    }
+
 }
 
 <div id="blazor-error-ui" data-nosnippet>

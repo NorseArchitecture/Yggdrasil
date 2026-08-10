@@ -6,16 +6,16 @@ using Norse.Hosting.Web.Components;
 namespace Norse.Hosting.Web.Client.Tests;
 
 /// <summary>
-/// Task 14's proof-by-adding-one, a permanent regression lock: <c>DiscoveryFixture</c> is a minimal
-/// RCL referenced only here, never by a host itself, carrying exactly one <see cref="IValidator{T}"/>
-/// implementation and one <c>@page</c>-routed component. This asserts the generated client-side
-/// discovery (Midgard's <c>Infrastructure.Web.Client.Generator</c>, re-run over THIS project's own
-/// compilation per the csproj's <c>NorseGeneratorRef</c> whitelist) registers the fixture's validator
-/// and includes the fixture's assembly in <see cref="RoutesAdditionalAssemblies"/> — proving
-/// "adding a validator/component assembly requires zero host registration edits" against a real,
-/// separately compiled consumer, not just the two hosts the generator was written for. Exactly the
-/// cross-compilation behavior a snapshot test of the emitter's output (Midgard's own
-/// <c>ClientComponentRegistrationEmitterTests</c>) can't catch.
+///     Task 14's proof-by-adding-one, a permanent regression lock: <c>DiscoveryFixture</c> is a minimal
+///     RCL referenced only here, never by a host itself, carrying exactly one <see cref="IValidator{T}" />
+///     implementation and one <c>@page</c>-routed component. This asserts the generated client-side
+///     discovery (Midgard's <c>Infrastructure.Web.Client.Generator</c>, re-run over THIS project's own
+///     compilation per the csproj's <c>NorseGeneratorRef</c> whitelist) registers the fixture's validator
+///     and includes the fixture's assembly in <see cref="RoutesAdditionalAssemblies" /> — proving
+///     "adding a validator/component assembly requires zero host registration edits" against a real,
+///     separately compiled consumer, not just the two hosts the generator was written for. Exactly the
+///     cross-compilation behavior a snapshot test of the emitter's output (Midgard's own
+///     <c>ClientComponentRegistrationEmitterTests</c>) can't catch.
 /// </summary>
 public sealed class DiscoveryFixtureCompositionTests
 {
@@ -37,7 +37,7 @@ public sealed class DiscoveryFixtureCompositionTests
 		// the rebind). The point here is deliberately testing THIS project's own freshly generated copy
 		// (the proof-by-adding-one is about a consumer other than the two hosts), so the qualification
 		// exists to pin exactly which copy is under test, not to avoid a compile error.
-		Norse.Hosting.Web.Client.Tests.NorseClientComponentRegistration.AddNorseClientComponents(services);
+		services.AddNorseClientComponents();
 
 		using var provider = services.BuildServiceProvider();
 		var validator = provider.GetService<IValidator<FixtureRequest>>();

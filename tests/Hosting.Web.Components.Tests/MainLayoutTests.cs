@@ -1,5 +1,6 @@
 using System.Reflection;
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Norse.Hosting.Web.Components.Layout;
 
@@ -13,6 +14,10 @@ public sealed class MainLayoutTests : BunitContext
 		JSInterop.Mode = JSRuntimeMode.Loose;
 		// MainLayout renders NavMenu, whose AuthorizeView needs a cascading auth state.
 		AddAuthorization().SetNotAuthorized();
+		// FluentUI v5 rc5 components read RendererInfo, which bUnit leaves unset by default -- without
+		// this, every render throws MissingRendererInfoException before any assertion runs. Touching
+		// Renderer seals the service collection, so this must stay the LAST line of setup.
+		Renderer.SetRendererInfo(new RendererInfo("Server", isInteractive: true));
 	}
 
 	[Fact]
@@ -38,12 +43,15 @@ public sealed class MainLayoutTests : BunitContext
 	static string ExpectedInformationalVersion()
 	{
 		var assembly = Assembly.GetEntryAssembly() ?? typeof(MainLayout).Assembly;
-		var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+		var informationalVersion =
+			assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
 		if (string.IsNullOrEmpty(informationalVersion))
 			return "unknown";
 
 		var buildMetadataIndex = informationalVersion.IndexOf('+');
-		return buildMetadataIndex < 0 ? informationalVersion : informationalVersion[..buildMetadataIndex];
+		return buildMetadataIndex < 0 ?
+			informationalVersion :
+			informationalVersion[..buildMetadataIndex];
 	}
 }

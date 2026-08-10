@@ -3,7 +3,8 @@ using Norse.Infrastructure.ServiceDefaults.AspNet;
 
 namespace Norse.Hosting.Stories.Server.Tests;
 
-public sealed class StoriesServerTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public sealed class StoriesServerTests(WebApplicationFactory<Program> factory)
+	: IClassFixture<WebApplicationFactory<Program>>
 {
 	readonly HttpClient _client = factory.CreateClient();
 
@@ -20,7 +21,8 @@ public sealed class StoriesServerTests(WebApplicationFactory<Program> factory) :
 	[Fact]
 	async Task Deep_client_route_falls_back_to_the_app_shell()
 	{
-		var response = await _client.GetAsync(new Uri("/some/deep/client/route", UriKind.Relative), TestContext.Current.CancellationToken);
+		var response = await _client.GetAsync(new Uri("/some/deep/client/route", UriKind.Relative),
+			TestContext.Current.CancellationToken);
 
 		response.EnsureSuccessStatusCode();
 		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);

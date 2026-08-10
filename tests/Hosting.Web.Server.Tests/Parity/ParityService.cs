@@ -6,32 +6,35 @@ using Norse.Infrastructure.Web.Server.Validation;
 
 namespace Norse.Hosting.Web.Server.Tests.Parity;
 
-/// <summary>The permissive policy every mediator request in this swoop fixture carries — mirrors <c>AuthNPolicies.Public</c>/<c>ReferencePolicies.Public</c>.</summary>
+/// <summary>
+///     The permissive policy every mediator request in this swoop fixture carries — mirrors
+///     <c>AuthNPolicies.Public</c>/<c>ReferencePolicies.Public</c>.
+/// </summary>
 static class ParityPolicies
 {
 	public const string Public = "Parity.Public";
 }
 
 /// <summary>
-/// The mediator identity <see cref="ParityService.EchoAsync"/> hydrates <see cref="ParityRequest"/>
-/// into and sends — the swoop's own mirror of Himinbjörg's real <c>LoginCommand</c>. Wire paths in the
-/// <c>.OverridePropertyName(...)</c> calls below (<see cref="ParityRequestValidator"/>) must match this command's
-/// wrapped request exactly, since <c>ValidationBehavior</c> groups failures by
-/// <c>ValidationFailure.PropertyName</c> — the only way JSON's failure paths land on the same
-/// <c>{root}/@{attribute}</c> grammar XML's formatter produces natively (spec §11.2).
+///     The mediator identity <see cref="ParityService.EchoAsync" /> hydrates <see cref="ParityRequest" />
+///     into and sends — the swoop's own mirror of Himinbjörg's real <c>LoginCommand</c>. Wire paths in the
+///     <c>.OverridePropertyName(...)</c> calls below (<see cref="ParityRequestValidator" />) must match this command's
+///     wrapped request exactly, since <c>ValidationBehavior</c> groups failures by
+///     <c>ValidationFailure.PropertyName</c> — the only way JSON's failure paths land on the same
+///     <c>{root}/@{attribute}</c> grammar XML's formatter produces natively (spec §11.2).
 /// </summary>
 [Authorize(Policy = ParityPolicies.Public)]
 sealed record EchoParityCommand(ParityRequest Request) : CommandRequest<ParityRequest, ParityReport>(Request);
 
 /// <summary>
-/// Validates every <see cref="ParityRequest"/> scalar via <see cref="ResultRules"/> — the only place a
-/// malformed/missing scalar on the JSON channel ever becomes a 400 (Task 13 research finding: unlike
-/// XML, STJ's <c>Result&lt;T&gt;</c> converter never throws and never touches <c>ModelState</c>; a
-/// captured <c>Failure</c> rides silently into the handler as ordinary data absent this validator).
-/// <c>.OverridePropertyName(...)</c> on every rule pins <c>ValidationFailure.PropertyName</c> to the exact wire
-/// path <c>AddNorseXml(XmlCaseStyle.CamelCase, ...)</c> would have produced for the same failure, so
-/// JSON and XML render byte-identical <c>errors</c> paths — proven, not assumed, by
-/// <c>TriProtocolSwoopTests</c>.
+///     Validates every <see cref="ParityRequest" /> scalar via <see cref="ResultRules" /> — the only place a
+///     malformed/missing scalar on the JSON channel ever becomes a 400 (Task 13 research finding: unlike
+///     XML, STJ's <c>Result&lt;T&gt;</c> converter never throws and never touches <c>ModelState</c>; a
+///     captured <c>Failure</c> rides silently into the handler as ordinary data absent this validator).
+///     <c>.OverridePropertyName(...)</c> on every rule pins <c>ValidationFailure.PropertyName</c> to the exact wire
+///     path <c>AddNorseXml(XmlCaseStyle.CamelCase, ...)</c> would have produced for the same failure, so
+///     JSON and XML render byte-identical <c>errors</c> paths — proven, not assumed, by
+///     <c>TriProtocolSwoopTests</c>.
 /// </summary>
 sealed class ParityRequestValidator : AbstractValidator<ParityRequest>
 {
@@ -55,14 +58,15 @@ sealed class ParityRequestValidator : AbstractValidator<ParityRequest>
 }
 
 /// <summary>
-/// Turns every accumulated <see cref="ParityRequest"/> scalar into a <see cref="ParityReport"/> field —
-/// only ever reached once <see cref="ParityRequestValidator"/> has already proven every member
-/// <see cref="Norse.Primitives.Success{T}"/>, so the <c>Match</c> failure branch below is a genuine
-/// "this should be unreachable" guard, not a real code path.
+///     Turns every accumulated <see cref="ParityRequest" /> scalar into a <see cref="ParityReport" /> field —
+///     only ever reached once <see cref="ParityRequestValidator" /> has already proven every member
+///     <see cref="Norse.Primitives.Success{T}" />, so the <c>Match</c> failure branch below is a genuine
+///     "this should be unreachable" guard, not a real code path.
 /// </summary>
 sealed class EchoParityHandler : IRequestHandler<EchoParityCommand, ParityReport>
 {
-	public ValueTask<Outcome<ParityReport>> Handle(EchoParityCommand request, CancellationToken cancellationToken = default)
+	public ValueTask<Outcome<ParityReport>> Handle(EchoParityCommand request,
+		CancellationToken cancellationToken = default)
 	{
 		var wire = request.Request;
 		ParityReport report = new()
@@ -92,14 +96,15 @@ sealed class EchoParityHandler : IRequestHandler<EchoParityCommand, ParityReport
 }
 
 /// <summary>
-/// The tri-protocol swoop's gRPC-service-shaped implementation — same hydrate-and-send shape as
-/// Himinbjörg's real <c>AuthenticationService.Login</c>: wraps the wire request in
-/// <see cref="EchoParityCommand"/> and runs it through the real <see cref="ISender"/> pipeline
-/// (telemetry, exception translation, authorization, validation), never a stub.
+///     The tri-protocol swoop's gRPC-service-shaped implementation — same hydrate-and-send shape as
+///     Himinbjörg's real <c>AuthenticationService.Login</c>: wraps the wire request in
+///     <see cref="EchoParityCommand" /> and runs it through the real <see cref="ISender" /> pipeline
+///     (telemetry, exception translation, authorization, validation), never a stub.
 /// </summary>
 sealed class ParityService(ISender sender) : IParityService
 {
 	[Authorize(Policy = ParityPolicies.Public)]
-	public ValueTask<Outcome<ParityReport>> EchoAsync(ParityRequest request, CancellationToken cancellationToken = default) =>
+	public ValueTask<Outcome<ParityReport>> EchoAsync(ParityRequest request,
+		CancellationToken cancellationToken = default) =>
 		sender.Send(new EchoParityCommand(request), cancellationToken);
 }
