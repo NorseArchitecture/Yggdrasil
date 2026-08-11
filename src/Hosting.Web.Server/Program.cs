@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Norse.Abstractions.Components.Primitives;
+using Norse.AuthN.Components;
 using Norse.AuthN.Services;
 using Norse.Hosting.Web.Components;
 using Norse.Hosting.Web.Server;
@@ -43,6 +44,7 @@ builder.Services
 // MapRazorComponents<App>() below via the generated AddNorseComponentAssemblies().
 builder.Services
 	.AddNorseClientComponents()
+	.AddNorseSessionTransition()
 	.AddSingleton<IAppShellLayout, AppShellLayout>()
 	.AddNorseFluentUiTheme()
 	.AddCascadingAuthenticationState()
