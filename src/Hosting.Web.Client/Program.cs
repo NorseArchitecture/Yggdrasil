@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Norse.AuthN.Components;
 using Norse.Hosting.Web.Client;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.Web.Client.Grpc;
@@ -33,7 +34,8 @@ builder.Services
 	.AddCascadingAuthenticationState()
 	.AddAuthenticationStateDeserialization()
 	.AddNorseFluentUiTheme()
-	.AddNorseClientComponents();
+	.AddNorseClientComponents()
+	.AddNorseSessionTransition();
 
 // gRPC-Web rides ordinary HTTP/1.1 — no HTTP/2-specific configuration needed in the browser.
 // One invoker, not one per service: every Norse gRPC service this client talks to (IAuthenticationService,

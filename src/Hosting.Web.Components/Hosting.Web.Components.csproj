@@ -7,6 +7,9 @@
 		<NorseRef Include="Abstractions.Components">
 			<Repo>Asgard</Repo>
 		</NorseRef>
+		<NorseRef Include="AuthN.Components">
+			<Repo>Heimdall</Repo>
+		</NorseRef>
 		<NorseRef Include="Reference.Components.FluentUI">
 			<Repo>Mimir</Repo>
 		</NorseRef>
