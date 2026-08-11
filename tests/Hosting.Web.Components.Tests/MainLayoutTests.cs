@@ -17,7 +17,17 @@ public sealed class MainLayoutTests : BunitContext
 		// FluentUI v5 rc5 components read RendererInfo, which bUnit leaves unset by default -- without
 		// this, every render throws MissingRendererInfoException before any assertion runs. Touching
 		// Renderer seals the service collection, so this must stay the LAST line of setup.
-		Renderer.SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+		Renderer.SetRendererInfo(new RendererInfo("WebAssembly", isInteractive: true));
+	}
+
+	[Fact]
+	void Probe_exposes_renderer_name_and_an_explicit_lowercase_interactivity_value()
+	{
+		var component = Render<MainLayout>();
+		var marker = component.Find("[data-norse-renderer][data-norse-interactive]");
+
+		marker.GetAttribute("data-norse-renderer").ShouldBe("WebAssembly");
+		marker.GetAttribute("data-norse-interactive").ShouldBe("true");
 	}
 
 	[Fact]
