@@ -16,6 +16,7 @@ env:
 jobs:
   browser-runtime:
     runs-on: ubuntu-latest
+    # Deliberately non-additive: phase ceilings classify hangs; this is the hard ratchet for the whole gate.
     timeout-minutes: 10
     steps:
       - name: Checkout

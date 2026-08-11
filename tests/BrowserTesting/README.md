@@ -2,7 +2,7 @@
 
 The Yggdrasil browser-runtime workflow is a released-package gate. Every build and test command sets `-p:UseProjectReferences=false`, which resolves the standalone Yggdrasil NuGet graph rather than consuming sibling realm projects from the Bifrost filesystem. The Release build produces the `playwright.ps1` used to install the matching browser runtime, so build, browser installation, and test execution remain coupled to the same package graph.
 
-The workflow has a ten-minute job ceiling and separate five-minute ceilings for the Build browser hosts, Install Chromium, and Test browser hosts diagnostic legs. It runs Chromium only. Firefox and WebKit are intentionally deferred.
+The workflow has a ten-minute hard ceiling and separate five-minute ceilings for the Build browser hosts, Install Chromium, and Test browser hosts diagnostic legs. Those phase ceilings are deliberately non-additive: they identify which leg hung, while the job ceiling remains the platform's ratchet for the complete gate. The Test browser hosts ceiling covers both sequential smoke commands together; it is not a five-minute allowance for each host. It runs Chromium only. Firefox and WebKit are intentionally deferred.
 
 ## Local equivalent
 
