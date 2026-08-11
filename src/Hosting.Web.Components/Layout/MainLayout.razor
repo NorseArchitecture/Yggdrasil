@@ -1,6 +1,9 @@
 @using System.Reflection
 @inherits LayoutComponentBase
 
+<div style="display: contents;"
+	 data-norse-renderer="@RendererInfo.Name"
+	 data-norse-interactive="@RendererInfo.IsInteractive.ToString().ToLowerInvariant()">
 <FluentLayout>
     <FluentLayoutItem Area="LayoutArea.Header">
         <FluentLayoutHamburger/>
@@ -29,6 +32,7 @@
 </FluentLayout>
 
 <FluentProviders/>
+</div>
 
 @code {
     ErrorBoundary? _errorBoundary;

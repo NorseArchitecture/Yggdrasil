@@ -1,0 +1,62 @@
+name: Browser Runtime
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  DOTNET_VERSION: "11.0.x"
+  DOTNET_QUALITY: "preview"
+
+jobs:
+  browser-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+
+      - name: Build browser hosts
+        timeout-minutes: 5
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+        run: |
+          dotnet build tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false
+          dotnet build tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj -c Release -p:UseProjectReferences=false
+
+      - name: Install Chromium
+        timeout-minutes: 5
+        shell: pwsh
+        run: |
+          $script = Get-ChildItem -Path . -Filter playwright.ps1 -Recurse |
+            Where-Object FullName -Match '[\\/]bin[\\/]Release[\\/]' |
+            Select-Object -First 1
+          if ($null -eq $script) { throw 'Release build produced no playwright.ps1.' }
+          & $script.FullName install --with-deps chromium
+          if ($LASTEXITCODE -ne 0) { throw "Playwright install exited $LASTEXITCODE." }
+
+      - name: Test browser hosts
+        timeout-minutes: 5
+        run: |
+          dotnet test tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.WebServerBrowserRuntimeSmokeTests"
+          dotnet test tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.StoriesBrowserRuntimeSmokeTests"
+
+      - name: Upload Playwright failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-failure-evidence
+          path: '**/TestResults/playwright/**'
+          if-no-files-found: ignore
+          retention-days: 7

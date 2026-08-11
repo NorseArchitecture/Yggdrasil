@@ -24,21 +24,11 @@ namespace Norse.Hosting.Web.Server.Tests;
 public sealed class CompositionTests(WebApplicationFactory<Program> factory)
 	: IClassFixture<WebApplicationFactory<Program>>
 {
-	// Program.cs reads builder.Configuration.GetConnectionString(...) synchronously, before
-	// builder.Build() runs -- earlier than WebApplicationFactory's WithWebHostBuilder/
-	// ConfigureAppConfiguration hooks apply (those decorate the deferred host builder, which only
-	// takes effect at Build()). WebApplicationBuilder.CreateBuilder(args) does include environment
-	// variables among its default sources from the very start, so a process env var set before the
-	// factory's first host boot is the one override Program.cs's own pre-Build() read can see.
-	// The real norse_identity connection string comes from Aspire at runtime; this only needs to be
-	// syntactically valid Npgsql for AddNorseAuthenticationService's DI-time registration -- nothing
-	// exercised by these tests ever opens a connection.
-	static CompositionTests()
+	[Fact]
+	void Test_host_connection_strings_exist_before_factory_boot()
 	{
-		Environment.SetEnvironmentVariable("ConnectionStrings__norse_identity",
-			"Host=localhost;Database=norse_identity_composition_tests;Username=test;Password=test");
-		Environment.SetEnvironmentVariable("ConnectionStrings__norse_reference",
-			"Host=localhost;Database=norse_reference_composition_tests;Username=test;Password=test");
+		Environment.GetEnvironmentVariable("ConnectionStrings__norse_identity").ShouldNotBeNullOrWhiteSpace();
+		Environment.GetEnvironmentVariable("ConnectionStrings__norse_reference").ShouldNotBeNullOrWhiteSpace();
 	}
 
 	[Fact]
@@ -99,7 +89,8 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory)
 
 	// Liveness only -- MapDefaultEndpoints() maps /livez to just the live-tagged checks and /readyz to
 	// every registered check (Midgard's own doc comment on the extension), and this fixture's fake,
-	// unreachable ConnectionStrings__norse_identity/norse_reference (this file's static ctor) exist
+	// unreachable ConnectionStrings__norse_identity/norse_reference (TestHostEnvironment's module
+	// initializer) exist
 	// precisely so nothing here opens a real connection. DbContextHealthCheck isn't live-tagged, so
 	// /livez upholds that; /readyz would genuinely try to reach Postgres and hang on the timeout --
 	// that's real infrastructure reachability, out of scope for a composition/wiring fixture.
