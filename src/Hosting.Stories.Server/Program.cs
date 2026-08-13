@@ -5,11 +5,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddAssetHostServiceDefaults();
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-	app.UseWebAssemblyDebugging();
-}
-
 app.MapStaticAssets().DisableHttpMetrics();
 app.MapDefaultEndpoints();
 

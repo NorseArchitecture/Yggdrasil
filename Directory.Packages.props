@@ -16,7 +16,7 @@
 		<!-- 3rd party versions -->
 		<BlazingStoryVersion>1.0.0-preview.91</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
-		<DotNetVersion>11.0.0-preview.6.26359.118</DotNetVersion>
+		<DotNetVersion>11.0.0-preview.7.26381.103</DotNetVersion>
 		<FluentUIVersion>5.0.0-rc.5-26219.1</FluentUIVersion>
 		<GrpcVersion>2.83.0</GrpcVersion>
 	</PropertyGroup>
@@ -35,7 +35,7 @@
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="$(FluentUIVersion)" />
-		<PackageVersion Include="protobuf-net" Version="3.2.56" />
+		<PackageVersion Include="protobuf-net" Version="3.3.8" />
 		<PackageVersion Include="protobuf-net.Grpc" Version="1.2.5" />
 		<PackageVersion Include="protobuf-net.Grpc.AspNetCore.Reflection" Version="1.2.2" />
 		<PackageVersion Include="Scalar.AspNetCore" Version="2.16.18" />
