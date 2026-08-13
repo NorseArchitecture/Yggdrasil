@@ -19,7 +19,6 @@
 		<DotNetVersion>11.0.0-preview.7.26381.103</DotNetVersion>
 		<FluentUIVersion>5.0.0-rc.5-26219.1</FluentUIVersion>
 		<GrpcVersion>2.83.0</GrpcVersion>
-		<ProtoBufGrpcVersion>1.2.2</ProtoBufGrpcVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="BlazingStory" Version="$(BlazingStoryVersion)" />
@@ -37,8 +36,8 @@
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="protobuf-net" Version="3.3.8" />
-		<PackageVersion Include="protobuf-net.Grpc" Version="$(ProtoBufGrpcVersion)" />
-		<PackageVersion Include="protobuf-net.Grpc.AspNetCore.Reflection" Version="$(ProtoBufGrpcVersion)" />
+		<PackageVersion Include="protobuf-net.Grpc" Version="1.2.5" />
+		<PackageVersion Include="protobuf-net.Grpc.AspNetCore.Reflection" Version="1.2.2" />
 		<PackageVersion Include="Scalar.AspNetCore" Version="2.16.18" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Architecture.Analyzers" Version="$(SvartalfheimVersion)" />
