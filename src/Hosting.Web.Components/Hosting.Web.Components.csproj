@@ -18,6 +18,10 @@
 		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" />
 		<PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" />
 		<SupportedPlatform Include="browser" />
+		<SupportedPlatform Include="android" />
+		<SupportedPlatform Include="ios" />
+		<SupportedPlatform Include="maccatalyst" />
+		<SupportedPlatform Include="windows" />
 	</ItemGroup>
 
 </Project>

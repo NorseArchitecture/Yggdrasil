@@ -52,6 +52,7 @@
 		<PackageReference Include="protobuf-net" />
 		<PackageReference Include="protobuf-net.Grpc" />
 		<ProjectReference Include="..\Hosting.Web.Components\Hosting.Web.Components.csproj" />
+		<SupportedPlatform Include="browser" />
 	</ItemGroup>
 
 </Project>
