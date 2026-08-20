@@ -189,7 +189,7 @@ public sealed class StoriesBrowserRuntimeSmokeTests(StoriesBrowserFixture fixtur
 				{
 					audit.Dispose();
 				}
-			}, fixture.CreateEvidencePolicy());
+			}, fixture.CreateEvidencePolicy()).WaitAsync(TestContext.Current.CancellationToken);
 		}
 		catch (Exception exception)
 		{

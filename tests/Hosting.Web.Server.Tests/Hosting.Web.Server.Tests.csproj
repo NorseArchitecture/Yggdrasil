@@ -5,23 +5,7 @@
 		     Midgard's own Infrastructure.Web.Server.Tests.csproj fix for the identical generator. -->
 		<InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.OpenApi.Generated</InterceptorsNamespaces>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(UseProjectReferences)' == 'true'">
-		<!-- NU1605 local-dev-mode false positive: from Bifrost root, UseProjectReferences=true turns
-		     every NorseRef this project reaches transitively (Hosting.Web.Server to Identity.Web.Server
-		     to Persistence.EntityFramework.PostgreSQL) into a ProjectReference. NuGet's restore-time
-		     downgrade check reads that referenced project's static $(Version), evaluated before
-		     MinVer's target ever runs, which is the plain SDK default "1.0.0", not the real
-		     git-tag-derived version. That collides with this project's own Version="*" below
-		     (which resolves to the real published version) as a spurious "downgrade". CI never sees
-		     this: it restores the real published Norse.Persistence.EntityFramework.PostgreSQL package
-		     (no ProjectReference, no MinVer timing gap), so the wildcard above is what actually governs
-		     there. Scoped to dev mode only — CI's package-mode restore must keep NU1605 as an error. -->
-		<NoWarn>$(NoWarn);NU1605</NoWarn>
-	</PropertyGroup>
 	<ItemGroup>
-		<!-- The Futhark XML shape generator must run in this compilation, not Hosting.Web.Server's own —
-		     Parity/ParityController.cs (the one real GrpcControllerBase descendant on the platform today)
-		     lives here, per Futhark's "facade controllers are host-compilation source" law. -->
 		<NorseGeneratorRef Include="Infrastructure.Web.Server.Generator">
 			<Repo>Midgard</Repo>
 		</NorseGeneratorRef>
@@ -30,44 +14,14 @@
 		</NorseGeneratorRef>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*-*" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.*-*" />
-		<PackageReference Include="Microsoft.Playwright" Version="1.61.0" />
-		<!-- NorseRef never belongs in tests/ (CPM is deliberately off here) — Norse package
-		     references pin an explicit Version directly instead, same as Testcontainers.PostgreSql
-		     below. Version="*" floats to each package's latest published version, so a sub-realm
-		     release never needs a hand edit here — unlike the third-party pin below, there's no
-		     compatibility-matrix reason to hold these back. -->
-		<!-- Direct reference (CI-mode attachment) so NORSE080's bundled analyzer isn't stripped by
-		     NuGet's default transitive exclude — it only reaches this project through
-		     Hosting.Web.Server, which doesn't survive the trip in standalone/package mode. Plain
-		     PackageReference + Version, not NorseRef, per the "NorseRef never belongs in
-		     tests/" rule immediately above; the NorseGeneratorRef Infrastructure.Web.Grpc.Analyzers
-		     item above (in the first ItemGroup) covers dev-mode attachment.
-		     Condition="UseProjectReferences != true" is load-bearing, not decorative: in Bifröst
-		     dev-mode this project already reaches a FRESH Infrastructure.Web.Grpc transitively via
-		     the ProjectReference to Hosting.Web.Server below (ordinary type resolution propagates
-		     transitively through ProjectReferences, unlike analyzer attachment) — Version="*"
-		     floats to the latest PUBLISHED package, which predates WireModelRegistrationGuard's
-		     existence until Midgard actually releases, and un-conditioned this collides with the
-		     fresh project reference and breaks the local build (CS1061: EnsureRegistered not found).
-		     Scoped to standalone/CI mode only, where no such transitive project reference exists. -->
+		<PackageReference Include="Microsoft.Playwright" Version="*" />
 		<PackageReference Include="Norse.Infrastructure.Web.Grpc" Version="*" Condition="'$(UseProjectReferences)' != 'true'" />
 		<PackageReference Include="Norse.Persistence.EntityFramework.PostgreSQL" Version="*" />
-		<!-- Migrations.PostgreSQL marks its NorseDesignRef to the Design chassis PrivateAssets="all",
-		     which blocks it from flowing here transitively; needed directly because
-		     ReferenceDbContextFactory (NorseDesignTimeDbContextFactory<>) is referenced below for the
-		     migrations-assembly name. Mirrors Himinbjorg's Identity.Migrations.Tests.csproj, which hit
-		     the same gap first. -->
 		<PackageReference Include="Norse.Persistence.EntityFramework.Design" Version="*" />
 		<PackageReference Include="Norse.Reference.Data.EntityFramework.Migrations" Version="*" />
 		<PackageReference Include="Norse.Reference.Data.EntityFramework.Migrations.PostgreSQL" Version="*" />
 		<PackageReference Include="Norse.Reference.Data.Namespaces" Version="*" />
-		<!-- Not CPM-pinned (halt-and-ask gate on Directory.Packages.props, Task 13): Version
-		     pins this one third-party package for this project without touching the central file.
-		     4.13.0 mirrors the version every other realm's own PostgresContainerFixture already
-		     resolves via its own (non-CPM) csproj. -->
 		<PackageReference Include="Testcontainers.PostgreSql" Version="*" />
-		<!-- Testcontainers pulls in SSH.NET 2025.1.0, which has a known high severity vulnerability (GHSA-q939-rpr3-3284); pin past it. -->
-		<PackageReference Include="SSH.NET" Version="*" />
 		<ProjectReference Include="..\..\src\Hosting.Web.Server\Hosting.Web.Server.csproj" />
 		<Compile Include="../BrowserTesting/*.cs" Link="BrowserTesting/%(Filename)%(Extension)" />
 	</ItemGroup>

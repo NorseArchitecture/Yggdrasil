@@ -67,7 +67,7 @@ public sealed class WebServerBrowserRuntimeSmokeTests(WebServerBrowserFixture fi
 							new() { Timeout = BrowserTimeouts.PlaywrightOperationMilliseconds }),
 						cancellationToken);
 				});
-		}, WebServerBrowserFixture.CreateEvidencePolicy());
+		}, WebServerBrowserFixture.CreateEvidencePolicy()).WaitAsync(TestContext.Current.CancellationToken);
 	}
 
 	static async Task DispatchAndObserveCountryLookupAsync(
