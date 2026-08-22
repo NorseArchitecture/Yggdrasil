@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Norse.Abstractions.Components.Primitives;
 using Norse.AuthN.Components;
-using Norse.AuthN.Services;
 using Norse.Hosting.Web.Components;
 using Norse.Hosting.Web.Server;
 using Norse.Hosting.Web.Server.Components;
@@ -14,13 +13,13 @@ using Norse.Infrastructure.Backend.Serialization;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.Persistence.EntityFramework;
 using Norse.Infrastructure.ServiceDefaults.AspNet;
+using Norse.Infrastructure.Web.Server.Authentication;
 using Norse.Infrastructure.Web.Server.DeferredSignIn;
 using Norse.Infrastructure.Web.Server.Json;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
 using Norse.Infrastructure.Web.Server.OpenApi;
 using Norse.Infrastructure.Web.Server.Xml;
-using Norse.Reference;
 using Norse.Reference.Data.EntityFramework;
 using Norse.Reference.Web.Server;
 using ProtoBuf.Grpc.Server;
@@ -52,20 +51,6 @@ builder.Services
 	.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>()
 	.AddScoped<CircuitHandler, LoggingCircuitHandler>();
 
-// AuthN.Public/Reference.Public are satisfied by any principal, anonymous-role cookie included
-// (Norse.AuthN.Services.AuthNPolicies / Norse.Reference.ReferencePolicies) — every
-// AuthenticationService/ReferenceService method still declares one per decided law item 4 (NORSE011),
-// so both must exist here even though neither imposes a real requirement. IdentityPolicies.Self and
-// .MaskedDisclosure are real policies, not placeholders: Self requires any authenticated user (the
-// disclosure subject reading their own data), MaskedDisclosure requires the system role (a caller
-// reading someone else's data back masked). Composition root's job: Heimdall/Mimir stay
-// policy-name-only, never register policies themselves.
-builder.Services.AddAuthorizationBuilder()
-	.AddPolicy(AuthNPolicies.Public, policy => policy.RequireAssertion(_ => true))
-	.AddPolicy(ReferencePolicies.Public, policy => policy.RequireAssertion(_ => true))
-	.AddPolicy(IdentityPolicies.Self, policy => policy.RequireAuthenticatedUser())
-	.AddPolicy(IdentityPolicies.MaskedDisclosure, policy => policy.RequireRole(IdentityPolicies.SystemRole));
-
 var norseReferenceConnectionString = builder.Configuration.GetConnectionString("norse_reference")
 	?? throw new InvalidOperationException("Connection string 'norse_reference' is not configured.");
 builder
@@ -86,6 +71,21 @@ builder
 	// protobuf-net.Grpc wire lifecycle independent of the Blazor UI. Never mapped outside Development —
 	// reflection hands out the full service/message catalog to anyone who can reach the endpoint.
 	.AddCodeFirstGrpcReflection();
+
+// Lane composition (Glitnir Platform/specs/2026-08-21-principal-at-the-door-design.md §2.2). No ambient
+// default scheme: the selector reads endpoint shape and forwards to exactly one lane, so an endpoint that
+// declares nothing gets no principal rather than the wrong one. Placed after AddNorseAuthenticationService
+// above (which calls AddIdentity<NorseUser, NorseRole>() internally) deliberately, not where the block it
+// replaces used to sit: AddIdentity's own AddAuthentication call sets AuthenticationOptions.DefaultScheme
+// itself, and Options composition is last-registration-wins per property, so AddNorseAuthentication() must
+// run after it to have its own DefaultScheme/DefaultAuthenticateScheme/DefaultChallengeScheme/
+// DefaultForbidScheme choices win (Midgard's AddNorseAuthentication doc comment states the requirement).
+builder.Services.AddNorseAuthentication();
+
+// Every [NorsePolicy] declaration in the resolved reference set, registered once. This call replaces four
+// hand-written AddPolicy lambdas -- adding a policy anywhere upstream now needs no edit here, which is the
+// point: a fifth hand-rolled registration is what guaranteed the argument would be had again.
+builder.Services.AddNorsePolicies();
 
 // Futhark's REST ambassador layer (../Glitnir/docs/Platform/specs/2026-08-01-opinionated-xml-serialization-design.md):
 // content-negotiated JSON/XML for hand-authored GrpcControllerBase facade controllers, plus the OpenAPI

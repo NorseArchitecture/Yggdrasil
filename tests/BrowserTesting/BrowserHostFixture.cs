@@ -31,6 +31,19 @@ abstract class BrowserHostFixture<TEntryPoint> : IAsyncLifetime where TEntryPoin
 	internal Uri Origin =>
 		_origin ?? throw new InvalidOperationException("Kestrel origin is unavailable before fixture initialization.");
 
+	/// <summary>
+	///     The booted host's root service provider -- for a fact that needs to reach into the running
+	///     Kestrel instance's own DI container (e.g. to decode a cookie through its Data Protection key ring)
+	///     rather than only drive it through HTTP/the browser. Ensures the fixture has started, mirroring
+	///     <see cref="OpenEvidenceAsync" />.
+	/// </summary>
+	internal async Task<IServiceProvider> GetServicesAsync()
+	{
+		await _startup.EnsureStartedAsync();
+		return _factory?.Services ??
+			throw new InvalidOperationException("Kestrel host services are unavailable before fixture initialization.");
+	}
+
 	protected virtual void ConfigureWebHost(IWebHostBuilder builder) { }
 	protected virtual bool IsExpectedRedirect(IResponse response) => false;
 
