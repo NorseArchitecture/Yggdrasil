@@ -31,6 +31,19 @@ abstract class BrowserHostFixture<TEntryPoint> : IAsyncLifetime where TEntryPoin
 	internal Uri Origin =>
 		_origin ?? throw new InvalidOperationException("Kestrel origin is unavailable before fixture initialization.");
 
+	/// <summary>
+	///     The booted host's root service provider -- for a fact that needs to reach into the running
+	///     Kestrel instance's own DI container (e.g. to decode a cookie through its Data Protection key ring)
+	///     rather than only drive it through HTTP/the browser. Ensures the fixture has started, mirroring
+	///     <see cref="OpenEvidenceAsync" />.
+	/// </summary>
+	internal async Task<IServiceProvider> GetServicesAsync()
+	{
+		await _startup.EnsureStartedAsync();
+		return _factory?.Services ??
+			throw new InvalidOperationException("Kestrel host services are unavailable before fixture initialization.");
+	}
+
 	protected virtual void ConfigureWebHost(IWebHostBuilder builder) { }
 	protected virtual bool IsExpectedRedirect(IResponse response) => false;
 
@@ -76,7 +89,17 @@ abstract class BrowserHostFixture<TEntryPoint> : IAsyncLifetime where TEntryPoin
 		}
 	}
 
-	internal async Task<BrowserEvidence> OpenEvidenceAsync(string testName)
+	/// <param name="testName">Identifies this evidence run's artifact directory.</param>
+	/// <param name="cookies">
+	///     Seeded into the context's cookie jar before its first page is created -- the only way a Playwright
+	///     context can carry an already-minted cookie (e.g. one read back from a prior <see cref="HttpClient" />
+	///     handshake against the same host) instead of minting its own on first contact. Cookie-seeding lives
+	///     here, before <see cref="BrowserEvidence" /> exists, rather than as a method on
+	///     <see cref="BrowserEvidence" /> itself -- that type's public surface is deliberately locked to
+	///     exactly <see cref="BrowserEvidence.ExecuteAsync" /> (see its own reflection-guarded test).
+	/// </param>
+	internal async Task<BrowserEvidence> OpenEvidenceAsync(
+		string testName, IEnumerable<Microsoft.Playwright.Cookie>? cookies = null)
 	{
 		await _startup.EnsureStartedAsync();
 		var browser = _browser ??
@@ -87,6 +110,8 @@ abstract class BrowserHostFixture<TEntryPoint> : IAsyncLifetime where TEntryPoin
 			IgnoreHTTPSErrors = false,
 			Locale = "en-US",
 		});
+		if (cookies is not null)
+			await context.AddCookiesAsync(cookies);
 		return await BrowserEvidence.StartAsync(
 			context,
 			testName,

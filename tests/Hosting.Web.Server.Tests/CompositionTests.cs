@@ -184,19 +184,27 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory)
 	}
 
 	[Fact]
-	async Task An_Accept_naming_neither_JSON_nor_XML_negotiates_to_406_on_the_live_host()
+	async Task A_credentialless_call_to_the_facade_is_rejected_before_content_negotiation_runs()
 	{
-		// ReturnHttpNotAcceptable, proven on the real composition root. The garbage code makes the
-		// handler answer its typed validation failure before any repository call, so the fake
-		// connection string is never dialed -- and the unmatched Accept then turns the would-be 400
-		// problem into an honest 406 at the negotiation seam.
+		// Was "...negotiates to 406 on the live host" -- true before Task 14 (principal-at-the-door,
+		// Glitnir Platform/specs/2026-08-21-principal-at-the-door-design.md §2.6). CountriesController
+		// derives from GrpcControllerBase, so it is machine-lane by inheritance (§5.1) and now rejected
+		// at UseAuthorization() -- above MVC, above content negotiation -- for any call carrying no
+		// bearer credential. Until Himinbjorg#49 lands the bearer scheme, nothing can satisfy that lane,
+		// so this fact can no longer prove ReturnHttpNotAcceptable against the live facade; that proof
+		// still exists on the swoop fixture's own host (Swoop/WiringTests.Probe_1a, which never gates on
+		// this lane) -- currently red for an unrelated pre-existing reason (PrincipalAccessor.Seed
+		// rejecting that fixture's GUID-less test principal), not a claim this comment makes about its
+		// current pass/fail state. What this fact still proves, live: rejection happens above negotiation, honestly
+		// (401, no body) -- LaneCompositionTests.The_reference_facade_is_closed_to_a_credentialless_caller
+		// pins the same shape for the happy-path code, this one for a request that would otherwise 406.
 		using var client = factory.CreateClient();
 		using var request = new HttpRequestMessage(HttpMethod.Get, "/api/reference/countries/banana");
 		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/csv"));
 
 		using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
 
-		response.StatusCode.ShouldBe(HttpStatusCode.NotAcceptable);
+		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
 	}
 
 	[Fact]
