@@ -5,20 +5,24 @@ using
 	System.Net.Http.Json; // Authored deliberately: the SDK's implicit using is removed platform-wide (NORSE070 carrier); tests are law-exempt and re-add it explicitly.
 using System.Security.Claims;
 using System.Text;
+using System.Text.Encodings.Web;
 using FluentValidation;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
 using Norse.Hosting.Web.Server.Tests.NorseXmlShapes;
 using Norse.Hosting.Web.Server.Tests.Parity;
 using Norse.Infrastructure.Web.Client.Grpc;
+using Norse.Infrastructure.Web.Server.Authentication;
 using Norse.Infrastructure.Web.Server.Json;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
@@ -72,14 +76,20 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		// registration-vs-registration TOCTOU shape that used to live at this site and is now structurally
 		// impossible: nothing in this assembly can observe a half-registered RuntimeTypeModel.Default.
 
-		var principal = new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"));
-
 		var builder = WebApplication.CreateBuilder();
 		builder.WebHost.UseTestServer();
 		builder.Logging.ClearProviders();
 
 		builder.Services.AddAuthorizationBuilder()
 			.AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true));
+		// Real credentials, not a hand-rolled IPrincipalAccessor bypass (spec §2.6): this fixture's REST
+		// leg (ParityController, a GrpcControllerBase descendant) is exactly the shape NorseLaneSelector
+		// routes to NorseSchemes.Machine in the real composition root. A genuine (test-only) handler
+		// mints a real GUID-bearing principal at that same scheme name, so PrincipalSeedingFilter/
+		// PrincipalSeedingInterceptor stamp HttpContext.User for real and PrincipalAccessor.Seed's GUID
+		// backstop (Midgard, already shipped) sees a caller with credentials, never a bare identity.
+		builder.Services.AddAuthentication(NorseSchemes.Machine)
+			.AddScheme<AuthenticationSchemeOptions, TestMachinePrincipalHandler>(NorseSchemes.Machine, null);
 		builder.Services.AddNorsePipeline();
 		builder.Services.AddNorseCodeFirstGrpc();
 
@@ -94,7 +104,6 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 			.AddScoped<IValidator<EchoParityCommand>,
 				CommandRequestValidator<EchoParityCommand, ParityRequest, ParityReport>>();
 		builder.Services.AddScoped<IParityService, ParityService>();
-		builder.Services.AddScoped<IPrincipalAccessor>(_ => new SwoopPrincipalAccessor(principal));
 
 		builder.Services
 			// Mirrors Program.cs's negotiation posture: unmatched Accept gets an honest 406, never the
@@ -111,6 +120,8 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		});
 
 		App = builder.Build();
+		App.UseAuthentication();
+		App.UseAuthorization();
 		App.MapControllers();
 		App.MapOpenApi();
 		App.MapGrpcService<ParityService>();
@@ -188,10 +199,28 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 	}
 }
 
-sealed class SwoopPrincipalAccessor(ClaimsPrincipal principal) : IPrincipalAccessor
+/// <summary>
+///     The swoop fixture's real, test-only implementation of the machine lane (<see cref="NorseSchemes.Machine" />)
+///     -- succeeds with a genuine minted-GUID principal instead of the production
+///     <c>NorseMachineRejectionHandler</c>'s unconditional 401, so <c>PrincipalAccessor.Seed</c>'s GUID
+///     backstop (Midgard, already shipped) sees a caller with real credentials. This models a machine
+///     caller that has authenticated, not a caller with no lane rule applied to it at all -- spec §2.6:
+///     supply credentials, never weaken the requirement.
+/// </summary>
+sealed class TestMachinePrincipalHandler(
+	IOptionsMonitor<AuthenticationSchemeOptions> options,
+	ILoggerFactory logger,
+	UrlEncoder encoder)
+	: AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-	public ValueTask<ClaimsPrincipal> GetPrincipalAsync(CancellationToken cancellationToken = default) =>
-		ValueTask.FromResult(principal);
+	protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+	{
+		ClaimsIdentity identity = new(
+			[new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())],
+			authenticationType: NorseSchemes.Machine);
+		var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), NorseSchemes.Machine);
+		return Task.FromResult(AuthenticateResult.Success(ticket));
+	}
 }
 
 /// <summary>
@@ -629,6 +658,10 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		builder.Logging.ClearProviders();
 		builder.Services.AddAuthorizationBuilder()
 			.AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true));
+		// Same real-credentials fix as InitializeAsync above -- this second host is its own composition
+		// root and needs its own authentication wiring, not a shared instance.
+		builder.Services.AddAuthentication(NorseSchemes.Machine)
+			.AddScheme<AuthenticationSchemeOptions, TestMachinePrincipalHandler>(NorseSchemes.Machine, null);
 		builder.Services.AddNorsePipeline();
 		builder.Services.AddScoped<IRequestHandler<EchoParityCommand, ParityReport>, EchoParityHandler>();
 		builder.Services.AddSingleton<ISenderDispatch, SenderDispatch<EchoParityCommand, ParityReport>>();
@@ -637,13 +670,13 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 			.AddScoped<IValidator<EchoParityCommand>,
 				CommandRequestValidator<EchoParityCommand, ParityRequest, ParityReport>>();
 		builder.Services.AddScoped<IParityService, ParityService>();
-		builder.Services.AddScoped<IPrincipalAccessor>(_ =>
-			new SwoopPrincipalAccessor(new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"))));
 		builder.Services.AddControllers()
 			.AddNorseJson(NorseEnumNameRegistration.Build())
 			.AddNorseXml(XmlCaseStyle.CamelCase, NorseXmlShapeRegistration.Build());
 
 		await using var app = builder.Build();
+		app.UseAuthentication();
+		app.UseAuthorization();
 		app.MapControllers();
 		await app.StartAsync(cancellationToken);
 

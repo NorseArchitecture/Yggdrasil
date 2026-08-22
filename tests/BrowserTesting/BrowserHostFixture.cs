@@ -89,7 +89,17 @@ abstract class BrowserHostFixture<TEntryPoint> : IAsyncLifetime where TEntryPoin
 		}
 	}
 
-	internal async Task<BrowserEvidence> OpenEvidenceAsync(string testName)
+	/// <param name="testName">Identifies this evidence run's artifact directory.</param>
+	/// <param name="cookies">
+	///     Seeded into the context's cookie jar before its first page is created -- the only way a Playwright
+	///     context can carry an already-minted cookie (e.g. one read back from a prior <see cref="HttpClient" />
+	///     handshake against the same host) instead of minting its own on first contact. Cookie-seeding lives
+	///     here, before <see cref="BrowserEvidence" /> exists, rather than as a method on
+	///     <see cref="BrowserEvidence" /> itself -- that type's public surface is deliberately locked to
+	///     exactly <see cref="BrowserEvidence.ExecuteAsync" /> (see its own reflection-guarded test).
+	/// </param>
+	internal async Task<BrowserEvidence> OpenEvidenceAsync(
+		string testName, IEnumerable<Microsoft.Playwright.Cookie>? cookies = null)
 	{
 		await _startup.EnsureStartedAsync();
 		var browser = _browser ??
@@ -100,6 +110,8 @@ abstract class BrowserHostFixture<TEntryPoint> : IAsyncLifetime where TEntryPoin
 			IgnoreHTTPSErrors = false,
 			Locale = "en-US",
 		});
+		if (cookies is not null)
+			await context.AddCookiesAsync(cookies);
 		return await BrowserEvidence.StartAsync(
 			context,
 			testName,

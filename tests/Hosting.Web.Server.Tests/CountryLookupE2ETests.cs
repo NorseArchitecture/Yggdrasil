@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Claims;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -10,9 +10,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Norse.Abstractions.Contracts;
-using Norse.Abstractions.Web.Server.Mediator;
 using Norse.Infrastructure.Persistence.EntityFramework;
 using Norse.Infrastructure.Web.Client.Grpc;
+using Norse.Infrastructure.Web.Server.Authentication;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
 using Norse.Persistence.EntityFramework;
@@ -83,8 +83,6 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 		// payload surrogate here: WireModelFixture (an [assembly: AssemblyFixture]) already did it,
 		// guaranteed complete before any test in this assembly runs.
 
-		var principal = new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"));
-
 		return await new HostBuilder()
 			.ConfigureWebHost(webHost =>
 			{
@@ -94,6 +92,19 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 					services.AddLogging();
 					services.AddAuthorizationBuilder()
 						.AddPolicy(ReferencePolicies.Public, p => p.RequireAssertion(_ => true));
+					// This host's gRPC leg needs the same real machine-lane credentials as
+					// MediatorParityTests/TriProtocolSwoopTests, not the plan's original "already
+					// authenticates, leave it alone" assumption: this fixture is its own bespoke
+					// composition root (no AddNorseAuthentication(), no lane selector, no identity
+					// cookie), so without a genuine scheme, PrincipalSeedingInterceptor stamps
+					// PrincipalAccessor.Seed from a default anonymous, claim-less HttpContext.User and
+					// Seed's GUID backstop (Midgard, already shipped) throws before every handler runs --
+					// reproduced directly (every test but the client-side-fault one failed with
+					// ErrorCategory.Fault before this fix). A genuine test-only scheme forwarded to
+					// NorseSchemes.Machine fixes it the same way.
+					services.AddAuthentication(NorseSchemes.Machine)
+						.AddScheme<AuthenticationSchemeOptions, TestMachinePrincipalHandler>(NorseSchemes.Machine,
+							null);
 					services.AddNorsePipeline();
 					services.AddNorseCodeFirstGrpc();
 					services.AddRouting();
@@ -106,15 +117,11 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 					// it makes the same call Program.cs does.
 					services.AddNorseReferenceService(connectionString);
 					services.AddWell<ReferenceDbContext>();
-
-					// Mirrors MediatorParityTests: AuthorizationBehavior needs a principal to ask about,
-					// and this suite has neither a circuit nor a cookie scheme to seed one for real.
-					// ReferencePolicies.Public's permissive assertion means any principal satisfies it.
-					services.AddScoped<IPrincipalAccessor>(_ => new ReferenceTestPrincipalAccessor(principal));
 				});
 				webHost.Configure(app =>
 				{
 					app.UseRouting();
+					app.UseAuthentication();
 					app.UseAuthorization();
 					app.UseEndpoints(endpoints => endpoints.MapGrpcService<ReferenceService>());
 				});
@@ -228,13 +235,10 @@ public sealed class CountryLookupE2ETests(CountryLookupPostgresFixture fixture)
 	}
 }
 
-/// <summary>
-///     Overrides <c>AddNorsePipeline()</c>'s own <see cref="IPrincipalAccessor" /> registration (DI resolves
-///     the last registration for a single-service ask) so <c>AuthorizationBehavior</c> always has a
-///     principal to ask about -- mirrors <c>MediatorParityTests.ReferenceTestPrincipalAccessor</c> exactly.
-/// </summary>
-sealed class ReferenceTestPrincipalAccessor(ClaimsPrincipal principal) : IPrincipalAccessor
-{
-	public ValueTask<ClaimsPrincipal> GetPrincipalAsync(CancellationToken cancellationToken = default) =>
-		ValueTask.FromResult(principal);
-}
+// This host needs no test-local IPrincipalAccessor and no test-local authentication handler of its own:
+// every test in this file drives its assertions entirely through CreateWireClient (a real gRPC call,
+// never a bare ISender.Send), so AddNorsePipeline()'s own IPrincipalAccessor registration (the concrete,
+// seeded PrincipalAccessor) is exactly right here, once CreateHostAsync's scheme registration gives it
+// something real to seed from. TestMachinePrincipalHandler (MediatorParityTests.cs, same namespace, same
+// assembly) is reused rather than redefined -- both hosts need the identical genuine-GUID-principal
+// machine-lane test double, and this namespace can only declare it once (CS0101).

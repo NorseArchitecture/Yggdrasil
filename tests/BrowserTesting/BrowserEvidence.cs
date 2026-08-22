@@ -61,16 +61,6 @@ sealed class BrowserEvidence
 		_page.FrameNavigated += RecordFrameNavigated;
 	}
 
-	/// <summary>
-	///     Seeds the browser context's cookie jar before the first navigation -- the only way a Playwright
-	///     context can carry an already-minted cookie (e.g. one read back from a prior <see cref="HttpClient" />
-	///     handshake against the same host) instead of minting its own on first contact. Safe to call any
-	///     time before <see cref="ExecuteAsync" />'s first <c>page.GotoAsync</c>: cookies live in the
-	///     context's jar, not the already-created (still blank) page.
-	/// </summary>
-	internal Task AddCookiesAsync(IEnumerable<Microsoft.Playwright.Cookie> cookies) =>
-		_context.AddCookiesAsync(cookies);
-
 	[SuppressMessage("Design", "CA1031:Do not catch general exception types",
 		Justification = "A partially started evidence context must always be disposed while preserving both failures.")]
 	internal static async Task<BrowserEvidence> StartAsync(

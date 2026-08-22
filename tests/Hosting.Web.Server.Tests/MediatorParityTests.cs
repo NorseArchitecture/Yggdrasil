@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Encodings.Web;
 using FluentValidation;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
@@ -8,11 +9,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
 using Norse.AuthN.Components;
 using Norse.AuthN.Services;
 using Norse.Infrastructure.Web.Client.Grpc;
+using Norse.Infrastructure.Web.Server.Authentication;
 using Norse.Infrastructure.Web.Server.Mediator;
 using Norse.Infrastructure.Web.Server.Mediator.Grpc;
 using Norse.Primitives;
@@ -43,16 +47,49 @@ sealed class StubLoginHandler(Func<LoginRequest, CancellationToken, ValueTask<Ou
 }
 
 /// <summary>
-///     Overrides <c>AddNorsePipeline()</c>'s own <see cref="IPrincipalAccessor" /> registration (DI resolves
-///     the last registration for a single-service ask, so registering this after <c>AddNorsePipeline()</c>
-///     wins) so <c>AuthorizationBehavior</c> always has a principal to ask about, on both the circuit and
-///     wire paths alike -- Midgard's concrete <c>PrincipalAccessor</c> throws when unseeded and no
-///     <see cref="Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider" /> is
-///     registered, and this test suite has neither a circuit nor a cookie scheme to seed one for real.
-///     <see cref="AuthNPolicies.Public" />'s permissive assertion means every command in this suite passes
-///     authorization regardless of who this principal is -- its only job is existing.
+///     The wire (gRPC) leg's own real, test-only implementation of the machine lane
+///     (<see cref="NorseSchemes.Machine" />) -- mints a genuine GUID-bearing principal so
+///     <c>PrincipalAccessor.Seed</c>'s GUID backstop (Midgard, already shipped) sees real credentials when
+///     <see cref="PrincipalSeedingInterceptor" /> stamps it from the authenticated
+///     <c>HttpContext.User</c>, rather than the default anonymous, claim-less principal this suite's wire
+///     leg used to reach that call with implicitly. <see cref="AuthNPolicies.Public" />'s permissive
+///     assertion still means every command in this suite passes authorization regardless of who this
+///     principal is; only its existence (and its GUID claim) matters.
 /// </summary>
-sealed class TestPrincipalAccessor(ClaimsPrincipal principal) : IPrincipalAccessor
+sealed class TestMachinePrincipalHandler(
+	IOptionsMonitor<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions> options,
+	ILoggerFactory logger,
+	UrlEncoder encoder)
+	: Microsoft.AspNetCore.Authentication.AuthenticationHandler<
+		Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions>(options, logger, encoder)
+{
+	// Microsoft.AspNetCore.Authentication is not `using`d in this file -- Norse.AuthN.Services.IAuthenticationService
+	// (the platform's own mediator-facing contract, used throughout this file) would otherwise collide
+	// with Microsoft.AspNetCore.Authentication.IAuthenticationService (CS0104), so the few ASP.NET Core
+	// authentication types this handler needs are fully qualified instead.
+	protected override Task<Microsoft.AspNetCore.Authentication.AuthenticateResult> HandleAuthenticateAsync()
+	{
+		ClaimsIdentity identity = new(
+			[new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())],
+			authenticationType: NorseSchemes.Machine);
+		Microsoft.AspNetCore.Authentication.AuthenticationTicket ticket =
+			new(new ClaimsPrincipal(identity), NorseSchemes.Machine);
+		return Task.FromResult(Microsoft.AspNetCore.Authentication.AuthenticateResult.Success(ticket));
+	}
+}
+
+/// <summary>
+///     The circuit path's own <see cref="IPrincipalAccessor" /> (spec §2.6): overrides
+///     <c>AddNorsePipeline()</c>'s own registration (DI resolves the last registration for a
+///     single-service ask) so a bare <c>host.Services.CreateScope()</c> call -- no HTTP request, no
+///     <see cref="Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider" /> -- still
+///     has a genuine GUID-bearing principal to hand <c>AuthorizationBehavior</c>, mirroring what a real
+///     Blazor circuit's <c>AuthenticationStateProvider</c> would supply. Unrelated to the wire leg's own
+///     fix above: <see cref="PrincipalSeedingInterceptor" /> seeds the concrete <c>PrincipalAccessor</c>
+///     type directly from <c>HttpContext.User</c>, never this interface override, so the wire leg's
+///     correctness rides entirely on <see cref="TestMachinePrincipalHandler" /> above.
+/// </summary>
+sealed class TestCircuitPrincipalAccessor(ClaimsPrincipal principal) : IPrincipalAccessor
 {
 	public ValueTask<ClaimsPrincipal> GetPrincipalAsync(CancellationToken cancellationToken = default) =>
 		ValueTask.FromResult(principal);
@@ -103,7 +140,13 @@ public sealed class MediatorParityTests
 		// surrogates here: WireModelFixture (an [assembly: AssemblyFixture]) already did it, guaranteed
 		// complete before any test in this assembly runs.
 
-		var principal = new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "test"));
+		// The circuit path below (a bare ISender.Send from host.Services.CreateScope(), no HTTP request
+		// at all) has nothing for PrincipalSeedingInterceptor to seed and no AuthenticationStateProvider
+		// (no Blazor circuit exists in this host) -- Midgard's concrete PrincipalAccessor throws loudly
+		// when neither is present, by design. A genuine GUID-bearing principal, supplied directly here,
+		// models what a real circuit's AuthenticationStateProvider would hand back.
+		var circuitPrincipal = new ClaimsPrincipal(new ClaimsIdentity(
+			[new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())], authenticationType: "Test.Circuit"));
 
 		return await new HostBuilder()
 			.ConfigureWebHost(webHost =>
@@ -114,6 +157,14 @@ public sealed class MediatorParityTests
 					services.AddLogging();
 					services.AddAuthorizationBuilder()
 						.AddPolicy(AuthNPolicies.Public, p => p.RequireAssertion(_ => true));
+					// The wire (gRPC) leg's real machine-lane credentials (spec §2.6): a genuine
+					// test-only authentication scheme forwarded to NorseSchemes.Machine, so
+					// PrincipalSeedingInterceptor stamps a real GUID-bearing HttpContext.User instead of
+					// the default anonymous, claim-less principal PrincipalAccessor.Seed's GUID backstop
+					// (Midgard, already shipped) rejects.
+					services.AddAuthentication(NorseSchemes.Machine)
+						.AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions,
+							TestMachinePrincipalHandler>(NorseSchemes.Machine, null);
 					services.AddNorsePipeline();
 					services.AddNorseCodeFirstGrpc();
 					services.AddRouting();
@@ -130,11 +181,13 @@ public sealed class MediatorParityTests
 							CommandRequestValidator<TestLoginCommand, LoginRequest, NavigationResult>>();
 
 					services.AddScoped<IAuthenticationService, TestAuthenticationService>();
-					services.AddScoped<IPrincipalAccessor>(_ => new TestPrincipalAccessor(principal));
+					services.AddScoped<IPrincipalAccessor>(_ => new TestCircuitPrincipalAccessor(circuitPrincipal));
 				});
 				webHost.Configure(app =>
 				{
 					app.UseRouting();
+					app.UseAuthentication();
+					app.UseAuthorization();
 					app.UseEndpoints(endpoints => endpoints.MapGrpcService<TestAuthenticationService>());
 				});
 			})

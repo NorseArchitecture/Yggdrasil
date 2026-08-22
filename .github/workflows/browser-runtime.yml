@@ -50,7 +50,7 @@ jobs:
       - name: Test browser hosts
         timeout-minutes: 5
         run: |
-          dotnet test tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.WebServerBrowserRuntimeSmokeTests"
+          dotnet test tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.WebServerBrowserRuntimeSmokeTests" "*.LaneCompositionTests"
           dotnet test tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.StoriesBrowserRuntimeSmokeTests"
 
       - name: Upload Playwright failure evidence

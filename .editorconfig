@@ -330,6 +330,18 @@ dotnet_diagnostic.CA1727.severity = error
 # that default and keep the rule running.
 dotnet_code_quality.CA1852.ignore_internalsvisibleto = true
 
+## ── Selected analyzer (NORSE) severities ────────────────────────────────
+# NORSE013 (Svartalfheim's Architecture.Analyzers, "AllowAnonymous is banned")
+# ships isEnabledByDefault:false -- an aspirational rule every consuming realm
+# opts into on its own timeline, not NotConfigurable like NORSE070-075/079.
+# Principal-at-the-door (Glitnir/docs/Platform/plans/2026-08-21-principal-at-
+# the-door.md) is that timeline for Yggdrasil: every lane now establishes a
+# real principal before authorization runs, so an authored .AllowAnonymous()/
+# [AllowAnonymous]/IAllowAnonymous marker in this realm is never load-bearing
+# again -- promote to error, the hard-build-error enforcement mechanism that
+# makes the rest of the plan's guarantee permanent.
+dotnet_diagnostic.NORSE013.severity = error
+
 ###############################################################################
 # 4. C# formatting — stock conventions, declared explicitly
 ###############################################################################

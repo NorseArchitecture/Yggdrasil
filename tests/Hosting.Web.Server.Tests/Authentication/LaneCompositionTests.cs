@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -84,38 +85,39 @@ public sealed class LaneCompositionTests
 		// mint can happen.
 		var handshake = await fixture.HandshakeAsync(cancellationToken);
 
-		var evidence = await fixture.OpenEvidenceAsync(
-			nameof(A_circuit_inherits_the_handshake_identity_and_concurrency_mints_no_second_guid));
-
-		// The browser carries the exact cookie the handshake minted, injected into the context before any
+		// The browser carries the exact cookie the handshake minted, seeded into the context before any
 		// navigation -- it must never get the chance to mint a second, separate identity of its own.
-		await evidence.AddCookiesAsync(
-		[
-			new()
-			{
-				Name = "Norse.Anonymous",
-				Value = handshake.CookieValue,
-				Domain = fixture.Origin.Host,
-				Path = "/",
-				HttpOnly = true,
-				Secure = true,
-				SameSite = SameSiteAttribute.Lax,
-			},
-		]);
+		var evidence = await fixture.OpenEvidenceAsync(
+			nameof(A_circuit_inherits_the_handshake_identity_and_concurrency_mints_no_second_guid),
+			cookies:
+			[
+				new()
+				{
+					Name = "Norse.Anonymous",
+					Value = handshake.CookieValue,
+					Domain = fixture.Origin.Host,
+					Path = "/",
+					HttpOnly = true,
+					Secure = true,
+					SameSite = SameSiteAttribute.Lax,
+				},
+			]);
 
-		List<string> setCookieHeadersAfterHandshake = [];
+		// IResponse.Headers is Playwright's synchronous, best-effort header snapshot, which deliberately
+		// excludes security-related headers -- Set-Cookie included, per Playwright's own docs. Only the
+		// async HeadersArrayAsync()/AllHeadersAsync() surface those, and both need the response's own
+		// page/context still open -- so every fetch is started the moment the response is observed, not
+		// deferred until after ExecuteAsync's evidence cleanup has already closed the page.
+		ConcurrentQueue<Task<IReadOnlyList<Header>>> headerFetchesAfterHandshake = new();
 
 		await evidence.ExecuteAsync(async operation =>
 		{
 			var page = operation.Page;
 
-			void RecordSetCookie(object? _, IResponse response)
-			{
-				if (response.Headers.TryGetValue("set-cookie", out var value))
-					setCookieHeadersAfterHandshake.Add(value);
-			}
+			void RecordResponse(object? _, IResponse response) =>
+				headerFetchesAfterHandshake.Enqueue(response.HeadersArrayAsync());
 
-			page.Response += RecordSetCookie;
+			page.Response += RecordResponse;
 			try
 			{
 				IPrincipalAccessor? circuitPrincipalAccessor = null;
@@ -154,17 +156,37 @@ public sealed class LaneCompositionTests
 					});
 
 				observed.ShouldAllBe(id => id == handshake.Id);
+
+				// Awaited here, still inside ExecuteAsync's scope -- once the callback returns, evidence
+				// cleanup closes the page and every pending HeadersArrayAsync() call would fail with
+				// TargetClosedException instead of returning data.
+				var headerBatches = await Task.WhenAll(headerFetchesAfterHandshake);
+
+				// NorseAnonymousHandler.ReadOrMint's existing-cookie branch reissues Set-Cookie on a sliding
+				// lifetime, so real Set-Cookie traffic exists on this navigation -- the invariant under test
+				// is not "no Set-Cookie ever" (the page also mints its own, unrelated
+				// .AspNetCore.Antiforgery.* cookie, which this must not choke on), it's "no Norse.Anonymous
+				// Set-Cookie carrying a different identity than the handshake minted". Scoped to that one
+				// cookie's own name=value pair, not the whole Set-Cookie header (which trails
+				// path/samesite/httponly attributes a raw StartsWith would also have to anticipate).
+				var anonymousCookieValuesAfterHandshake = headerBatches
+					.SelectMany(static headers => headers)
+					.Where(static header => string.Equals(header.Name, "set-cookie", StringComparison.OrdinalIgnoreCase))
+					.Select(static header => header.Value.Split(';', 2)[0])
+					.Where(static nameValue => nameValue.StartsWith("Norse.Anonymous=", StringComparison.Ordinal))
+					.ToArray();
+
+				anonymousCookieValuesAfterHandshake.ShouldAllBe(nameValue =>
+					nameValue == $"Norse.Anonymous={handshake.CookieValue}");
 			}
 			finally
 			{
-				page.Response -= RecordSetCookie;
+				page.Response -= RecordResponse;
 			}
 			// Same evidence policy as WebServerBrowserRuntimeSmokeTests: this is the identical composition
 			// root, so the same bounded FluentUI rc5 startup allowances (overflowchange/accordionchange,
 			// Web.Server CLAUDE.md) and the same once-only /_blazor/disconnect abort-on-teardown allowance
 			// apply here too -- not a second, parallel policy to keep in sync by hand.
 		}, WebServerBrowserFixture.CreateEvidencePolicy());
-
-		setCookieHeadersAfterHandshake.ShouldBeEmpty();
 	}
 }
