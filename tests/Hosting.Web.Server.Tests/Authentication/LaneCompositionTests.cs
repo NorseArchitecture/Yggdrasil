@@ -65,6 +65,37 @@ public sealed class LaneCompositionTests
 		response.Headers.TryGetValues("Set-Cookie", out _).ShouldBeFalse();
 	}
 
+	// The bug this pins (browser fix, ../Glitnir/docs/Platform/plans/2026-08-21-principal-at-the-door.md
+	// authn-uniformity amendment): Mímir's CountryLookup component calls IReferenceService.GetCountry over
+	// gRPC-Web from the same page a browser-lane request already minted an anonymous cookie on. Before the
+	// fix, NorseSchemes.IdentityCookieOnly forwarded straight to the real identity cookie with no fallback,
+	// so that anonymous visitor's own gRPC-Web call failed authentication and the lookup broke -- even
+	// though ReferencePolicies.Public is satisfied by any principal, anonymous role included. Paired with
+	// ChallengeAndForbidTests.The_grpc_lane_challenges_without_a_redirect (no cookie at all -> bare 401):
+	// together they pin both edges of NorseGrpcHandler's read-only anonymous fallback.
+	[Fact]
+	async Task The_grpc_lane_accepts_an_already_established_anonymous_cookie()
+	{
+		using var host = await WebServerHost.StartAsync();
+		var browser = host.CreateBrowserClient();
+
+		// Mints the anonymous cookie exactly as a first page view would; persisted on this client's own
+		// cookie jar (WebApplicationFactoryClientOptions.HandleCookies default) so the gRPC-Web call below
+		// carries it the same way a browser tab's next fetch would.
+		await browser.GetAsync(new Uri("/", UriKind.Relative), TestContext.Current.CancellationToken);
+
+		using var body = WebServerHost.EmptyGrpcBody();
+		var response = await browser.PostAsync(
+			new Uri("/grpc.reference.v1.ReferenceService/GetCountry", UriKind.Relative),
+			body, TestContext.Current.CancellationToken);
+
+		// Not a bare 401/403 -- authentication succeeded and the request reached the gRPC pipeline, which
+		// always answers HTTP 200 with the business (or business-fault) result riding grpc-status/the
+		// Outcome<T> payload, never the transport status. The empty-body request's own business outcome is
+		// out of scope here; CountryLookupE2ETests already proves the real round trip against a live database.
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+	}
+
 	// Needs a real listening Kestrel instance and a real browser: a live Blazor Server circuit (the
 	// SignalR /_blazor hub) has no shape an in-memory TestServer/raw HubConnection can drive without
 	// reverse-engineering the private wire protocol (decision recorded in the Task 14 fact 4 brief).

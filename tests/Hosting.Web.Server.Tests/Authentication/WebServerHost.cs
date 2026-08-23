@@ -1,5 +1,7 @@
+using System.Net;
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Norse.Infrastructure.Web.Server.Authentication;
 
 namespace Norse.Hosting.Web.Server.Tests.Authentication;
 
@@ -49,10 +51,27 @@ sealed class WebServerHost : IDisposable
 	///     response, not where a client-side redirect chain lands) and cookies persisted across requests on
 	///     this client instance (<see cref="WebApplicationFactoryClientOptions.HandleCookies" />'s default),
 	///     so the anonymous cookie the browser lane's anonymous handler mints on one request rides along on
-	///     the next, the way a tab's own cookie jar would.
+	///     the next, the way a tab's own cookie jar would. The <c>https://</c> base address is load-bearing,
+	///     not cosmetic: <see cref="NorseAnonymousOptions.BuildCookieOptions" /> marks the cookie
+	///     <c>Secure</c>, and <see cref="HttpClient" />'s own cookie container silently withholds a
+	///     <c>Secure</c> cookie from a plain-<c>http</c> request — the default base address
+	///     <see cref="WebApplicationFactory{TEntryPoint}" /> would otherwise use. HTTP/2 is requested
+	///     explicitly for the same reason <see cref="EmptyGrpcBody" />'s callers already need it
+	///     (mirrors Midgard's <c>LaneHost</c>): a gRPC endpoint answers 426 Upgrade Required to a plain
+	///     HTTP/1.1 request once authentication lets it reach routing, and the plain 401/403 lane tests
+	///     never got far enough into the pipeline to notice the client was never asking for HTTP/2.
 	/// </summary>
-	internal HttpClient CreateBrowserClient() =>
-		_factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+	internal HttpClient CreateBrowserClient()
+	{
+		var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+		{
+			AllowAutoRedirect = false,
+			BaseAddress = new Uri("https://localhost"),
+		});
+		client.DefaultRequestVersion = HttpVersion.Version20;
+		client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact;
+		return client;
+	}
 
 	/// <summary>
 	///     A well-formed, zero-length unary gRPC request body: a 5-byte frame (no compression, zero-length
