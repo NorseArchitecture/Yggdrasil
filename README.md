@@ -22,8 +22,7 @@ flowchart BT
 		WebComponents["Hosting.Web.Components"]
 		Worker["Hosting.Worker"]
 		MigrationsService["Hosting.Migrations.Service"]
-		StoriesServer["Hosting.Stories.Server"]
-		StoriesClient["Hosting.Stories.Client"]
+		StoriesHost["Hosting.Stories"]
 	end
 	subgraph Asgard["Asgard — Norse.Abstractions"]
 		AContracts["Abstractions.Contracts"]
@@ -96,11 +95,10 @@ flowchart BT
 	MigrationsService --> ServiceDefaults
 	MigrationsService --> UMigrations
 	MigrationsService --> RefDataEFMigPg
-	StoriesClient --> AuthNServices
-	StoriesClient --> Stories
-	StoriesClient --> ThemeFluentUI
-	StoriesServer --> ServiceDefaultsAspNet
-	StoriesServer --> StoriesClient
+	StoriesHost --> AuthNServices
+	StoriesHost --> Stories
+	StoriesHost --> ThemeFluentUI
+	StoriesHost --> ServiceDefaultsAspNet
 ```
 
 ## What's hosted here
@@ -109,7 +107,7 @@ flowchart BT
 - **`Hosting.Web.Client`** — the browser: a cookie-credentialed gRPC-Web channel to the generated client proxies (`AddNorseGrpcClients()`), `OutcomeClientInterceptor` decoding wire failures back into `Outcome<T>`, and FluentUI theming seeded from Naglfar's token package.
 - **`Hosting.Web.Components`** — the shared page shell (layout, nav, template pages, circuit safety net). Realm components arrive by the drop-in law: referencing the assembly *is* the registration — Mímir's `CountryLookup` page routed and served with no host edit beyond its nav entry.
 - **`Hosting.Migrations.Service`** — the permanent three-line migrations deployable: `AddNorseMigrations()` discovers every contributor at compile time, runs them against Postgres, and exits clean. New bounded contexts join by reference, never by edit.
-- **`Hosting.Stories.Client`/`.Stories.Server`** — the BlazingStory catalog host for Bragi's `DesignSystem.Stories`, published to `ghcr.io/norsearchitecture/hosting/stories`.
+- **`Hosting.Stories`** — the BlazingStory catalog host for Bragi's `DesignSystem.Stories`, now Blazor Interactive Server (not WASM) and also exposing an MCP endpoint (`AddBlazingStoryMcpServer()`/`MapBlazingStoryMcp()`), published to `ghcr.io/norsearchitecture/hosting/stories`.
 - **`Hosting.Worker`** — the one genuine stub left, waiting on the hosting abstractions from Asgard and Midgard.
 
 ## Status

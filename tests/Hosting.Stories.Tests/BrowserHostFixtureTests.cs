@@ -1,8 +1,8 @@
 using Microsoft.Playwright;
 using Norse.Hosting.BrowserTesting;
-using Norse.Hosting.Stories.Server.Tests.BrowserRuntime;
+using Norse.Hosting.Stories.Tests.BrowserRuntime;
 
-namespace Norse.Hosting.Stories.Server.Tests;
+namespace Norse.Hosting.Stories.Tests;
 
 public sealed class BrowserHostFixtureTests
 {
@@ -43,7 +43,7 @@ public sealed class BrowserHostFixtureTests
 			response.Status.ShouldBe(200);
 			var browserLanguage = await operation.Page.EvaluateAsync<string>("navigator.language");
 			browserLanguage.ShouldBe("en-US");
-		}, new StoriesBrowserEvidencePolicy(fixture.Origin)).WaitAsync(TestContext.Current.CancellationToken);
+		}, new StoriesBrowserEvidencePolicy()).WaitAsync(TestContext.Current.CancellationToken);
 	}
 }
 

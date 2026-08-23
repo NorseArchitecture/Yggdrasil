@@ -10,10 +10,10 @@ Run these commands from the `Yggdrasil` repository root, in this order:
 
 ```text
 dotnet build tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false
-dotnet build tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj -c Release -p:UseProjectReferences=false
+dotnet build tests/Hosting.Stories.Tests/Hosting.Stories.Tests.csproj -c Release -p:UseProjectReferences=false
 pwsh tests/Hosting.Web.Server.Tests/bin/Release/net11.0/playwright.ps1 install chromium
 dotnet test tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.WebServerBrowserRuntimeSmokeTests"
-dotnet test tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.StoriesBrowserRuntimeSmokeTests"
+dotnet test tests/Hosting.Stories.Tests/Hosting.Stories.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.StoriesBrowserRuntimeSmokeTests"
 ```
 
 The browser smoke classes and the real-host fixture are xUnit explicit tests: ordinary `dotnet test` selections skip them and do not start their Kestrel host or launch Chromium. Include `--explicit only` and the matching class filter to run the smoke classes deliberately. The ordinary `BrowserProcessLeaseTests` unit test intentionally acquires and releases its file lease twice to test that primitive; it has no browser prerequisite and is not a host-fixture or Chromium launch.

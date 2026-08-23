@@ -2,7 +2,7 @@ using System.Reflection;
 using Microsoft.Playwright;
 using Norse.Hosting.BrowserTesting;
 
-namespace Norse.Hosting.Stories.Server.Tests;
+namespace Norse.Hosting.Stories.Tests;
 
 public sealed class BrowserTimeoutClassificationTests
 {

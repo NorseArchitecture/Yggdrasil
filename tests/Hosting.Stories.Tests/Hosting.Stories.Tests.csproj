@@ -2,7 +2,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*-*" />
 		<PackageReference Include="Microsoft.Playwright" Version="*" />
-		<ProjectReference Include="..\..\src\Hosting.Stories.Server\Hosting.Stories.Server.csproj" />
+		<ProjectReference Include="..\..\src\Hosting.Stories\Hosting.Stories.csproj" />
 		<Compile Include="../BrowserTesting/*.cs" Link="BrowserTesting/%(Filename)%(Extension)" />
 	</ItemGroup>
 </Project>
