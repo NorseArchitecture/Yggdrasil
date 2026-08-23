@@ -104,7 +104,7 @@ if (-not [regex]::IsMatch($browserRuntimeJob.Groups['block'].Value, '(?m)^    ti
 }
 
 $webBuild = 'dotnet build tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false'
-$storiesBuild = 'dotnet build tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj -c Release -p:UseProjectReferences=false'
+$storiesBuild = 'dotnet build tests/Hosting.Stories.Tests/Hosting.Stories.Tests.csproj -c Release -p:UseProjectReferences=false'
 $build = Get-StepBlock $browserRuntimeJob.Groups['block'].Value 'Build browser hosts'
 Require-FiveMinuteTimeout $build 'Build browser hosts'
 Require-ExactRunBody $build 'Build browser hosts' @($webBuild, $storiesBuild)
@@ -123,7 +123,7 @@ if (-not [string]::Equals($installInvocations[0], '& $script.FullName install --
 }
 
 $webTest = 'dotnet test tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.WebServerBrowserRuntimeSmokeTests"'
-$storiesTest = 'dotnet test tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.StoriesBrowserRuntimeSmokeTests"'
+$storiesTest = 'dotnet test tests/Hosting.Stories.Tests/Hosting.Stories.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.StoriesBrowserRuntimeSmokeTests"'
 $test = Get-StepBlock $browserRuntimeJob.Groups['block'].Value 'Test browser hosts'
 Require-FiveMinuteTimeout $test 'Test browser hosts'
 Require-ExactRunBody $test 'Test browser hosts' @($webTest, $storiesTest)

@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
-		<OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+		<ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:$(ContainerVersion)</ContainerBaseImage>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -10,7 +10,10 @@
 		     longer consumes IAuthenticationService in code. The ref stays because Bragi's package
 		     carries its own baked transitive floor on Norse.AuthN.Services that NuGet's nearest-wins
 		     resolution would otherwise pick over our CPM pin — the direct ref plus the CPM pin at
-		     $(HeimdallVersion) keeps this composition root's pin authoritative. -->
+		     $(HeimdallVersion) keeps this composition root's pin authoritative. Unverified against a
+		     real NU1608 in this shape (2026-08-22): inside the Bifröst workspace NorseRef forwards to
+		     local project references, so no package-version comparison can fire here regardless —
+		     re-check in a standalone/package-mode restore post-tag. -->
 		<NorseRef Include="AuthN.Services">
 			<Repo>Heimdall</Repo>
 		</NorseRef>
@@ -20,11 +23,11 @@
 		<NorseRef Include="Infrastructure.Components.Theme.FluentUI">
 			<Repo>Midgard</Repo>
 		</NorseRef>
+		<NorseRef Include="Infrastructure.ServiceDefaults.AspNet">
+			<Repo>Midgard</Repo>
+		</NorseRef>
 		<PackageReference Include="BlazingStory" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
-		<SupportedPlatform Include="browser" />
-
+		<PackageReference Include="BlazingStory.McpServer" />
 	</ItemGroup>
 
 </Project>

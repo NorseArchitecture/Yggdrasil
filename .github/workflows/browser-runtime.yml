@@ -34,7 +34,7 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
         run: |
           dotnet build tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false
-          dotnet build tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj -c Release -p:UseProjectReferences=false
+          dotnet build tests/Hosting.Stories.Tests/Hosting.Stories.Tests.csproj -c Release -p:UseProjectReferences=false
 
       - name: Install Chromium
         timeout-minutes: 5
@@ -51,7 +51,7 @@ jobs:
         timeout-minutes: 5
         run: |
           dotnet test tests/Hosting.Web.Server.Tests/Hosting.Web.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.WebServerBrowserRuntimeSmokeTests" "*.LaneCompositionTests"
-          dotnet test tests/Hosting.Stories.Server.Tests/Hosting.Stories.Server.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.StoriesBrowserRuntimeSmokeTests"
+          dotnet test tests/Hosting.Stories.Tests/Hosting.Stories.Tests.csproj -c Release -p:UseProjectReferences=false --no-build -- --explicit only --filter-class "*.StoriesBrowserRuntimeSmokeTests"
 
       - name: Upload Playwright failure evidence
         if: failure()

@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Norse.Hosting.Stories.Server.Tests.BrowserRuntime;
+namespace Norse.Hosting.Stories.Tests.BrowserRuntime;
 
 [CollectionDefinition(Name, DisableParallelization = true)]
 [SuppressMessage("Design", "CA1711:Identifiers should not have incorrect suffix",

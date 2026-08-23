@@ -22,6 +22,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="BlazingStory" Version="$(BlazingStoryVersion)" />
+		<PackageVersion Include="BlazingStory.McpServer" Version="$(BlazingStoryVersion)" />
 		<PackageVersion Include="Grpc.AspNetCore.Web" Version="$(GrpcVersion)" />
 		<PackageVersion Include="Grpc.Net.Client" Version="$(GrpcVersion)" />
 		<PackageVersion Include="Grpc.Net.Client.Web" Version="$(GrpcVersion)" />

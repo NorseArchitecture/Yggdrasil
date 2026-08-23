@@ -1,0 +1,17 @@
+@using BlazingStory.Components
+@using Microsoft.FluentUI.AspNetCore.Components
+@using Norse.DesignSystem.Stories
+@using Norse.Infrastructure.Components.Theme.FluentUI
+@*
+    Spike note (Task 4, 2026-08-22): this indirection is load-bearing, not incidental. Putting
+    @rendermode directly on <BlazingStoryApp> makes ASP.NET Core treat it as the interactive-server
+    render-mode boundary, which tries to JSON-serialize its parameters (Assemblies: IEnumerable
+    <Assembly>) into the boundary marker — Assembly/TypeInfo is not JSON-serializable, and the
+    request 500s (System.NotSupportedException). A parameterless wrapper carries the boundary
+    instead; NorseFluentDesignTheme, FluentProviders, and BlazingStoryApp are all plain children
+    that inherit interactivity for free, no serialization involved. See
+    ../Glitnir/docs/Platform/specs/2026-08-22-stories-blazor-server-mcp-design.md.
+*@
+<NorseFluentDesignTheme/>
+<FluentProviders/>
+<BlazingStoryApp Assemblies="[typeof(AssemblyMarker).Assembly]"/>

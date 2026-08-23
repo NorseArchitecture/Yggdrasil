@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Norse.Hosting.Stories.Server.Tests;
+namespace Norse.Hosting.Stories.Tests;
 
 public sealed class StoriesServerTests(WebApplicationFactory<Program> factory)
 	: IClassFixture<WebApplicationFactory<Program>>
@@ -14,7 +14,13 @@ public sealed class StoriesServerTests(WebApplicationFactory<Program> factory)
 
 		response.EnsureSuccessStatusCode();
 		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-		body.ShouldContain("_framework/blazor.webassembly");
+		// Confirmed live (Task 6, 2026-08-22): under Interactive Server this marker comment is
+		// emitted by Blazor Web's own component-serialization boundary and only appears when the
+		// root component actually rendered as a Server render-mode boundary -- a static or
+		// misrouted fallback page never carries it. It replaces the WASM-era
+		// "_framework/blazor.webassembly" substring check, which no longer holds: this host serves
+		// no .wasm runtime or blazor.webassembly.*.js asset at all.
+		body.ShouldContain("<!--Blazor-Server-Component-State:");
 	}
 
 	[Fact]
@@ -25,7 +31,7 @@ public sealed class StoriesServerTests(WebApplicationFactory<Program> factory)
 
 		response.EnsureSuccessStatusCode();
 		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-		body.ShouldContain("_framework/blazor.webassembly");
+		body.ShouldContain("<!--Blazor-Server-Component-State:");
 	}
 
 	// The asset host's probes are the one place a body assertion is load-bearing rather than
@@ -39,10 +45,9 @@ public sealed class StoriesServerTests(WebApplicationFactory<Program> factory)
 	// authorization metadata, but a middleware was not found that supports authorization" -- Midgard's
 	// MapDefaultEndpoints() now unconditionally attaches .RequireAuthorization(NorsePolicies.Probe) to
 	// /health and /alive. The gap is real, not a test-fixture artifact -- it would 500 in production the
-	// same way. It is deliberately left unfixed here: Hosting.Stories.Server is about to be fully ported
-	// from WASM to Blazor Server in a separate, already-planned effort, and fixing this Program.cs now
-	// would be throwaway work against a host that's about to be replaced. That port is expected to
-	// resurrect this test (and land the real Program.cs fix) properly.
+	// same way. Confirmed still present post-port (Task 6, 2026-08-22): Hosting.Stories/Program.cs
+	// still never calls UseAuthentication()/UseAuthorization(). Left unfixed here, not resurrected by
+	// the port -- still a live gap for whoever wires up auth on this host next.
 	// [Theory]
 	// [InlineData(HealthEndpoints.Liveness)]
 	// [InlineData(HealthEndpoints.Readiness)]

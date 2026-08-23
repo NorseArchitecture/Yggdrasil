@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Norse.Hosting.BrowserTesting;
 
-namespace Norse.Hosting.Stories.Server.Tests.BrowserRuntime;
+namespace Norse.Hosting.Stories.Tests.BrowserRuntime;
 
 [Collection(StoriesBrowserCollection.Name)]
 public sealed class StoriesBrowserRuntimeSmokeTests(StoriesBrowserFixture fixture)
@@ -161,7 +161,6 @@ public sealed class StoriesBrowserRuntimeSmokeTests(StoriesBrowserFixture fixtur
 						sweepCheckpoint,
 						"full dynamic catalog sweep",
 						RuntimeCheckpointLaw.FullSweep);
-					var redirectCount = audit.AssertRedirectLaw();
 					Console.WriteLine(
 						$"Cold Register checkpoint: messages={coldValidationMessages}; " +
 						$"navigations={coldEvidence.NavigationCount}; bootstraps={coldEvidence.BootstrapCount}; " +
@@ -176,7 +175,7 @@ public sealed class StoriesBrowserRuntimeSmokeTests(StoriesBrowserFixture fixtur
 						$"sample={discovery.DomSample}");
 					Console.WriteLine(
 						$"Catalog sweep: driven={drivenStates.Count}; max-live-frames={audit.MaxLiveFrameCount}; " +
-						$"stylesheet-redirects={redirectCount}; bootstrap-requests={audit.BootstrapCount}; " +
+						$"bootstrap-requests={audit.BootstrapCount}; " +
 						$"checkpoint-navigations={sweepEvidence.NavigationCount}; " +
 						$"checkpoint-lifecycle={sweepEvidence.LifecycleEventCount}");
 				}
@@ -189,7 +188,7 @@ public sealed class StoriesBrowserRuntimeSmokeTests(StoriesBrowserFixture fixtur
 				{
 					audit.Dispose();
 				}
-			}, fixture.CreateEvidencePolicy()).WaitAsync(TestContext.Current.CancellationToken);
+			}, StoriesBrowserFixture.CreateEvidencePolicy()).WaitAsync(TestContext.Current.CancellationToken);
 		}
 		catch (Exception exception)
 		{
@@ -222,6 +221,18 @@ public sealed class StoriesBrowserRuntimeSmokeTests(StoriesBrowserFixture fixtur
 		await AwaitPlaywrightActionAsync(page, install, cancellationToken);
 	}
 
+	// Confirmed live (Task 6, 2026-08-22): Norse.Hosting.BrowserTesting.FrameworkRequestQuiescence
+	// (shared with Hosting.Web.Server.Tests) waits for a *successful .wasm response* before
+	// declaring the framework quiescent -- a WASM-boot-specific signal this host can never satisfy,
+	// since it never serves any .wasm asset at all (Interactive Server only, confirmed against the
+	// real running host: zero ".wasm" requests across an outer load and a multi-canvas Docs page).
+	// Calling it here would deadlock every cold direct navigation until the phase budget expired.
+	// The replacement below performs the direct navigation itself, then defers the actual
+	// "is this circuit really up" proof to AwaitStoryFrameAsync (which now also asserts the
+	// _blazing_story_ready_for_visible marker) and, immediately after this call returns, to
+	// AssertRequiredDriverCompleteAsync -- a real JS-interop round trip through the connected
+	// SignalR circuit is strictly stronger evidence of "booted" than the old network-quiescence
+	// heuristic.
 	static async Task<IFrame> OpenDirectStoryAsync(
 		IPage page,
 		Uri origin,
@@ -229,10 +240,13 @@ public sealed class StoriesBrowserRuntimeSmokeTests(StoriesBrowserFixture fixtur
 		CancellationToken cancellationToken)
 	{
 		var expectedUrl = new Uri(origin, link);
-		await FrameworkRequestQuiescence.WaitAsync(
+		await AwaitPlaywrightActionAsync(
 			page,
-			origin,
-			expectedUrl.AbsoluteUri,
+			page.GotoAsync(expectedUrl.AbsoluteUri, new()
+			{
+				WaitUntil = WaitUntilState.DOMContentLoaded,
+				Timeout = BrowserTimeouts.PlaywrightHostStartupMilliseconds,
+			}),
 			cancellationToken);
 		await AwaitPlaywrightActionAsync(
 			page,
@@ -480,9 +494,25 @@ public sealed class StoriesBrowserRuntimeSmokeTests(StoriesBrowserFixture fixtur
 				"story",
 				new() { Timeout = BrowserTimeouts.PlaywrightStoryStateMilliseconds }),
 			cancellationToken);
+		// Render-mode-agnostic (Task 4's findings, confirmed live under Interactive Server, Task 6):
+		// BlazingStoryApp's own JS adds this class to the canvas document's <html> once fonts/styles
+		// finish loading and frame-size adjustment settles. Reused unchanged from the WASM-era
+		// design as the definitive "canvas really rendered" signal.
 		await AwaitPlaywrightActionAsync(
 			page,
-			Assertions.Expect(frame.Locator("#app > *")).Not.ToHaveCountAsync(
+			Assertions.Expect(frame.Locator("html._blazing_story_ready_for_visible")).ToHaveCountAsync(
+				1,
+				new() { Timeout = BrowserTimeouts.PlaywrightStoryStateMilliseconds }),
+			cancellationToken);
+		// Confirmed live (Task 6, 2026-08-22): this host never renders a "#app" mount div anywhere
+		// -- that was the WASM-era client-side mount point (Blazor.start() attaches to it); Blazor
+		// Server renders the component tree directly. ".preview-story-area" is BlazingStory's own
+		// generic wrapper around a rendered story's content, present and populated for every story
+		// type verified live (a plain fake-driven form and a markup-only Loader primitive alike),
+		// so it replaces "#app" as the render-mode-agnostic "canvas has real content" signal.
+		await AwaitPlaywrightActionAsync(
+			page,
+			Assertions.Expect(frame.Locator(".preview-story-area > *")).Not.ToHaveCountAsync(
 				0,
 				new() { Timeout = BrowserTimeouts.PlaywrightStoryStateMilliseconds }),
 			cancellationToken);
@@ -683,35 +713,37 @@ public sealed class StoriesBrowserRuntimeSmokeTests(StoriesBrowserFixture fixtur
 
 public sealed class StoriesBrowserEvidencePolicyTests
 {
-	static readonly Uri _origin = new("http://127.0.0.1:54321");
 	const string OverflowError = """
 		page-error page=http://127.0.0.1:54321/?path=/story/authentication-login--default: Error: The custom event 'overflowchange' cannot have the same name as its browserEventName 'overflowchange'. Choose a different name for the custom event.
-		    at Object.registerCustomEventType (http://127.0.0.1:54321/_framework/blazor.webassembly.ax9cgflnhi.js:1:60603)
+		    at Object.registerCustomEventType (http://127.0.0.1:54321/_framework/blazor.web.ax9cgflnhi.js:1:60603)
 		    at Object.d [as Overflow] (http://127.0.0.1:54321/_content/Microsoft.FluentUI.AspNetCore.Components/Microsoft.FluentUI.AspNetCore.Components.lib.module.js:6004:5984)
 		    at A (http://127.0.0.1:54321/_content/Microsoft.FluentUI.AspNetCore.Components/Microsoft.FluentUI.AspNetCore.Components.lib.module.js:6004:9689)
 		""";
 	const string AccordionError = """
 		page-error page=http://127.0.0.1:54321/: Error: The event 'accordionchange' is already registered.
-		    at Object.registerCustomEventType (http://127.0.0.1:54321/_framework/blazor.webassembly.ax9cgflnhi.js:1:60603)
+		    at Object.registerCustomEventType (http://127.0.0.1:54321/_framework/blazor.web.ax9cgflnhi.js:1:60603)
 		    at Object.s [as Accordion] (http://127.0.0.1:54321/_content/Microsoft.FluentUI.AspNetCore.Components/Microsoft.FluentUI.AspNetCore.Components.lib.module.js:6004:3548)
 		""";
 
 	[Fact]
-	void Fluent_UI_overflow_allowance_is_exact_and_bounded_to_seven_runtimes()
+	void Fluent_UI_registration_allowance_is_exact_and_bounded_per_message_type()
 	{
-		StoriesBrowserEvidencePolicy policy = new(_origin);
+		StoriesBrowserEvidencePolicy policy = new();
 
-		for (var runtime = 0; runtime < 7; runtime++)
+		for (var runtime = 0; runtime < StoriesBrowserEvidencePolicy.MaxRegisteringRuntimes; runtime++)
 			policy.IsExpectedPageError(OverflowError).ShouldBeTrue();
 		policy.IsExpectedPageError(OverflowError).ShouldBeFalse();
+
+		for (var runtime = 0; runtime < StoriesBrowserEvidencePolicy.MaxRegisteringRuntimes; runtime++)
+			policy.IsExpectedPageError(AccordionError).ShouldBeTrue();
+		policy.IsExpectedPageError(AccordionError).ShouldBeFalse();
 	}
 
 	[Fact]
-	void Fluent_UI_overflow_allowance_rejects_message_stack_alias_and_origin_near_misses()
+	void Fluent_UI_registration_allowance_rejects_message_stack_alias_and_origin_near_misses()
 	{
-		StoriesBrowserEvidencePolicy policy = new(_origin);
+		StoriesBrowserEvidencePolicy policy = new();
 
-		policy.IsExpectedPageError(AccordionError).ShouldBeFalse();
 		policy.IsExpectedPageError(
 			OverflowError.Replace("Choose a different name", "Please choose a different name")).ShouldBeFalse();
 		policy.IsExpectedPageError(
@@ -723,78 +755,10 @@ public sealed class StoriesBrowserEvidencePolicyTests
 			OverflowError.Replace(
 				"Microsoft.FluentUI.AspNetCore.Components.lib.module.js",
 				"other.lib.module.js")).ShouldBeFalse();
-	}
-
-	[Fact]
-	void Scoped_stylesheet_redirect_policy_accepts_only_the_exact_302_chain_start()
-	{
-		StoriesBrowserEvidencePolicy policy = new(_origin);
-
-		policy.IsExpectedRedirect(Response(
-			302,
-			"GET",
-			StoriesBrowserEvidencePolicy.RequestedStylesheetPath,
-			null)).ShouldBeTrue();
-		policy.IsExpectedRedirect(Response(
-			302,
-			"GET",
-			StoriesBrowserEvidencePolicy.RequestedStylesheetPath,
-			StoriesBrowserEvidencePolicy.TargetStylesheetPath)).ShouldBeTrue();
-		policy.IsExpectedRedirect(Response(
-			301,
-			"GET",
-			StoriesBrowserEvidencePolicy.RequestedStylesheetPath,
-			StoriesBrowserEvidencePolicy.TargetStylesheetPath)).ShouldBeFalse();
-		policy.IsExpectedRedirect(Response(
-			302,
-			"POST",
-			StoriesBrowserEvidencePolicy.RequestedStylesheetPath,
-			StoriesBrowserEvidencePolicy.TargetStylesheetPath)).ShouldBeFalse();
-	}
-
-	[Fact]
-	void Scoped_stylesheet_redirect_policy_rejects_source_and_origin_near_misses()
-	{
-		StoriesBrowserEvidencePolicy policy = new(_origin);
-
-		policy.IsExpectedRedirect(Response(
-			302,
-			"GET",
-			$"{StoriesBrowserEvidencePolicy.RequestedStylesheetPath}?v=1",
-			StoriesBrowserEvidencePolicy.TargetStylesheetPath)).ShouldBeFalse();
-		policy.IsExpectedRedirect(Response(
-			302,
-			"GET",
-			StoriesBrowserEvidencePolicy.RequestedStylesheetPath,
-			StoriesBrowserEvidencePolicy.TargetStylesheetPath,
-			sourceOrigin: "http://localhost:54321")).ShouldBeFalse();
-	}
-
-	[Fact]
-	void Scoped_stylesheet_redirect_terminal_requires_the_exact_correlated_200_target()
-	{
-		var source = Response(
-			302,
-			"GET",
-			StoriesBrowserEvidencePolicy.RequestedStylesheetPath,
-			null);
-
-		StoriesBrowserEvidencePolicy.MatchesExpectedRedirectTarget(
-			TargetResponse(200, StoriesBrowserEvidencePolicy.TargetStylesheetPath, source.Request),
-			source.Request,
-			_origin).ShouldBeTrue();
-		StoriesBrowserEvidencePolicy.MatchesExpectedRedirectTarget(
-			TargetResponse(204, StoriesBrowserEvidencePolicy.TargetStylesheetPath, source.Request),
-			source.Request,
-			_origin).ShouldBeFalse();
-		StoriesBrowserEvidencePolicy.MatchesExpectedRedirectTarget(
-			TargetResponse(200, "/Norse.Hosting.Stories.Client.other.css", source.Request),
-			source.Request,
-			_origin).ShouldBeFalse();
-		StoriesBrowserEvidencePolicy.MatchesExpectedRedirectTarget(
-			TargetResponse(200, StoriesBrowserEvidencePolicy.TargetStylesheetPath, Substitute.For<IRequest>()),
-			source.Request,
-			_origin).ShouldBeFalse();
+		policy.IsExpectedPageError(
+			AccordionError.Replace("is already registered", "was already registered")).ShouldBeFalse();
+		policy.IsExpectedPageError(
+			AccordionError.Replace("[as Accordion]", "[as Overflow]")).ShouldBeFalse();
 	}
 
 	[Fact]
@@ -917,47 +881,11 @@ public sealed class StoriesBrowserEvidencePolicyTests
 	}
 
 	static RuntimeBootstrapObservation OuterBootstrap() =>
-		new("cold", "http://127.0.0.1:54321/_framework/blazor.webassembly.js", "http://127.0.0.1:54321/", true);
+		new("cold", "http://127.0.0.1:54321/_framework/blazor.web.js", "http://127.0.0.1:54321/", true);
 
 	static RuntimeBootstrapObservation CanvasBootstrap() =>
-		new("story", "http://127.0.0.1:54321/_framework/blazor.webassembly.js", "http://127.0.0.1:54321/iframe.html?id=story", false);
+		new("story", "http://127.0.0.1:54321/_framework/blazor.web.js", "http://127.0.0.1:54321/iframe.html?id=story", false);
 
 	static RuntimeBootstrapObservation NestedBootstrap() =>
-		new("story", "http://127.0.0.1:54321/_framework/blazor.webassembly.js", "http://127.0.0.1:54321/", false);
-
-	static IResponse Response(
-		int status,
-		string method,
-		string sourcePath,
-		string? targetPath,
-		string? targetOrigin = null,
-		string? sourceOrigin = null)
-	{
-		var request = Substitute.For<IRequest>();
-		request.Method.Returns(method);
-		if (targetPath is not null)
-		{
-			var redirectedTo = Substitute.For<IRequest>();
-			redirectedTo.Url.Returns($"{targetOrigin ?? _origin.GetLeftPart(UriPartial.Authority)}{targetPath}");
-			request.RedirectedTo.Returns(redirectedTo);
-		}
-		var response = Substitute.For<IResponse>();
-		response.Status.Returns(status);
-		var sourceBase = new Uri(sourceOrigin ?? _origin.GetLeftPart(UriPartial.Authority) + "/");
-		response.Url.Returns(new Uri(sourceBase, sourcePath).AbsoluteUri);
-		response.Request.Returns(request);
-		return response;
-	}
-
-	static IResponse TargetResponse(int status, string targetPath, IRequest redirectedFrom)
-	{
-		var request = Substitute.For<IRequest>();
-		request.Method.Returns("GET");
-		request.RedirectedFrom.Returns(redirectedFrom);
-		var response = Substitute.For<IResponse>();
-		response.Status.Returns(status);
-		response.Url.Returns(new Uri(_origin, targetPath).AbsoluteUri);
-		response.Request.Returns(request);
-		return response;
-	}
+		new("story", "http://127.0.0.1:54321/_framework/blazor.web.js", "http://127.0.0.1:54321/", false);
 }

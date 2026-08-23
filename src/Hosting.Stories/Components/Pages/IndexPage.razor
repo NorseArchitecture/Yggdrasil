@@ -1,0 +1,30 @@
+@inject NavigationManager NavigationManager
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Norse Stories</title>
+    <base href="@(new Uri(NavigationManager.BaseUri).AbsolutePath)"/>
+    <ResourcePreloader/>
+    <ImportMap/>
+    <link rel="stylesheet" href="@Assets["css/blazor-ui.css"]"/>
+    <!-- Path defined in Norse.Infrastructure.Components.Theme.NorseThemeAssets.StylesheetPath -->
+    <link rel="stylesheet" href="_content/Norse.DesignSystem.Tokens/norse-design-tokens.css"/>
+    <HeadOutlet @rendermode="InteractiveServer"/>
+</head>
+
+<body>
+<Norse.Hosting.Stories.Components.App @rendermode="InteractiveServer"/>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>

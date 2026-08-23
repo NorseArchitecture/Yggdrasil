@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Playwright;
 using Norse.Hosting.BrowserTesting;
 
-namespace Norse.Hosting.Stories.Server.Tests.BrowserRuntime;
+namespace Norse.Hosting.Stories.Tests.BrowserRuntime;
 
 public sealed class StoriesBrowserFixture : IAsyncLifetime
 {
@@ -27,72 +27,83 @@ public sealed class StoriesBrowserFixture : IAsyncLifetime
 	internal Task<BrowserEvidence> OpenEvidenceAsync(string testName) =>
 		_host.OpenEvidenceAsync(testName);
 
-	internal StoriesBrowserEvidencePolicy CreateEvidencePolicy() => new(Origin);
+	internal static StoriesBrowserEvidencePolicy CreateEvidencePolicy() => new();
 
 	public ValueTask DisposeAsync() => _host.DisposeAsync();
 }
 
 sealed class StoriesBrowserHostFixture : BrowserHostFixture<Program>;
 
-sealed class StoriesBrowserEvidencePolicy(Uri origin) :
-	BrowserEvidencePolicy("Stories.Server exact scoped-CSS redirect")
+// Confirmed live (Task 6, 2026-08-22): the scoped-CSS redirect this policy used to allow no longer
+// occurs at all. Under WASM mode, the requested "Hosting.Stories.Client.styles.css" link didn't
+// carry the brand prefix and 302'd to "Norse.Hosting.Stories.Client.styles.css". Under Interactive
+// Server, IFramePage.razor references the bundle through @Assets[...], which resolves straight to
+// its fingerprinted path (e.g. "Norse.Hosting.Stories.{hash}.styles.css") with zero redirects --
+// live-verified against the running host across an outer load and a multi-canvas Docs page. The
+// base BrowserEvidence collector already fails on any *unaccepted* first-party redirect, so once
+// this policy accepts none, an unexpected regression back to a redirecting reference still fails
+// loudly; there is no longer a dedicated law to encode here.
+sealed class StoriesBrowserEvidencePolicy() :
+	BrowserEvidencePolicy("Stories FluentUI custom-event registration allowance")
 {
+	// Confirmed live (Task 6, 2026-08-22): under Interactive Server, FluentUI's JS module
+	// double-registers two custom DOM events -- 'overflowchange' and 'accordionchange' -- once each
+	// per top-level Blazor Web document/circuit it attaches to (the outer catalog shell and every
+	// canvas iframe alike), because its module's afterWebStarted (SSR/prerender pass) and
+	// afterServerStarted (interactive pass) lifecycle callbacks both fire on the same page load.
+	// Reused (pooled) canvases that client-navigate in place, rather than mounting a fresh document,
+	// do not repeat this. This predates any Stories-authored FluentUI markup (BlazingStory ships
+	// none of its own either) and is cosmetic -- it never blocked rendering or interactivity in
+	// live verification. See Task 4's findings note for the WASM-mode precedent (overflow only).
 	const string OverflowMessage =
 		"Error: The custom event 'overflowchange' cannot have the same name as its browserEventName 'overflowchange'. Choose a different name for the custom event.";
+	const string AccordionMessage =
+		"Error: The event 'accordionchange' is already registered.";
 	const string FluentUiModulePath =
 		"/_content/Microsoft.FluentUI.AspNetCore.Components/Microsoft.FluentUI.AspNetCore.Components.lib.module.js:";
-	internal const string RequestedStylesheetPath = "/Hosting.Stories.Client.styles.css";
-	internal const string TargetStylesheetPath = "/Norse.Hosting.Stories.Client.styles.css";
+	const string FrameworkScriptPathMarker = "/_framework/blazor.web.";
+
+	// Bound to AssertFrameLawAsync's own structural ceiling (preview.91 permits at most 7 live
+	// frames -- the outer shell plus PooledIFrame's 5-pool + 1-active canvas ceiling): every
+	// distinct top-level document/circuit this run can ever create contributes at most one of each
+	// message, so each message type is independently bounded by that same ceiling.
+	internal const int MaxRegisteringRuntimes = 7;
+
 	int _acceptedOverflowErrors;
+	int _acceptedAccordionErrors;
 
 	internal override bool IsExpectedPageError(string error)
 	{
-		if (_acceptedOverflowErrors >= 7 || !MatchesOverflowRegistrationError(error))
-			return false;
-		_acceptedOverflowErrors++;
-		return true;
+		if (MatchesRegistrationError(error, OverflowMessage, "Overflow"))
+		{
+			if (_acceptedOverflowErrors >= MaxRegisteringRuntimes)
+				return false;
+			_acceptedOverflowErrors++;
+			return true;
+		}
+		if (MatchesRegistrationError(error, AccordionMessage, "Accordion"))
+		{
+			if (_acceptedAccordionErrors >= MaxRegisteringRuntimes)
+				return false;
+			_acceptedAccordionErrors++;
+			return true;
+		}
+		return false;
 	}
 
-	internal override bool IsExpectedRedirect(IResponse response) =>
-		MatchesExpectedRedirect(response, origin);
-
-	internal static bool MatchesExpectedRedirect(IResponse response, Uri expectedOrigin)
-		=> response.Status == 302 &&
-			response.Request.Method == "GET" &&
-			IsExactFirstPartyPath(response.Url, expectedOrigin, RequestedStylesheetPath);
-
-	internal static bool MatchesExpectedRedirectTarget(
-		IResponse response,
-		IRequest redirectSource,
-		Uri expectedOrigin) =>
-		response.Status == 200 &&
-		response.Request.Method == "GET" &&
-		ReferenceEquals(response.Request.RedirectedFrom, redirectSource) &&
-		IsExactFirstPartyPath(response.Url, expectedOrigin, TargetStylesheetPath);
-
-	internal static bool IsExactFirstPartyPath(string url, Uri expectedOrigin, string expectedPath) =>
-		Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
-		string.Equals(
-			uri.GetLeftPart(UriPartial.Authority),
-			expectedOrigin.GetLeftPart(UriPartial.Authority),
-			StringComparison.Ordinal) &&
-		uri.AbsolutePath == expectedPath &&
-		string.IsNullOrEmpty(uri.Query) &&
-		string.IsNullOrEmpty(uri.Fragment);
-
-	internal static bool MatchesOverflowRegistrationError(string error)
+	internal static bool MatchesRegistrationError(string error, string expectedMessage, string expectedCallback)
 	{
 		var lines = error.Split('\n');
 		return lines.Length >= 3 &&
 			lines[0].StartsWith("page-error page=http://127.0.0.1:", StringComparison.Ordinal) &&
-			lines[0].EndsWith($": {OverflowMessage}", StringComparison.Ordinal) &&
+			lines[0].EndsWith($": {expectedMessage}", StringComparison.Ordinal) &&
 			lines[1].StartsWith(
 				"    at Object.registerCustomEventType (http://127.0.0.1:",
 				StringComparison.Ordinal) &&
-			lines[1].Contains("/_framework/blazor.webassembly.", StringComparison.Ordinal) &&
+			lines[1].Contains(FrameworkScriptPathMarker, StringComparison.Ordinal) &&
 			lines[1].Contains(".js:", StringComparison.Ordinal) &&
 			lines[2].StartsWith("    at Object.", StringComparison.Ordinal) &&
-			lines[2].Contains(" [as Overflow] (http://127.0.0.1:", StringComparison.Ordinal) &&
+			lines[2].Contains($" [as {expectedCallback}] (http://127.0.0.1:", StringComparison.Ordinal) &&
 			lines[2].Contains(FluentUiModulePath, StringComparison.Ordinal);
 	}
 }
@@ -102,7 +113,6 @@ sealed class StoriesRuntimeAudit : IDisposable
 	readonly IPage _page;
 	readonly Uri _origin;
 	readonly Func<string> _currentState;
-	readonly ConcurrentQueue<ResponseObservation> _responses = new();
 	readonly ConcurrentQueue<RuntimeBootstrapObservation> _bootstraps = new();
 	readonly ConcurrentQueue<NavigationObservation> _navigations = new();
 	readonly ConcurrentQueue<RuntimeLifecycleObservation> _lifecycleEvents = new();
@@ -118,7 +128,6 @@ sealed class StoriesRuntimeAudit : IDisposable
 		_origin = origin;
 		_currentState = currentState;
 		_page.Request += RecordRequest;
-		_page.Response += RecordResponse;
 		_page.FrameNavigated += RecordNavigation;
 		_page.Console += RecordConsole;
 	}
@@ -207,42 +216,6 @@ sealed class StoriesRuntimeAudit : IDisposable
 		}
 	}
 
-	internal int AssertRedirectLaw()
-	{
-		var responses = _responses.ToArray();
-		var redirects = responses.Where(static response =>
-			response.Status is >= 300 and <= 399 && response.Status != 304).ToArray();
-		foreach (var redirect in redirects)
-		{
-			if (!redirect.ExpectedRedirect)
-			{
-				var observedTarget = responses.SingleOrDefault(response =>
-					ReferenceEquals(response.Request.RedirectedFrom, redirect.Request));
-				throw new BrowserFailure(
-					$"Unexpected first-party redirect in state {redirect.State}: " +
-					$"{redirect.Status} {redirect.Url} -> {observedTarget?.Url ?? "<none>"}.");
-			}
-		}
-
-		var stylesheetRedirects = redirects.Where(static response =>
-			response.ExpectedRedirect).ToArray();
-		if (stylesheetRedirects.Length == 0)
-			throw new BrowserFailure(
-				$"Observed 0 exact {StoriesBrowserEvidencePolicy.RequestedStylesheetPath} redirects; required at least 1.");
-
-		foreach (var redirect in stylesheetRedirects)
-		{
-			var final = responses.SingleOrDefault(response =>
-				StoriesBrowserEvidencePolicy.MatchesExpectedRedirectTarget(
-					response.Response,
-					redirect.Request,
-					_origin)) ?? throw new BrowserFailure(
-				$"The expected stylesheet redirect in state {redirect.State} exposed no terminal response.");
-		}
-
-		return stylesheetRedirects.Length;
-	}
-
 	internal async Task AppendFailureEvidenceAsync(string testName)
 	{
 		var directory = Path.Combine(BrowserFailure.ArtifactRoot, testName);
@@ -272,7 +245,6 @@ sealed class StoriesRuntimeAudit : IDisposable
 		if (_disposed)
 			return;
 		_page.Request -= RecordRequest;
-		_page.Response -= RecordResponse;
 		_page.FrameNavigated -= RecordNavigation;
 		_page.Console -= RecordConsole;
 		_disposed = true;
@@ -282,8 +254,14 @@ sealed class StoriesRuntimeAudit : IDisposable
 	{
 		try
 		{
+			// Confirmed live (Task 6, 2026-08-22): this host serves "_framework/blazor.web.{hash}.js"
+			// (Blazor Web's unified script), never "_framework/blazor.webassembly.*" -- no .wasm
+			// runtime exists anywhere on this host. Exactly one such script request fires per
+			// top-level document/circuit ever created (the outer shell, and each canvas iframe on
+			// its first creation); a pooled canvas that is reused via client-side navigation fires
+			// none, matching the old WASM-era bootstrap-counting semantics this replaces.
 			if (!TryGetFirstPartyUri(request.Url, out var uri) ||
-				!uri.AbsolutePath.StartsWith("/_framework/blazor.webassembly", StringComparison.Ordinal))
+				!uri.AbsolutePath.StartsWith("/_framework/blazor.web.", StringComparison.Ordinal))
 				return;
 
 			string frameUrl;
@@ -336,35 +314,8 @@ sealed class StoriesRuntimeAudit : IDisposable
 				false));
 	}
 
-	void RecordResponse(object? _, IResponse response)
-	{
-		try
-		{
-			if (!IsFirstParty(response.Url))
-				return;
-			_responses.Enqueue(new(
-				_currentState(),
-				response,
-				response.Status,
-				response.Url,
-				response.Request,
-				StoriesBrowserEvidencePolicy.MatchesExpectedRedirect(response, _origin)));
-		}
-		catch (Exception exception)
-		{
-			_diagnostics.Enqueue($"stories-response-callback-failure: {exception}");
-		}
-	}
-
 	bool TryGetFirstPartyUri(string url, [NotNullWhen(true)] out Uri? uri) =>
 		Uri.TryCreate(url, UriKind.Absolute, out uri) &&
-		string.Equals(
-			uri.GetLeftPart(UriPartial.Authority),
-			_origin.GetLeftPart(UriPartial.Authority),
-			StringComparison.Ordinal);
-
-	bool IsFirstParty(string url) =>
-		Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
 		string.Equals(
 			uri.GetLeftPart(UriPartial.Authority),
 			_origin.GetLeftPart(UriPartial.Authority),
@@ -415,14 +366,6 @@ sealed class StoriesRuntimeAudit : IDisposable
 			throw;
 		}
 	}
-
-	sealed record ResponseObservation(
-		string State,
-		IResponse Response,
-		int Status,
-		string Url,
-		IRequest Request,
-		bool ExpectedRedirect);
 
 	sealed record NavigationObservation(string State, string Url, string ParentUrl);
 }
