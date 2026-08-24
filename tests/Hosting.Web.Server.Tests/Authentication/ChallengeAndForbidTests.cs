@@ -38,8 +38,12 @@ public sealed class ChallengeAndForbidTests
 		// UNIMPLEMENTED fallback (a 200 with a grpc-status trailer, logged as "Service ... is unimplemented")
 		// -- which also carries no Location header and an empty body, so it passed this fact without ever
 		// exercising NorseSchemes.IdentityCookieOnly's forward to the machine lane at all. The corrected path
-		// below was confirmed (by the same empirical run) to reach real authorization and get rejected by
-		// NorseMachineRejectionHandler, logged as "AuthenticationScheme: Norse.Machine was challenged."
+		// below reaches real authorization: gRPC controllers are machine-lane by inheritance
+		// (GrpcControllerBase), so a bearer-less call is challenged on NorseSchemes.Machine, which is
+		// registered as an AddPolicyScheme forward -- not a hand-rolled handler -- onto OpenIddict's own
+		// validation scheme (OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+		// AuthenticationBuilderExtensions.AddNorseAuthentication, NorseSchemes.Machine's own doc comment).
+		// The forwarded-to OpenIddict validation handler is what actually issues the 401 challenge.
 		var response = await host.Client.PostAsync(
 			new Uri("/grpc.reference.v1.ReferenceService/GetCountry", UriKind.Relative),
 			body, TestContext.Current.CancellationToken);

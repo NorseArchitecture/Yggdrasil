@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Norse.Abstractions.Components.Authorization;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
 using Norse.Hosting.Web.Server.Tests.NorseXmlShapes;
@@ -81,7 +82,8 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		builder.Logging.ClearProviders();
 
 		builder.Services.AddAuthorizationBuilder()
-			.AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true));
+			.AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true))
+			.AddPolicy(NorsePolicies.Machine, NorsePlatformPolicies.Machine);
 		// Real credentials, not a hand-rolled IPrincipalAccessor bypass (spec §2.6): this fixture's REST
 		// leg (ParityController, a GrpcControllerBase descendant) is exactly the shape NorseLaneSelector
 		// routes to NorseSchemes.Machine in the real composition root. A genuine (test-only) handler
@@ -657,7 +659,8 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 		builder.WebHost.UseUrls("http://127.0.0.1:0");
 		builder.Logging.ClearProviders();
 		builder.Services.AddAuthorizationBuilder()
-			.AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true));
+			.AddPolicy(ParityPolicies.Public, policy => policy.RequireAssertion(_ => true))
+			.AddPolicy(NorsePolicies.Machine, NorsePlatformPolicies.Machine);
 		// Same real-credentials fix as InitializeAsync above -- this second host is its own composition
 		// root and needs its own authentication wiring, not a shared instance.
 		builder.Services.AddAuthentication(NorseSchemes.Machine)

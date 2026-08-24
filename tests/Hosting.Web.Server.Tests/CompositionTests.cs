@@ -190,14 +190,17 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory)
 		// Glitnir Platform/specs/2026-08-21-principal-at-the-door-design.md §2.6). CountriesController
 		// derives from GrpcControllerBase, so it is machine-lane by inheritance (§5.1) and now rejected
 		// at UseAuthorization() -- above MVC, above content negotiation -- for any call carrying no
-		// bearer credential. Until Himinbjorg#49 lands the bearer scheme, nothing can satisfy that lane,
-		// so this fact can no longer prove ReturnHttpNotAcceptable against the live facade; that proof
-		// still exists on the swoop fixture's own host (Swoop/WiringTests.Probe_1a, which never gates on
-		// this lane) -- currently red for an unrelated pre-existing reason (PrincipalAccessor.Seed
-		// rejecting that fixture's GUID-less test principal), not a claim this comment makes about its
-		// current pass/fail state. What this fact still proves, live: rejection happens above negotiation, honestly
-		// (401, no body) -- LaneCompositionTests.The_reference_facade_is_closed_to_a_credentialless_caller
-		// pins the same shape for the happy-path code, this one for a request that would otherwise 406.
+		// bearer credential. Himinbjorg#49's bearer scheme has since landed (Norse.Machine, forwarding to
+		// OpenIddict's validation handler -- AuthenticationBuilderExtensions.AddNorseAuthentication), but
+		// this WebApplicationFactory host has no real database and no seeded machine client to mint a
+		// token against, so no credential this fact could present would ever satisfy that lane -- this
+		// fact still can't prove ReturnHttpNotAcceptable against the live facade; that proof still exists
+		// on the swoop fixture's own host (Swoop/WiringTests.Probe_1a, which never gates on this lane).
+		// The real end-to-end proof, with a seeded client and a genuine token, is
+		// MachineAuthE2ETests (needs Docker/Testcontainers Postgres). What this fact still proves, live:
+		// rejection happens above negotiation, honestly (401, no body) --
+		// LaneCompositionTests.The_reference_facade_is_closed_to_a_credentialless_caller pins the same
+		// shape for the happy-path code, this one for a request that would otherwise 406.
 		using var client = factory.CreateClient();
 		using var request = new HttpRequestMessage(HttpMethod.Get, "/api/reference/countries/banana");
 		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/csv"));
