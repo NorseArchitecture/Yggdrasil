@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Norse.Abstractions.Components.Primitives;
@@ -54,8 +55,11 @@ builder.Services
 
 var norseReferenceConnectionString = builder.Configuration.GetConnectionString("norse_reference")
 	?? throw new InvalidOperationException("Connection string 'norse_reference' is not configured.");
+var oidcSigningCertPfx = builder.Configuration["OIDC_SIGNING_CERT_PFX"]
+	?? throw new InvalidOperationException("Configuration value 'OIDC_SIGNING_CERT_PFX' is not configured.");
+var oidcSigningCertificate = X509CertificateLoader.LoadPkcs12(Convert.FromBase64String(oidcSigningCertPfx), password: null);
 builder
-	.AddNorseAuthenticationService("norse_identity")
+	.AddNorseAuthenticationService("norse_identity", oidcSigningCertificate)
 	.Services
 	// Dev-grade only: rooted content-root-relative so subject identities survive process restarts
 	// without ever naming a machine-absolute path. The production seam is a vault-backed provider.
@@ -106,7 +110,9 @@ builder.Services.AddOpenApi(options =>
 	options.AddSchemaTransformer<EnumSchemaTransformer>();
 	options.AddSchemaTransformer<XmlMetadataTransformer>();
 	options.AddDocumentTransformer<UnionLeakGuardTransformer>();
+	options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
 	options.AddOperationTransformer<StandardResponsesTransformer>();
+	options.AddOperationTransformer<MachineAuthOperationTransformer>();
 });
 
 var app = builder.Build();
@@ -132,6 +138,7 @@ app.MapRazorComponents<App>()
 	.AddNorseComponentAssemblies();
 
 app.MapAdditionalIdentityEndpoints();
+app.MapNorseOpenIddictEndpoints();
 
 app.MapControllers();
 app.MapOpenApi();

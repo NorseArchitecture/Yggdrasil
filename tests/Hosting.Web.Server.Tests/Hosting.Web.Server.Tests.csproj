@@ -15,6 +15,8 @@
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*-*" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.*-*" />
 		<PackageReference Include="Microsoft.Playwright" Version="*" />
+		<PackageReference Include="Norse.Identity.Migrations" Version="*" />
+		<PackageReference Include="Norse.Identity.Migrations.PostgreSQL" Version="*" />
 		<PackageReference Include="Norse.Infrastructure.Web.Grpc" Version="*" Condition="'$(UseProjectReferences)' != 'true'" />
 		<PackageReference Include="Norse.Persistence.EntityFramework.PostgreSQL" Version="*" />
 		<PackageReference Include="Norse.Persistence.EntityFramework.Design" Version="*" />
