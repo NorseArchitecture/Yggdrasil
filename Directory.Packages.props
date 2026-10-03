@@ -16,9 +16,9 @@
 		<!-- 3rd party versions -->
 		<BlazingStoryVersion>1.0.0-preview.91</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
-		<DotNetVersion>11.0.0-preview.7.26381.103</DotNetVersion>
-		<FluentUIVersion>5.0.0-rc.5-26219.1</FluentUIVersion>
-		<GrpcVersion>2.83.0</GrpcVersion>
+		<DotNetVersion>11.0.0-rc.1.26425.128</DotNetVersion>
+		<FluentUIVersion>5.0.0</FluentUIVersion>
+		<GrpcVersion>2.84.0</GrpcVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="BlazingStory" Version="$(BlazingStoryVersion)" />
@@ -36,10 +36,11 @@
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="$(FluentUIVersion)" />
-		<PackageVersion Include="protobuf-net" Version="3.4.14" />
+		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="11.0.0-rc.1.1" />
+		<PackageVersion Include="protobuf-net" Version="3.4.30" />
 		<PackageVersion Include="protobuf-net.Grpc" Version="1.3.14" />
 		<PackageVersion Include="protobuf-net.Grpc.AspNetCore.Reflection" Version="1.3.14" />
-		<PackageVersion Include="Scalar.AspNetCore" Version="2.17.1" />
+		<PackageVersion Include="Scalar.AspNetCore" Version="2.17.13" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Architecture.Analyzers" Version="$(SvartalfheimVersion)" />
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
