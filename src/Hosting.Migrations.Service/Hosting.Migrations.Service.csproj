@@ -23,6 +23,10 @@
 		<NorseRef Include="Reference.Data.EntityFramework.Migrations.PostgreSQL">
 			<Repo>Mimisbrunnr</Repo>
 		</NorseRef>
+		<!-- Pull CPM versions of Norse.Primitives (Svartalfheim) and Reference.Data.EntityFramework.Migrations (Mimisbrunnr) -->
+		<PackageReference Include="HyperCast" />
+		<PackageReference Include="HyperTabular" />
+		<PackageReference Include="HyperUuid" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 	</ItemGroup>
 </Project>

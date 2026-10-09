@@ -28,6 +28,13 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           dotnet-quality: ${{ env.DOTNET_QUALITY }}
 
+      # Hosting.Web.Server references the WebAssembly client, which opts into native linking for the
+      # HyperCast/HyperUuid archives (WasmBuildNative), so the build needs wasm-tools. Same step as the
+      # shared ci-build-test.yml: the projects say which workloads they need.
+      - name: Restore .NET workloads
+        timeout-minutes: 5
+        run: dotnet workload restore
+
       - name: Build browser hosts
         timeout-minutes: 5
         env:

@@ -4,6 +4,13 @@
 		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
 		<NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
 		<StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+		<!-- The engines (HyperCast, HyperUuid) ship browser-wasm static archives and a NativeFileReference
+		     through their targets. The .NET 11 WASM SDK links them only when the wasm-tools workload is
+		     present; when it is absent the publish still succeeds, with a warning and a runtime that has
+		     no engine symbols, and the first cast or identifier throws in the browser. This property
+		     makes the missing workload a build error instead, and is what makes `dotnet workload restore`
+		     install it. Engines cut, 2026-10-09 (Glitnir spec §9). -->
+		<WasmBuildNative>true</WasmBuildNative>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -33,6 +40,9 @@
 			<Repo>Mimir</Repo>
 		</NorseRef>
 		<PackageReference Include="Grpc.Net.Client" />
+		<!-- Pull CPM versions of Norse.Primitives (Svartalfheim): the engines statically link into the WASM runtime -->
+		<PackageReference Include="HyperCast" />
+		<PackageReference Include="HyperUuid" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" />
 		<!-- App.razor (Hosting.Web.Server) links _content/Norse.DesignSystem.Tokens/norse-design-tokens.css

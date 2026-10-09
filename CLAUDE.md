@@ -22,6 +22,7 @@ Yggdrasil is **connective tissue** — `Norse.Hosting`: the web, worker, and mig
 ## Build & Test
 
 - `dotnet build Yggdrasil.slnx` — warnings are errors; a single warning fails.
+- `dotnet workload restore Yggdrasil.slnx` once per machine — the WebAssembly client statically links HyperCast and HyperUuid since the engines cut (`../Glitnir/docs/Svartalfheim/specs/2026-10-09-hyper-engines-cut-design.md` §9) and declares `WasmBuildNative=true`, which is what makes `wasm-tools` required (without it the SDK silently skips the native link and the browser throws at the first engine call); CI and the devcontainer run the same command, driven by what the projects declare.
 - `dotnet test Yggdrasil.slnx` — xUnit v3 + Shouldly on Microsoft.Testing.Platform. **VSTest `--filter` does NOT work** — use `dotnet test tests/<Project> -- --filter-class "*.<ClassName>"`. `CountryLookupE2ETests` needs Docker (Testcontainers Postgres).
 - **`CompositionTests` boot the real `Program.cs`** via `WebApplicationFactory<Program>`. Connection strings must be set as process env vars in a static constructor — `Program.cs` reads them before `builder.Build()`, earlier than any `WithWebHostBuilder` hook applies; env vars are the one override its pre-Build read can see. Nothing in these tests opens a connection.
 - **`WireModelFixture` is an `[assembly: AssemblyFixture]`** warming `RuntimeTypeModel.Default` once, before any test. Never re-register surrogates per fixture — that is the registration-vs-registration TOCTOU this design removed.

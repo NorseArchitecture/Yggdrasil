@@ -5,14 +5,14 @@
 		<AsgardVersion>0.0.31</AsgardVersion>
 		<BragiVersion>0.0.12</BragiVersion>
 		<HeimdallVersion>0.0.18</HeimdallVersion>
-		<HiminbjorgVersion>0.0.22</HiminbjorgVersion>
-		<MidgardVersion>0.0.33</MidgardVersion>
+		<HiminbjorgVersion>0.0.23</HiminbjorgVersion>
+		<MidgardVersion>0.0.34</MidgardVersion>
 		<MimirVersion>0.0.8</MimirVersion>
-		<MimisbrunnrVersion>0.0.14</MimisbrunnrVersion>
+		<MimisbrunnrVersion>0.0.15</MimisbrunnrVersion>
 		<NaglfarVersion>0.0.5</NaglfarVersion>
 		<RatatoskrVersion>0.0.0</RatatoskrVersion>
-		<SvartalfheimVersion>0.0.19</SvartalfheimVersion>
-		<UrdarbrunnrVersion>0.0.14</UrdarbrunnrVersion>
+		<SvartalfheimVersion>0.0.20</SvartalfheimVersion>
+		<UrdarbrunnrVersion>0.0.15</UrdarbrunnrVersion>
 		<!-- 3rd party versions -->
 		<BlazingStoryVersion>1.0.0-preview.93</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
@@ -41,10 +41,13 @@
 		<PackageVersion Include="protobuf-net.Grpc" Version="1.3.14" />
 		<PackageVersion Include="protobuf-net.Grpc.AspNetCore.Reflection" Version="1.3.14" />
 		<PackageVersion Include="Scalar.AspNetCore" Version="2.17.14" />
+		<!-- SkunkWerkx: Svartalfheim's casting and identifier engines; Mimisbrunnr's tabular reader -->
+		<PackageVersion Include="HyperCast" Version="0.8.0" />
+		<PackageVersion Include="HyperTabular" Version="0.8.0" />
+		<PackageVersion Include="HyperUuid" Version="0.8.0" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Architecture.Analyzers" Version="$(SvartalfheimVersion)" />
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
-		<PackageVersion Include="Norse.Primitives.Ingestion" Version="$(SvartalfheimVersion)" />
 		<!-- Asgard -->
 		<PackageVersion Include="Norse.Abstractions.Backend" Version="$(AsgardVersion)" />
 		<PackageVersion Include="Norse.Abstractions.Components" Version="$(AsgardVersion)" />
