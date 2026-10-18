@@ -16,7 +16,7 @@
 		<!-- 3rd party versions -->
 		<BlazingStoryVersion>1.0.0-preview.93</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
-		<DotNetVersion>11.0.0-rc.1.26425.128</DotNetVersion>
+		<DotNetVersion>11.0.0-rc.2.26504.105</DotNetVersion>
 		<FluentUIVersion>5.0.0</FluentUIVersion>
 		<GrpcVersion>2.84.0</GrpcVersion>
 	</PropertyGroup>
