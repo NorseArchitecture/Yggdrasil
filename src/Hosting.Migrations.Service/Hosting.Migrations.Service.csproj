@@ -27,6 +27,8 @@
 		<PackageReference Include="HyperCast" />
 		<PackageReference Include="HyperTabular" />
 		<PackageReference Include="HyperUuid" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
 	</ItemGroup>
 </Project>
