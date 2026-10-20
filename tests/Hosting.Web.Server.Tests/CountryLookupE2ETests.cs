@@ -38,7 +38,7 @@ namespace Norse.Hosting.Web.Server.Tests;
 /// </summary>
 public sealed class CountryLookupPostgresFixture : IAsyncLifetime
 {
-	readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:19beta4")
+	readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:19rc1")
 		.WithDatabase("norse_reference")
 		.Build();
 
