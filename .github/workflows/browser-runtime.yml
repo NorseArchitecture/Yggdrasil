@@ -9,10 +9,6 @@ permissions:
   contents: read
   packages: read
 
-env:
-  DOTNET_VERSION: "11.0.x"
-  DOTNET_QUALITY: "preview"
-
 jobs:
   browser-runtime:
     runs-on: ubuntu-latest
@@ -25,8 +21,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-          dotnet-quality: ${{ env.DOTNET_QUALITY }}
+          global-json-file: global.json
 
       # Hosting.Web.Server references the WebAssembly client, which opts into native linking for the
       # HyperCast/HyperUuid archives (WasmBuildNative), so the build needs wasm-tools. Same step as the

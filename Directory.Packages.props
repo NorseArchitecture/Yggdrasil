@@ -46,9 +46,9 @@
 		<PackageVersion Include="System.Security.Cryptography.Pkcs" Version="$(DotNetVersion)" />
 		<PackageVersion Include="System.Security.Cryptography.Xml" Version="$(DotNetVersion)" />
 		<!-- SkunkWerkx: Svartalfheim's casting and identifier engines; Mimisbrunnr's tabular reader -->
-		<PackageVersion Include="HyperCast" Version="0.8.0" />
-		<PackageVersion Include="HyperTabular" Version="0.8.0" />
-		<PackageVersion Include="HyperUuid" Version="0.8.0" />
+		<PackageVersion Include="HyperCast" Version="0.9.0" />
+		<PackageVersion Include="HyperTabular" Version="0.9.0" />
+		<PackageVersion Include="HyperUuid" Version="0.9.0" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Architecture.Analyzers" Version="$(SvartalfheimVersion)" />
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
