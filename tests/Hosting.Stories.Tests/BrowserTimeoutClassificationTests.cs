@@ -325,8 +325,10 @@ public sealed class BrowserEvidenceLifecycleTests
 		var tracing = Substitute.For<ITracing>();
 		var disposed = 0;
 		context.Tracing.Returns(tracing);
+		// Playwright 1.64 made ITracing.StartAsync return Task<IAsyncDisposable> (a 1.63 Task); the
+		// faulted task must carry that type or NSubstitute rejects the Returns at run time.
 		tracing.StartAsync(Arg.Any<TracingStartOptions>())
-			.Returns(Task.FromException(new InvalidOperationException("trace startup failed")));
+			.Returns(Task.FromException<IAsyncDisposable>(new InvalidOperationException("trace startup failed")));
 		context.DisposeAsync().Returns(_ =>
 		{
 			Interlocked.Increment(ref disposed);
