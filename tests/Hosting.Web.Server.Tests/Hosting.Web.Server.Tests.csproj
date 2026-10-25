@@ -12,6 +12,12 @@
 		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
 			<Repo>Midgard</Repo>
 		</NorseGeneratorRef>
+		<!-- TEMPORARY (2026-10-24): lifts the transitive HyperTabular to the CPM 0.9.0 pin. The Mimisbrunnr
+		     migrations packages on the feed were packed against HyperTabular 0.8.0, so on the package
+		     crossing NuGet takes 0.8.0 for it while Hosting.Web.Server brings HyperCast 0.9.0 — a mixed
+		     native layout, and DelimitedReader.FillStep throws "libhypertabular reported a contract
+		     violation". Delete this line once Mimisbrunnr ships a release packed against 0.9.0. -->
+		<PackageReference Include="HyperTabular" Version="*" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*-*" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.*-*" />
 		<PackageReference Include="Microsoft.Playwright" Version="*" />

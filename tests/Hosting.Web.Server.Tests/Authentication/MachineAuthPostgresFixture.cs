@@ -35,11 +35,11 @@ namespace Norse.Hosting.Web.Server.Tests.Authentication;
 /// </summary>
 public sealed class MachineAuthPostgresFixture : IAsyncLifetime
 {
-	readonly PostgreSqlContainer _identityContainer = new PostgreSqlBuilder("postgres:19beta4")
+	readonly PostgreSqlContainer _identityContainer = new PostgreSqlBuilder("postgres:19rc1")
 		.WithDatabase("norse_identity")
 		.Build();
 
-	readonly PostgreSqlContainer _referenceContainer = new PostgreSqlBuilder("postgres:19beta4")
+	readonly PostgreSqlContainer _referenceContainer = new PostgreSqlBuilder("postgres:19rc1")
 		.WithDatabase("norse_reference")
 		.Build();
 
