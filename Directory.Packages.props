@@ -2,22 +2,22 @@
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<!-- Norse versions -->
-		<AsgardVersion>0.0.31</AsgardVersion>
+		<AsgardVersion>0.0.32</AsgardVersion>
 		<BragiVersion>0.0.12</BragiVersion>
 		<HeimdallVersion>0.0.19</HeimdallVersion>
 		<HiminbjorgVersion>0.0.23</HiminbjorgVersion>
-		<MidgardVersion>0.0.34</MidgardVersion>
+		<MidgardVersion>0.0.35</MidgardVersion>
 		<MimirVersion>0.0.9</MimirVersion>
 		<MimisbrunnrVersion>0.0.15</MimisbrunnrVersion>
 		<NaglfarVersion>0.0.5</NaglfarVersion>
 		<RatatoskrVersion>0.0.0</RatatoskrVersion>
 		<SvartalfheimVersion>0.0.20</SvartalfheimVersion>
-		<UrdarbrunnrVersion>0.0.16</UrdarbrunnrVersion>
+		<UrdarbrunnrVersion>0.0.17</UrdarbrunnrVersion>
 		<!-- 3rd party versions -->
-		<BlazingStoryVersion>1.0.0-preview.93</BlazingStoryVersion>
+		<BlazingStoryVersion>1.0.0-preview.96</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
 		<DotNetVersion>11.0.0-rc.2.26504.105</DotNetVersion>
-		<FluentUIVersion>5.0.0</FluentUIVersion>
+		<FluentUIVersion>5.0.1</FluentUIVersion>
 		<GrpcVersion>2.84.0</GrpcVersion>
 	</PropertyGroup>
 	<ItemGroup>
@@ -33,18 +33,22 @@
 		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="$(DotNetVersion)" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="$(FluentUIVersion)" />
-		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="11.0.0-rc.1.1" />
-		<PackageVersion Include="protobuf-net" Version="3.4.30" />
+		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="11.0.0-rc.2" />
+		<PackageVersion Include="protobuf-net" Version="3.4.40" />
 		<PackageVersion Include="protobuf-net.Grpc" Version="1.3.14" />
 		<PackageVersion Include="protobuf-net.Grpc.AspNetCore.Reflection" Version="1.3.14" />
-		<PackageVersion Include="Scalar.AspNetCore" Version="2.17.14" />
+		<PackageVersion Include="Scalar.AspNetCore" Version="2.18.3" />
+		<!-- The following two packages have had a ton of security vulnerabilities recently so pin them to the latest dotnet release -->
+		<PackageVersion Include="System.Security.Cryptography.Pkcs" Version="$(DotNetVersion)" />
+		<PackageVersion Include="System.Security.Cryptography.Xml" Version="$(DotNetVersion)" />
 		<!-- SkunkWerkx: Svartalfheim's casting and identifier engines; Mimisbrunnr's tabular reader -->
-		<PackageVersion Include="HyperCast" Version="0.8.0" />
-		<PackageVersion Include="HyperTabular" Version="0.8.0" />
-		<PackageVersion Include="HyperUuid" Version="0.8.0" />
+		<PackageVersion Include="HyperCast" Version="0.9.0" />
+		<PackageVersion Include="HyperTabular" Version="0.9.0" />
+		<PackageVersion Include="HyperUuid" Version="0.9.0" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Architecture.Analyzers" Version="$(SvartalfheimVersion)" />
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
