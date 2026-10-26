@@ -16,7 +16,7 @@
 		<!-- 3rd party versions -->
 		<BlazingStoryVersion>1.0.0-preview.96</BlazingStoryVersion>
 		<ContainerVersion>11.0-preview-resolute-chiseled-extra</ContainerVersion>
-		<DotNetVersion>11.0.0-rc.2.26504.105</DotNetVersion>
+		<DotNetVersion>11.0.0-rc.3.26522.148</DotNetVersion>
 		<FluentUIVersion>5.0.1</FluentUIVersion>
 		<GrpcVersion>2.84.0</GrpcVersion>
 	</PropertyGroup>
@@ -33,7 +33,7 @@
 		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.AspNetCore.Identity.UI" Version="$(DotNetVersion)" />
-		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(DotNetVersion)" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0-rc.2.26504.105" />
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(DotNetVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="$(FluentUIVersion)" />
 		<PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="$(FluentUIVersion)" />
@@ -46,9 +46,9 @@
 		<PackageVersion Include="System.Security.Cryptography.Pkcs" Version="$(DotNetVersion)" />
 		<PackageVersion Include="System.Security.Cryptography.Xml" Version="$(DotNetVersion)" />
 		<!-- SkunkWerkx: Svartalfheim's casting and identifier engines; Mimisbrunnr's tabular reader -->
-		<PackageVersion Include="HyperCast" Version="0.9.0" />
-		<PackageVersion Include="HyperTabular" Version="0.9.0" />
-		<PackageVersion Include="HyperUuid" Version="0.9.0" />
+		<PackageVersion Include="HyperCast" Version="1.0.0" />
+		<PackageVersion Include="HyperTabular" Version="1.0.0" />
+		<PackageVersion Include="HyperUuid" Version="1.0.0" />
 		<!-- Svartalfheim -->
 		<PackageVersion Include="Norse.Architecture.Analyzers" Version="$(SvartalfheimVersion)" />
 		<PackageVersion Include="Norse.Primitives" Version="$(SvartalfheimVersion)" />
