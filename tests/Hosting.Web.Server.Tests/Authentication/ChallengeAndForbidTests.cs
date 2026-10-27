@@ -71,4 +71,22 @@ public sealed class ChallengeAndForbidTests
 		response.Headers.Location.ShouldBeNull();
 		(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
 	}
+
+	[Fact]
+	async Task A_browser_principal_reaches_the_forgot_password_page_from_heimdalls_assembly()
+	{
+		using var host = await WebServerHost.StartAsync();
+		var browser = host.CreateBrowserClient();
+
+		// Train 1 (../Glitnir/docs/Himinbjorg/plans/2026-10-26-identity-account-lifecycle-train-1.md): the anonymous
+		// lifecycle pages moved from Himinbjörg's scaffold to Heimdall. A stale Himinbjörg page on the same
+		// template would have thrown on duplicate routes at startup; the Heimdall form's FormName in the body
+		// proves the route resolves to Heimdall's component, not merely to something answering 200.
+		var response = await browser.GetAsync(
+			new Uri("/Account/ForgotPassword", UriKind.Relative), TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))
+			.ShouldContain("authn-forgot-password");
+	}
 }

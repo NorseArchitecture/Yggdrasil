@@ -116,6 +116,34 @@ sealed class TestAuthenticationService(ISender sender) : IAuthenticationService
 		CancellationToken cancellationToken = default) =>
 		throw new NotSupportedException($"{nameof(EmailExists)} is not exercised by {nameof(MediatorParityTests)}.");
 
+	public Task<Outcome<NavigationResult>> TwoFactorSignIn(TwoFactorSignInRequest request,
+		CancellationToken cancellationToken = default) =>
+		throw new NotSupportedException($"{nameof(TwoFactorSignIn)} is not exercised by {nameof(MediatorParityTests)}.");
+
+	public Task<Outcome<NavigationResult>> RecoveryCodeSignIn(RecoveryCodeSignInRequest request,
+		CancellationToken cancellationToken = default) =>
+		throw new NotSupportedException($"{nameof(RecoveryCodeSignIn)} is not exercised by {nameof(MediatorParityTests)}.");
+
+	public Task<Outcome<NavigationResult>> ForgotPassword(ForgotPasswordRequest request,
+		CancellationToken cancellationToken = default) =>
+		throw new NotSupportedException($"{nameof(ForgotPassword)} is not exercised by {nameof(MediatorParityTests)}.");
+
+	public Task<Outcome<NavigationResult>> ResetPassword(ResetPasswordRequest request,
+		CancellationToken cancellationToken = default) =>
+		throw new NotSupportedException($"{nameof(ResetPassword)} is not exercised by {nameof(MediatorParityTests)}.");
+
+	public Task<Outcome<BoolResponse>> ConfirmEmail(ConfirmEmailRequest request,
+		CancellationToken cancellationToken = default) =>
+		throw new NotSupportedException($"{nameof(ConfirmEmail)} is not exercised by {nameof(MediatorParityTests)}.");
+
+	public Task<Outcome<NavigationResult>> ConfirmEmailChange(ConfirmEmailChangeRequest request,
+		CancellationToken cancellationToken = default) =>
+		throw new NotSupportedException($"{nameof(ConfirmEmailChange)} is not exercised by {nameof(MediatorParityTests)}.");
+
+	public Task<Outcome<BoolResponse>> ResendEmailConfirmation(ResendEmailConfirmationRequest request,
+		CancellationToken cancellationToken = default) =>
+		throw new NotSupportedException($"{nameof(ResendEmailConfirmation)} is not exercised by {nameof(MediatorParityTests)}.");
+
 	public Task<Outcome<NavigationResult>> Logout(CancellationToken cancellationToken = default) =>
 		Task.FromResult(Outcome<NavigationResult>.Ok(new NavigationResult { NextUrl = "/" }));
 }

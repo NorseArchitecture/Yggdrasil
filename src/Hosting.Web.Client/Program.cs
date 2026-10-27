@@ -29,8 +29,13 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 // assembly (AuthN.Components.FluentUI) are both discovered at compile time from what this project
 // actually references — adding a validator or a routed component anywhere upstream needs no edit
 // here anymore.
+//
+// AddNorsePolicies() (Midgard's generated client-side policy registration) mirrors the server's: every
+// [NorsePolicy] declaration in the reference set, registered once — the WASM router evaluates
+// [Authorize(Policy = …)] and throws on an unknown name.
 builder.Services
 	.AddAuthorizationCore()
+	.AddNorsePolicies()
 	.AddCascadingAuthenticationState()
 	.AddAuthenticationStateDeserialization()
 	.AddNorseFluentUiTheme()

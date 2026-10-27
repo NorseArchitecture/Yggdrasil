@@ -1,5 +1,8 @@
+using System.Security.Claims;
 using Grpc.Net.Client;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Norse.Abstractions.Components.Authorization;
 using Norse.AuthN.Services;
 
 namespace Norse.Hosting.Web.Client.Tests;
@@ -9,7 +12,9 @@ namespace Norse.Hosting.Web.Client.Tests;
 ///     <c>AddNorseGrpcClients</c> extension emitted into <c>Hosting.Web.Client</c> itself, over a channel
 ///     that needs no live server to construct, and proves it resolves <see cref="IAuthenticationService" />
 ///     -- this fails if the registration is ever deleted from <c>Program.cs</c>'s call site's underlying
-///     generated method, not just if the API shape changes.
+///     generated method, not just if the API shape changes. The second fact does the same for the
+///     generated <c>AddNorsePolicies</c> (Train 1): the client-side policy registration resolves
+///     <c>AuthNPolicies.Account</c> from <c>IAuthorizationPolicyProvider</c>.
 /// </summary>
 public sealed class CompositionTests
 {
@@ -37,5 +42,19 @@ public sealed class CompositionTests
 		var authenticationService = provider.GetService<IAuthenticationService>();
 
 		authenticationService.ShouldNotBeNull();
+	}
+
+	[Fact]
+	async Task AddNorsePolicies_registers_the_account_policy_on_the_client()
+	{
+		ServiceCollection services = new();
+		services.AddLogging().AddAuthorizationCore();
+		Client.NorsePolicyRegistration.AddNorsePolicies(services);
+		using var provider = services.BuildServiceProvider();
+		var policy = await provider.GetRequiredService<IAuthorizationPolicyProvider>().GetPolicyAsync(AuthNPolicies.Account);
+		policy.ShouldNotBeNull();
+		var evaluator = provider.GetRequiredService<IAuthorizationService>();
+		ClaimsPrincipal anonymous = new(new ClaimsIdentity([new Claim(ClaimTypes.Role, NorseRoles.Anonymous)], "Test"));
+		(await evaluator.AuthorizeAsync(anonymous, null, AuthNPolicies.Account)).Succeeded.ShouldBeFalse();
 	}
 }
