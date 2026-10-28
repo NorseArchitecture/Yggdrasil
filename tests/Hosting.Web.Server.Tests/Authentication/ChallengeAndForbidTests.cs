@@ -93,14 +93,32 @@ public sealed class ChallengeAndForbidTests
 	}
 
 	[Fact]
-	async Task An_identity_principal_failing_a_policy_gets_a_bare_403_even_on_a_page_navigation()
+	async Task An_identity_principal_failing_a_policy_is_sent_to_access_denied_on_a_page_navigation()
 	{
 		using var host = await WebServerHost.StartAsync();
 		var identity = host.CreateIdentityClient();
 
-		// A signed-in user lacking a role is not helped by a login page: Ruling 44 redirects only the
-		// anonymous principal, so an identity principal failing MaskedDisclosure stays a bare 403.
+		// A signed-in user lacking a role is not helped by a login page, but a human on a page navigation is not
+		// helped by a blank 403 either: Midgard forbids an identity principal's page navigation through the identity
+		// cookie, which redirects to its access-denied path with the return URL kept (T3-3).
 		using var request = Get("/protected-probe", HtmlAccept);
+		var response = await identity.SendAsync(request, TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+		var location = response.Headers.Location.ShouldNotBeNull();
+		var absolute = location.IsAbsoluteUri ? location : new Uri(new Uri("https://localhost"), location);
+		absolute.AbsolutePath.ShouldBe("/Account/AccessDenied");
+		QueryHelpers.ParseQuery(absolute.Query)["ReturnUrl"].ToString().ShouldBe("/protected-probe");
+	}
+
+	[Fact]
+	async Task An_identity_principal_failing_a_policy_off_a_page_navigation_gets_a_bare_403()
+	{
+		using var host = await WebServerHost.StartAsync();
+		var identity = host.CreateIdentityClient();
+
+		// The access-denied redirect is confined to page navigations: the same principal asking as a machine gets "no".
+		using var request = Get("/protected-probe", "application/json");
 		var response = await identity.SendAsync(request, TestContext.Current.CancellationToken);
 
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

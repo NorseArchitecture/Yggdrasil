@@ -9,6 +9,7 @@ using Norse.Hosting.Web.Server.Components;
 using Norse.Hosting.Web.Server.NorseXmlShapes;
 using Norse.Hosting.Web.Server.OpenApi;
 using Norse.Identity.Web.Server;
+using Norse.Identity.Web.Server.Verification;
 using Norse.Infrastructure.Backend.Keys;
 using Norse.Infrastructure.Backend.Serialization;
 using Norse.Infrastructure.Components.Theme.FluentUI;
@@ -37,10 +38,10 @@ builder.Services
 
 // AddNorseClientComponents() (Midgard's generated server-side discovery, Task 14) replaces the
 // hand-rolled RoutesAdditionalAssemblies singleton this block used to carry: Logout (AuthN.Components,
-// headless), Login/Register and the account-core Manage pages (AuthN.Components.FluentUI), and what
-// remains in Himinbjorg's Identity.Web.Server (the two-factor and passkey Manage pages, the external-login
-// callback) are all discovered at compile time from what this project actually references -- adding a
-// validator or a routed component anywhere upstream needs no edit here anymore. The endpoint half of
+// headless), Login/Register, the account-core Manage pages and every two-factor and passkey page
+// (AuthN.Components.FluentUI), and the one page Himinbjorg's Identity.Web.Server still contributes (the
+// external-login callback) are all discovered at compile time from what this project actually references --
+// adding a validator or a routed component anywhere upstream needs no edit here anymore. The endpoint half of
 // composition (AddAdditionalAssemblies) is chained onto MapRazorComponents<App>() below via the
 // generated AddNorseComponentAssemblies().
 builder.Services
@@ -49,7 +50,6 @@ builder.Services
 	.AddNorseAppShellLayout()
 	.AddNorseFluentUiTheme()
 	.AddCascadingAuthenticationState()
-	.AddScoped<IdentityRedirectManager>()
 	.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>()
 	.AddScoped<CircuitHandler, LoggingCircuitHandler>();
 
@@ -86,6 +86,15 @@ builder
 // run after it to have its own DefaultScheme/DefaultAuthenticateScheme/DefaultChallengeScheme/
 // DefaultForbidScheme choices win (Midgard's AddNorseAuthentication doc comment states the requirement).
 builder.Services.AddNorseAuthentication();
+
+// One OpenID Connect scheme per child of Identity:ExternalProviders. None is configured yet, so none is added and
+// the sign-in pages offer no provider until a section lands. AddAuthentication() configures no scheme defaults, so
+// it leaves AddNorseAuthentication()'s choices above standing.
+builder.Services.AddAuthentication().AddNorseExternalProviders(builder.Configuration);
+
+// The stranded-account verification (T3-28) is a hosted service, and it runs here rather than in Hosting.Worker:
+// the worker is a stub not grown ahead of the hosting abstractions (Yggdrasil/CLAUDE.md:20).
+builder.Services.AddNorseIdentityInvariantVerification(builder.Configuration);
 
 // Every [NorsePolicy] declaration in the resolved reference set, registered once. This call replaces four
 // hand-written AddPolicy lambdas -- adding a policy anywhere upstream now needs no edit here, which is the
@@ -137,7 +146,7 @@ app.MapRazorComponents<App>()
 	.AddInteractiveWebAssemblyRenderMode()
 	.AddNorseComponentAssemblies();
 
-app.MapAdditionalIdentityEndpoints();
+app.MapNorseExternalLoginEndpoints();
 app.MapNorseOpenIddictEndpoints();
 
 app.MapControllers();
@@ -154,9 +163,9 @@ app.MapDeferredSignIn();
 // Test-only probe pinned in production code deliberately (Task 15, principal-at-the-door,
 // ../Glitnir/docs/Platform/plans/2026-08-21-principal-at-the-door.md): ChallengeAndForbidTests needs a
 // real browser-lane endpoint guarded by a policy an anonymous principal genuinely fails, to pin how the
-// composed host answers forbid: a bare 403 for a non-navigation or an identity principal, and a login
-// challenge for an anonymous page navigation (Ruling 44, principal-at-the-door §2.4 amended
-// 2026-10-27). IdentityPolicies.Self would not do -- RequireAuthenticatedUser() is satisfied by the
+// composed host answers forbid: a bare 403 for a non-navigation; a login challenge for an anonymous page
+// navigation (Ruling 44) and the access-denied redirect for an identity principal's page navigation
+// (T3-3). IdentityPolicies.Self would not do -- RequireAuthenticatedUser() is satisfied by the
 // anonymous principal itself (spec §2.4: anonymous is authenticated) -- so MaskedDisclosure
 // (RequireRole(IdentityPolicies.SystemRole)) is used instead: the anonymous role is never SystemRole.
 app.MapGet("/protected-probe", () => Results.Ok())

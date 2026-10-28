@@ -12,6 +12,14 @@
 		<NorseGeneratorRef Include="Infrastructure.Web.Grpc.Analyzers">
 			<Repo>Midgard</Repo>
 		</NorseGeneratorRef>
+		<!-- NorseRefs, not floating packages: the workspace crossing must migrate with the InitialCreate that matches the
+		     local identity model, or MachineAuthPostgresFixture refuses the published one as pending model changes. -->
+		<NorseRef Include="Identity.Migrations">
+			<Repo>Himinbjorg</Repo>
+		</NorseRef>
+		<NorseRef Include="Identity.Migrations.PostgreSQL">
+			<Repo>Himinbjorg</Repo>
+		</NorseRef>
 		<!-- TEMPORARY (2026-10-24): lifts the transitive HyperTabular to the CPM 0.9.0 pin. The Mimisbrunnr
 		     migrations packages on the feed were packed against HyperTabular 0.8.0, so on the package
 		     crossing NuGet takes 0.8.0 for it while Hosting.Web.Server brings HyperCast 0.9.0 — a mixed
@@ -21,8 +29,6 @@
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.*-*" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.*-*" />
 		<PackageReference Include="Microsoft.Playwright" Version="*" />
-		<PackageReference Include="Norse.Identity.Migrations" Version="*" />
-		<PackageReference Include="Norse.Identity.Migrations.PostgreSQL" Version="*" />
 		<PackageReference Include="Norse.Infrastructure.Web.Grpc" Version="*" Condition="'$(UseProjectReferences)' != 'true'" />
 		<PackageReference Include="Norse.Persistence.EntityFramework.PostgreSQL" Version="*" />
 		<PackageReference Include="Norse.Persistence.EntityFramework.Design" Version="*" />

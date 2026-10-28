@@ -3,8 +3,12 @@ using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
 using FluentValidation;
 using Grpc.AspNetCore.Server;
+using Grpc.Net.Client;
+using Microsoft.AspNetCore.Components.Endpoints;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
@@ -12,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
+using Norse.AuthN.Services;
 using Norse.Identity.EntityFramework;
 using Norse.Infrastructure.ServiceDefaults.AspNet;
 using ProtoBuf.Meta;
@@ -263,6 +268,135 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory)
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 		response.Content.Headers.ContentType!.MediaType.ShouldBe("text/html");
 	}
+
+	// Train 3 (../Glitnir/docs/Himinbjorg/plans/2026-10-27-identity-account-lifecycle-train-3.md, Task 6.1): every
+	// two-factor and passkey page left Himinbjorg's scaffold for Heimdall. A stale Himinbjorg copy on the same
+	// template would throw on duplicate routes at startup; the routed component's own assembly is the proof the
+	// survivor is Heimdall's.
+	[Theory]
+	[InlineData("/Account/Manage/TwoFactorAuthentication")]
+	[InlineData("/Account/Manage/EnableAuthenticator")]
+	[InlineData("/Account/Manage/ShowRecoveryCodes")]
+	[InlineData("/Account/Manage/ResetAuthenticator")]
+	[InlineData("/Account/Manage/Disable2fa")]
+	[InlineData("/Account/Manage/GenerateRecoveryCodes")]
+	[InlineData("/Account/Manage/Passkeys")]
+	[InlineData("/Account/Manage/RenamePasskey/{Id}")]
+	[InlineData("/Account/LoginWithPasskey")]
+	void The_train_3_pages_route_from_heimdalls_assembly(string route)
+	{
+		var endpoints = EndpointsAt(route);
+
+		endpoints.ShouldNotBeEmpty();
+		endpoints.ShouldAllBe(static endpoint =>
+			endpoint.Metadata.GetMetadata<ComponentTypeMetadata>() != null &&
+			endpoint.Metadata.GetMetadata<ComponentTypeMetadata>()!.Type.Assembly.GetName().Name == "Norse.AuthN.Components.FluentUI");
+	}
+
+	// Heimdall's passkey ceremonies import their own module; Himinbjorg's PasskeySubmit.razor.js is gone, and with it
+	// the App.razor script tag that loaded it.
+	[Fact]
+	async Task The_passkeys_module_is_served_as_a_static_web_asset()
+	{
+		using var client = factory.CreateClient();
+
+		var response = await client.GetAsync(new Uri("/_content/Norse.AuthN.Components.FluentUI/passkeys.js", UriKind.Relative),
+			TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		response.Content.Headers.ContentType!.MediaType.ShouldBe("text/javascript");
+	}
+
+	// The NavMenu's logout is a link to Heimdall's click-to-confirm page (A62); the page's own POST is the
+	// component endpoint, never the minimal-API delegate Himinbjorg's retired MapAdditionalIdentityEndpoints mapped.
+	[Fact]
+	void The_logout_post_is_heimdalls_component_endpoint()
+	{
+		var endpoints = EndpointsAt("/Account/Logout");
+
+		endpoints.Where(static endpoint => AcceptsPost(endpoint)).ShouldNotBeEmpty();
+		endpoints.ShouldAllBe(static endpoint =>
+			endpoint.Metadata.GetMetadata<ComponentTypeMetadata>() != null &&
+			endpoint.Metadata.GetMetadata<ComponentTypeMetadata>()!.Type.Assembly.GetName().Name == "Norse.AuthN.Components");
+	}
+
+	// Passkey ceremonies ride gRPC (IPasskeyService, ISignInMethodsService): the scaffold's POST option endpoints
+	// (/Account/PasskeyCreationOptions, /Account/PasskeyRequestOptions) are gone. The /Account tree is the surface they
+	// lived on, and its component endpoints accept a form POST by construction, so only its other endpoints are judged.
+	[Fact]
+	void No_passkey_post_endpoint_remains()
+	{
+		var endpoints = factory.Services
+			.GetRequiredService<EndpointDataSource>()
+			.Endpoints
+			.OfType<RouteEndpoint>()
+			.Where(static endpoint => endpoint.Metadata.GetMetadata<ComponentTypeMetadata>() is null)
+			.Where(static endpoint =>
+				endpoint.RoutePattern.RawText?.StartsWith("/Account/", StringComparison.OrdinalIgnoreCase) == true
+				&& endpoint.RoutePattern.RawText.Contains("passkey", StringComparison.OrdinalIgnoreCase));
+
+		endpoints.Where(static endpoint => AcceptsPost(endpoint))
+			.Select(static endpoint => endpoint.RoutePattern.RawText)
+			.ShouldBeEmpty();
+	}
+
+	// T3-34: the external sign-in start is a server-authored link (GetSignInMethods' StartUrl), so it is a GET that
+	// fails closed on Fetch Metadata, never an antiforgery-guarded POST.
+	[Fact]
+	void The_external_start_is_a_get_endpoint()
+	{
+		var endpoint = EndpointsAt("/Account/PerformExternalLogin").ShouldHaveSingleItem();
+
+		endpoint.Metadata.GetRequiredMetadata<IHttpMethodMetadata>().HttpMethods.ShouldBe(["GET"]);
+	}
+
+	// Components inject the contracts directly. On the server render they resolve to Himinbjorg's registered services
+	// (AddNorseAuthenticationService); on the WASM render to the generated gRPC proxies. Both halves are pinned here.
+	[Fact]
+	void The_two_factor_passkey_and_sign_in_methods_contracts_resolve_on_the_client()
+	{
+		using var scope = factory.Services.CreateScope();
+
+		scope.ServiceProvider.GetRequiredService<ITwoFactorService>().GetType().FullName
+			.ShouldBe("Norse.Identity.Web.Server.TwoFactor.TwoFactorService");
+		scope.ServiceProvider.GetRequiredService<IPasskeyService>().GetType().FullName
+			.ShouldBe("Norse.Identity.Web.Server.Passkeys.PasskeyService");
+		scope.ServiceProvider.GetRequiredService<ISignInMethodsService>().GetType().FullName
+			.ShouldBe("Norse.Identity.Web.Server.SignInMethods.SignInMethodsService");
+
+		ServiceCollection clientServices = new();
+		using var channel = GrpcChannel.ForAddress("http://localhost");
+		Client.NorseGrpcClientRegistration.AddNorseGrpcClients(clientServices, channel);
+		using var client = clientServices.BuildServiceProvider();
+		client.GetService<ITwoFactorService>().ShouldNotBeNull();
+		client.GetService<IPasskeyService>().ShouldNotBeNull();
+		client.GetService<ISignInMethodsService>().ShouldNotBeNull();
+	}
+
+	// T3-27: the issuer is required configuration with no code default. Development supplies it
+	// (appsettings.Development.json); Production supplies nothing here, so the host fails before it serves.
+	[Fact]
+	void A_missing_authenticator_issuer_fails_startup()
+	{
+		using var production = factory.WithWebHostBuilder(static builder => builder.UseEnvironment("Production"));
+
+		var exception = Should.Throw<OptionsValidationException>(() => production.Services);
+
+		exception.Failures.ShouldContain(static failure => failure.Contains("Issuer", StringComparison.Ordinal));
+	}
+
+	List<RouteEndpoint> EndpointsAt(string route) =>
+	[
+		.. factory.Services
+			.GetRequiredService<EndpointDataSource>()
+			.Endpoints
+			.OfType<RouteEndpoint>()
+			.Where(endpoint => endpoint.RoutePattern.RawText == route)
+	];
+
+	// No method metadata means the endpoint answers every method, POST included.
+	static bool AcceptsPost(Endpoint endpoint) =>
+		endpoint.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods.Contains("POST") != false;
 
 	async Task<JsonNode> FetchOpenApiDocumentAsync()
 	{

@@ -49,6 +49,14 @@ public sealed class MachineAuthPostgresFixture : IAsyncLifetime
 	public string IdentityConnectionString { get; private set; } = null!;
 	public string ReferenceConnectionString { get; private set; } = null!;
 
+	/// <summary>
+	///     The one development key root every host on this fixture's identity database shares, the lane host
+	///     (<see cref="WebServerHost.StartAsync(MachineAuthPostgresFixture, Action{Microsoft.AspNetCore.Hosting.IWebHostBuilder})" />) included: EF's cached identity model
+	///     closes over the first host's protectors, so a second root in this process would read keys the first never
+	///     wrote.
+	/// </summary>
+	internal string KeysRoot => _keysRoot;
+
 	public async ValueTask InitializeAsync()
 	{
 		await Task.WhenAll(_identityContainer.StartAsync(), _referenceContainer.StartAsync());
@@ -100,6 +108,8 @@ public sealed class MachineAuthPostgresFixture : IAsyncLifetime
 		var builder = WebApplication.CreateBuilder();
 		builder.WebHost.UseTestServer();
 		builder.Configuration["ConnectionStrings:identity"] = IdentityConnectionString;
+		// Required configuration (T3-27): this host is Production, where nothing supplies an issuer by default.
+		builder.Configuration["Identity:Authenticator:Issuer"] = "Norse";
 		builder.AddNorseAuthenticationService("identity", _certificate, accessTokenLifetime);
 		builder.Services
 			.AddNorseDevelopmentKeys(_keysRoot)
