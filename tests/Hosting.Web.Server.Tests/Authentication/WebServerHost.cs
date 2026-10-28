@@ -1,6 +1,12 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Norse.Infrastructure.Web.Server.Authentication;
 
 namespace Norse.Hosting.Web.Server.Tests.Authentication;
@@ -70,6 +76,38 @@ sealed class WebServerHost : IDisposable
 		});
 		client.DefaultRequestVersion = HttpVersion.Version20;
 		client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact;
+		return client;
+	}
+
+	/// <summary>
+	///     A <see cref="CreateBrowserClient" />-shaped client whose default <c>Cookie</c> header carries a
+	///     freshly minted <see cref="IdentityConstants.ApplicationScheme" /> ticket: a signed-in identity
+	///     principal without a database. The ticket is protected by the booted host's own
+	///     <see cref="CookieAuthenticationOptions.TicketDataFormat" /> and carries exactly the three
+	///     allowlisted claims (user id, role, security stamp) under the host's
+	///     <see cref="IdentityOptions.ClaimsIdentity" /> claim types. Issued now, it sits inside
+	///     <see cref="SecurityStampValidatorOptions.ValidationInterval" />, so the cookie handler never
+	///     reads the store on the way through.
+	/// </summary>
+	internal HttpClient CreateIdentityClient()
+	{
+		var cookieOptions = Services
+			.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+			.Get(IdentityConstants.ApplicationScheme);
+		var claimTypes = Services.GetRequiredService<IOptions<IdentityOptions>>().Value.ClaimsIdentity;
+		ClaimsPrincipal principal = new(new ClaimsIdentity(
+		[
+			new Claim(claimTypes.UserIdClaimType, Guid.CreateVersion7().ToString()),
+			new Claim(claimTypes.RoleClaimType, "user"),
+			new Claim(claimTypes.SecurityStampClaimType, "stamp"),
+		], IdentityConstants.ApplicationScheme, claimTypes.UserNameClaimType, claimTypes.RoleClaimType));
+		var now = DateTimeOffset.UtcNow;
+		AuthenticationTicket ticket = new(principal,
+			new AuthenticationProperties { IssuedUtc = now, ExpiresUtc = now.AddHours(1) },
+			IdentityConstants.ApplicationScheme);
+
+		var client = CreateBrowserClient();
+		client.DefaultRequestHeaders.Add("Cookie", $"{cookieOptions.Cookie.Name}={cookieOptions.TicketDataFormat.Protect(ticket)}");
 		return client;
 	}
 

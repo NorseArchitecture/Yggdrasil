@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Norse.AuthN.Components;
 using Norse.Hosting.Web.Client;
+using Norse.Hosting.Web.Components;
 using Norse.Infrastructure.Components.Theme.FluentUI;
 using Norse.Infrastructure.Web.Client.Grpc;
 
@@ -40,7 +41,10 @@ builder.Services
 	.AddAuthenticationStateDeserialization()
 	.AddNorseFluentUiTheme()
 	.AddNorseClientComponents()
-	.AddNorseSessionTransition();
+	.AddNorseSessionTransition()
+	// Heimdall's ManageLayout nests inside the host's shell through IAppShellLayout; a WASM render of a
+	// Manage page without this registration fails to activate the layout. One call, shared with the server.
+	.AddNorseAppShellLayout();
 
 // gRPC-Web rides ordinary HTTP/1.1 — no HTTP/2-specific configuration needed in the browser.
 // One invoker, not one per service: every Norse gRPC service this client talks to (IAuthenticationService,

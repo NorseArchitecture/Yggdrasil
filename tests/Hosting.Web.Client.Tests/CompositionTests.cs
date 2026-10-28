@@ -3,7 +3,10 @@ using Grpc.Net.Client;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Norse.Abstractions.Components.Authorization;
+using Norse.Abstractions.Components.Primitives;
 using Norse.AuthN.Services;
+using Norse.Hosting.Web.Components;
+using Norse.Hosting.Web.Components.Layout;
 
 namespace Norse.Hosting.Web.Client.Tests;
 
@@ -42,6 +45,37 @@ public sealed class CompositionTests
 		var authenticationService = provider.GetService<IAuthenticationService>();
 
 		authenticationService.ShouldNotBeNull();
+	}
+
+	[Fact]
+	void AddNorseGrpcClients_registers_IAccountService_resolvable_from_the_container()
+	{
+		ServiceCollection services = new();
+		using var channel = GrpcChannel.ForAddress("http://localhost");
+
+		// Fully qualified for the same reason as the IAuthenticationService fact above.
+		Client.NorseGrpcClientRegistration.AddNorseGrpcClients(services, channel);
+
+		using var provider = services.BuildServiceProvider();
+		var accountService = provider.GetService<IAccountService>();
+
+		accountService.ShouldNotBeNull();
+	}
+
+	[Fact]
+	void AddNorseAppShellLayout_registers_the_main_layout_as_the_app_shell()
+	{
+		// Heimdall's ManageLayout injects IAppShellLayout to nest inside the host's chrome; a WASM render
+		// of a Manage page without the registration throws at activation. Both hosts' Program.cs call this
+		// one extension, so the client registers exactly what the server does.
+		ServiceCollection services = new();
+		services.AddNorseAppShellLayout();
+
+		using var provider = services.BuildServiceProvider();
+		var appShell = provider.GetService<IAppShellLayout>();
+
+		appShell.ShouldNotBeNull();
+		appShell.LayoutType.ShouldBe(typeof(MainLayout));
 	}
 
 	[Fact]
