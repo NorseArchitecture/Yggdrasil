@@ -25,7 +25,6 @@
 <Routes @rendermode="PageRenderMode"/>
 <ReconnectModal/>
 <script src="@Assets["_framework/blazor.web.js"]"></script>
-<script src="@Assets["Components/Shared/PasskeySubmit.razor.js"]" type="module"></script>
 </body>
 
 </html>
@@ -37,8 +36,8 @@
         /Account/* rides plain InteractiveAuto again (sidestep reverted 2026-08-05): the two defects
         that made Auto's WASM half unfit for identity pages are both fixed — the server now serializes
         auth state to the client (AddAuthenticationStateSerialization), and the WASM gRPC-Web path
-        dispatches through Midgard's GrpcWebCallInvoker. Himinbjörg's scaffold pages still opt out of
-        interactive routing entirely, so they take the null/static branch regardless.
+        dispatches through Midgard's GrpcWebCallInvoker. Himinbjörg's one remaining page, the external-login
+        callback, still opts out of interactive routing entirely, so it takes the null/static branch regardless.
     *@
     IComponentRenderMode? PageRenderMode =>
         HttpContext.AcceptsInteractiveRouting() ? InteractiveAuto : null;

@@ -1,6 +1,5 @@
-@implements IDisposable
-
-@inject NavigationManager NavigationManager
+@using System.Security.Claims
+@using Norse.AuthN.Services
 
 <FluentNav Id="main-menu" Width="260px">
     <FluentNavItem Href="/" Match="NavLinkMatch.All" IconRest="@(new Icons.Regular.Size20.Home())"
@@ -27,38 +26,19 @@
             Country Lookup
         </FluentNavItem>
     </FluentNavCategory>
-    <AuthorizeView>
+    @* The anonymous-cookie principal is authenticated, so the block is gated on the account tier the pages
+       themselves require, never on authentication alone. *@
+    <AuthorizeView Policy="@AuthNPolicies.Account">
         <Authorized>
-            <FluentNavItem Href="Account/Manage">@context.User.Identity?.Name</FluentNavItem>
-            <form action="Account/Logout" method="post">
-                <AntiforgeryToken/>
-                <input type="hidden" name="ReturnUrl" value="@_currentUrl"/>
-                <FluentButton Type="ButtonType.Submit" Style="width: 100%;">Logout</FluentButton>
-            </form>
+            <FluentNavItem Href="Account/Manage">@AccountLabel(context.User)</FluentNavItem>
+            <NavLink href="Account/Logout">Logout</NavLink>
         </Authorized>
     </AuthorizeView>
 </FluentNav>
 
+
 @code {
-    string? _currentUrl;
-
-    /// <inheritdoc />
-    protected override void OnInitialized()
-    {
-        _currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
-
-    void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        _currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
-
-    /// <inheritdoc />
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-
+	static string AccountLabel(ClaimsPrincipal user) =>
+		new[] { user.FindFirst(ClaimTypes.Email)?.Value, user.Identity?.Name }
+			.FirstOrDefault(static label => !string.IsNullOrWhiteSpace(label)) ?? "Account";
 }
