@@ -1,7 +1,6 @@
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.Circuits;
-using Norse.Abstractions.Components.Primitives;
 using Norse.AuthN.Components;
 using Norse.AuthN.Services;
 using Norse.Hosting.Web.Components;
@@ -38,15 +37,16 @@ builder.Services
 
 // AddNorseClientComponents() (Midgard's generated server-side discovery, Task 14) replaces the
 // hand-rolled RoutesAdditionalAssemblies singleton this block used to carry: Logout (AuthN.Components,
-// headless), Login/Register (AuthN.Components.FluentUI), and the Account pages (ExternalLogin, Manage,
-// etc., Himinbjorg's Identity.Web.Server) are all discovered at compile time from what this project
-// actually references -- adding a validator or a routed component anywhere upstream needs no edit
-// here anymore. The endpoint half of composition (AddAdditionalAssemblies) is chained onto
-// MapRazorComponents<App>() below via the generated AddNorseComponentAssemblies().
+// headless), Login/Register and the account-core Manage pages (AuthN.Components.FluentUI), and what
+// remains in Himinbjorg's Identity.Web.Server (the two-factor and passkey Manage pages, the external-login
+// callback) are all discovered at compile time from what this project actually references -- adding a
+// validator or a routed component anywhere upstream needs no edit here anymore. The endpoint half of
+// composition (AddAdditionalAssemblies) is chained onto MapRazorComponents<App>() below via the
+// generated AddNorseComponentAssemblies().
 builder.Services
 	.AddNorseClientComponents()
 	.AddNorseSessionTransition()
-	.AddSingleton<IAppShellLayout, AppShellLayout>()
+	.AddNorseAppShellLayout()
 	.AddNorseFluentUiTheme()
 	.AddCascadingAuthenticationState()
 	.AddScoped<IdentityRedirectManager>()
@@ -153,11 +153,12 @@ app.MapDeferredSignIn();
 
 // Test-only probe pinned in production code deliberately (Task 15, principal-at-the-door,
 // ../Glitnir/docs/Platform/plans/2026-08-21-principal-at-the-door.md): ChallengeAndForbidTests needs a
-// real browser-lane endpoint guarded by a policy an anonymous principal genuinely fails, to pin that the
-// composed host answers forbid with a bare 403 and never a login redirect. IdentityPolicies.Self would not
-// do -- RequireAuthenticatedUser() is satisfied by the anonymous principal itself (spec §2.4: anonymous is
-// authenticated) -- so MaskedDisclosure (RequireRole(IdentityPolicies.SystemRole)) is used instead: the
-// anonymous role is never SystemRole.
+// real browser-lane endpoint guarded by a policy an anonymous principal genuinely fails, to pin how the
+// composed host answers forbid: a bare 403 for a non-navigation or an identity principal, and a login
+// challenge for an anonymous page navigation (Ruling 44, principal-at-the-door §2.4 amended
+// 2026-10-27). IdentityPolicies.Self would not do -- RequireAuthenticatedUser() is satisfied by the
+// anonymous principal itself (spec §2.4: anonymous is authenticated) -- so MaskedDisclosure
+// (RequireRole(IdentityPolicies.SystemRole)) is used instead: the anonymous role is never SystemRole.
 app.MapGet("/protected-probe", () => Results.Ok())
 	.RequireAuthorization(IdentityPolicies.MaskedDisclosure)
 	.ExcludeFromDescription();

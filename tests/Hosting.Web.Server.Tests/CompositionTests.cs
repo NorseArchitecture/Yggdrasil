@@ -1,15 +1,18 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
+using FluentValidation;
 using Grpc.AspNetCore.Server;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
+using Norse.Identity.EntityFramework;
 using Norse.Infrastructure.ServiceDefaults.AspNet;
 using ProtoBuf.Meta;
 
@@ -39,6 +42,43 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory)
 		var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
 		sender.ShouldNotBeNull();
+	}
+
+	// Train 2's account commands are internal to Himinbjorg (server-sovereign mediator identity), so they
+	// are named by assembly-qualified string and closed over IValidator<> by reflection. Each must resolve
+	// through the generated AddNorseIdentityWebServerHandlers() -- the CommandRequestValidator adapter
+	// over Heimdall's wire validator -- never through a hand-written AddScoped here.
+	[Theory]
+	[InlineData("SetPhoneNumberCommand")]
+	[InlineData("ChangePasswordCommand")]
+	[InlineData("SetPasswordCommand")]
+	[InlineData("ChangeEmailCommand")]
+	[InlineData("RemoveExternalLoginCommand")]
+	[InlineData("DeletePersonalDataCommand")]
+	void The_account_command_validators_resolve_through_generated_discovery(string command)
+	{
+		var commandType = Type.GetType($"Norse.Identity.Web.Server.Account.{command}, Norse.Identity.Web.Server", throwOnError: true)!;
+		using var scope = factory.Services.CreateScope();
+
+		var validator = scope.ServiceProvider.GetService(typeof(IValidator<>).MakeGenericType(commandType));
+
+		validator.ShouldNotBeNull();
+		validator.GetType().GetGenericTypeDefinition().ShouldBe(typeof(CommandRequestValidator<,,>));
+	}
+
+	// Defect A of the Train 2 walk (Ruling 41): Midgard's two policy schemes once carried their own names
+	// as display names, and SignInManager offers every scheme with a display name as an external login --
+	// so the Manage page listed "Norse" and "Norse.Machine". With no external provider configured here,
+	// the composed host must offer none at all.
+	[Fact]
+	async Task The_composed_host_offers_no_external_login_scheme_when_no_provider_is_configured()
+	{
+		using var scope = factory.Services.CreateScope();
+		var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<NorseUser>>();
+
+		var schemes = await signInManager.GetExternalAuthenticationSchemesAsync();
+
+		schemes.ShouldBeEmpty();
 	}
 
 	[Fact]

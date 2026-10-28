@@ -17,9 +17,13 @@ public sealed class BrowserProcessLeaseTests
 			firstOwner = await File.ReadAllTextAsync(ownerPath, TestContext.Current.CancellationToken);
 			firstOwner.ShouldContain($"pid={Environment.ProcessId}");
 
-			using var blocked = new CancellationTokenSource(TimeSpan.FromMilliseconds(250));
-			var exception = await Should.ThrowAsync<BrowserLeaseWaitException>(() =>
-				BrowserProcessLease.AcquireAsync(blocked.Token).AsTask());
+			// Start the second acquire before arming the timeout: it runs synchronously to its first wait, so it
+			// has already met the held lock when the token fires. A timeout armed first can fire before a
+			// starved thread pool runs the call, and a never-contended acquire answers a bare cancellation.
+			using var blocked = new CancellationTokenSource();
+			var waiting = BrowserProcessLease.AcquireAsync(blocked.Token).AsTask();
+			blocked.CancelAfter(TimeSpan.FromMilliseconds(250));
+			var exception = await Should.ThrowAsync<BrowserLeaseWaitException>(waiting);
 			exception.Message.ShouldContain("Browser lease");
 			exception.Message.ShouldContain($"pid={Environment.ProcessId}");
 		}
