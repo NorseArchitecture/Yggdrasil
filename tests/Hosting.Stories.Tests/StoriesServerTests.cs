@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using Norse.Infrastructure.ServiceDefaults.AspNet;
 
 namespace Norse.Hosting.Stories.Tests;
 
@@ -37,26 +38,18 @@ public sealed class StoriesServerTests(WebApplicationFactory<Program> factory)
 	// The asset host's probes are the one place a body assertion is load-bearing rather than
 	// cosmetic: this host also serves an index.html fallback, so a probe path that never got mapped
 	// still answers 200 -- with the app shell. Only the body distinguishes a real probe from the
-	// fallback swallowing it.
-	//
-	// Commented out, not fixed (principal-at-the-door Task 16, Glitnir/docs/Platform/plans/
-	// 2026-08-21-principal-at-the-door.md): this host's own Program.cs never wired up
-	// UseAuthentication()/UseAuthorization(), so it 500s here with "Endpoint Health checks contains
-	// authorization metadata, but a middleware was not found that supports authorization" -- Midgard's
-	// MapDefaultEndpoints() now unconditionally attaches .RequireAuthorization(NorsePolicies.Probe) to
-	// /health and /alive. The gap is real, not a test-fixture artifact -- it would 500 in production the
-	// same way. Confirmed still present post-port (Task 6, 2026-08-22): Hosting.Stories/Program.cs
-	// still never calls UseAuthentication()/UseAuthorization(). Left unfixed here, not resurrected by
-	// the port -- still a live gap for whoever wires up auth on this host next.
-	// [Theory]
-	// [InlineData(HealthEndpoints.Liveness)]
-	// [InlineData(HealthEndpoints.Readiness)]
-	// async Task Probe_reports_healthy_rather_than_the_app_shell(string path)
-	// {
-	// 	var response = await _client.GetAsync(new Uri(path, UriKind.Relative), TestContext.Current.CancellationToken);
-	//
-	// 	response.EnsureSuccessStatusCode();
-	// 	var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-	// 	body.ShouldBe("Healthy");
-	// }
+	// fallback swallowing it. The asset root (AddAssetHostServiceDefaults) registers the Norse.Probe
+	// policy, and WebApplication adds the authorization middleware once it exists: before that, both
+	// probes answered 500 ("The AuthorizationPolicy named: 'Norse.Probe' was not found").
+	[Theory]
+	[InlineData(HealthEndpoints.Liveness)]
+	[InlineData(HealthEndpoints.Readiness)]
+	async Task Probe_reports_healthy_rather_than_the_app_shell(string path)
+	{
+		var response = await _client.GetAsync(new Uri(path, UriKind.Relative), TestContext.Current.CancellationToken);
+
+		response.EnsureSuccessStatusCode();
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+		body.ShouldBe("Healthy");
+	}
 }
