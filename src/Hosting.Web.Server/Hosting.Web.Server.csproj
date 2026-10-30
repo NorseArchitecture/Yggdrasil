@@ -48,6 +48,11 @@
 		<PackageReference Include="HyperCast" />
 		<PackageReference Include="HyperUuid" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+		<!-- Pull CPM versions of OpenIddict (Himinbjorg floats 8.*-*; the composition root pins what it deploys) -->
+		<PackageReference Include="OpenIddict.EntityFrameworkCore" />
+		<PackageReference Include="OpenIddict.Server.AspNetCore" />
+		<PackageReference Include="OpenIddict.Validation.AspNetCore" />
+		<PackageReference Include="OpenIddict.Validation.ServerIntegration" />
 		<!-- Overrides the stale >= 2.4.8 transitive floor protobuf-net.Grpc 1.2.5 declares for
 		     plain protobuf-net. -->
 		<PackageReference Include="protobuf-net" />

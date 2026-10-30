@@ -91,4 +91,35 @@ public sealed class CompositionTests
 		ClaimsPrincipal anonymous = new(new ClaimsIdentity([new Claim(ClaimTypes.Role, NorseRoles.Anonymous)], "Test"));
 		(await evaluator.AuthorizeAsync(anonymous, null, AuthNPolicies.Account)).Succeeded.ShouldBeFalse();
 	}
+
+	// The browser only ever holds the cookie identity (spec §7.3), so the WASM mirror of the policies treats its
+	// principal as the identity lane: the generated client AddNorsePolicies(), bootstrapped over
+	// AddNorseClientAuthorization() with nothing else registered, decides for a signed-in cookie principal exactly as
+	// before the lanes existed, and still refuses the anonymous one where it always did.
+	[Fact]
+	async Task Wasm_policy_evaluation_is_unchanged_for_the_cookie_principal()
+	{
+		ServiceCollection services = new();
+		services.AddLogging();
+		Client.NorsePolicyRegistration.AddNorsePolicies(services);
+		using var provider = services.BuildServiceProvider();
+		var evaluator = provider.GetRequiredService<IAuthorizationService>();
+		ClaimsPrincipal signedIn = new(new ClaimsIdentity(
+			[new Claim(ClaimTypes.NameIdentifier, Guid.CreateVersion7().ToString()), new Claim(ClaimTypes.Role, "user")],
+			"Identity.Application"));
+		ClaimsPrincipal anonymous = new(new ClaimsIdentity(
+			[new Claim(ClaimTypes.NameIdentifier, Guid.CreateVersion7().ToString()), new Claim(ClaimTypes.Role, NorseRoles.Anonymous)],
+			"Norse.Anonymous"));
+
+		foreach (var policy in new[]
+			{
+				AuthNPolicies.Public, AuthNPolicies.Account, AuthNPolicies.AccountRead, IdentityPolicies.Self,
+				NorsePolicies.Anonymous
+			})
+			(await evaluator.AuthorizeAsync(signedIn, null, policy)).Succeeded.ShouldBeTrue(policy);
+
+		(await evaluator.AuthorizeAsync(anonymous, null, AuthNPolicies.Public)).Succeeded.ShouldBeTrue();
+		(await evaluator.AuthorizeAsync(anonymous, null, AuthNPolicies.Account)).Succeeded.ShouldBeFalse();
+		(await evaluator.AuthorizeAsync(signedIn, null, IdentityPolicies.MaskedDisclosure)).Succeeded.ShouldBeFalse();
+	}
 }
