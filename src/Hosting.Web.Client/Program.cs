@@ -33,9 +33,9 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 //
 // AddNorsePolicies() (Midgard's generated client-side policy registration) mirrors the server's: every
 // [NorsePolicy] declaration in the reference set, registered once — the WASM router evaluates
-// [Authorize(Policy = …)] and throws on an unknown name.
+// [Authorize(Policy = …)] and throws on an unknown name. It bootstraps over AddNorseClientAuthorization()
+// (AddAuthorizationCore() plus the client lane handlers), so nothing registers authorization ahead of it.
 builder.Services
-	.AddAuthorizationCore()
 	.AddNorsePolicies()
 	.AddCascadingAuthenticationState()
 	.AddAuthenticationStateDeserialization()

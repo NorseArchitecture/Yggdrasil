@@ -91,6 +91,28 @@ sealed class WebServerHost : IDisposable
 	}
 
 	/// <summary>
+	///     A session with no cookies whose every gRPC call carries <c>Authorization: Bearer</c>
+	///     <paramref name="accessToken" />, as a native or machine client calls; page requests carry nothing.
+	/// </summary>
+	/// <param name="accessToken">The access token to present.</param>
+	internal WireSession CreateBearerSession(string accessToken) =>
+		CreateBearerSession(accessToken, []);
+
+	/// <summary>
+	///     A bearer session as the overload without cookies, whose jar also starts with <paramref name="cookies" />: a
+	///     caller presenting a bearer and a cookie at once.
+	/// </summary>
+	/// <param name="accessToken">The access token to present.</param>
+	/// <param name="cookies">The cookies the session starts with, by name.</param>
+	internal WireSession CreateBearerSession(string accessToken, params (string Name, string Value)[] cookies)
+	{
+		CookieContainer jar = new();
+		foreach (var (name, value) in cookies)
+			jar.Add(WireSession.Origin, new Cookie(name, value) { Secure = true });
+		return new(_factory, jar, WireLane.Grpc, accessToken);
+	}
+
+	/// <summary>
 	///     A fresh <see cref="HttpClient" /> against the same booted host, configured like a real browser
 	///     tab: no auto-follow on redirects (a lane-composition assertion cares about the server's own
 	///     response, not where a client-side redirect chain lands) and cookies persisted across requests on

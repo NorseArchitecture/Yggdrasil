@@ -65,6 +65,27 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 {
 	public WebApplication App { get; private set; } = null!;
 
+	/// <summary>
+	///     The machine lane as the composed host has it since Train 4 (2026-10-29 OpenIddict spec §7.1): Midgard's own
+	///     <see cref="NorseSchemes.Machine" /> handler authenticates <see cref="NorseSchemes.Bearer" />, here the test-only
+	///     <see cref="TestMachinePrincipalHandler" />, stamps the machine lane and lets Midgard's lane and audience
+	///     handlers decide <see cref="NorsePolicies.Machine" />. Every default is the machine lane, as this fixture's
+	///     single scheme was before: the gRPC leg has no identity cookie scheme for the lane selector to route to.
+	/// </summary>
+	/// <param name="services">The fixture host's services.</param>
+	internal static void AddMachineLane(IServiceCollection services)
+	{
+		services.AddNorseAuthentication()
+			.AddScheme<AuthenticationSchemeOptions, TestMachinePrincipalHandler>(NorseSchemes.Bearer, null);
+		services.Configure<AuthenticationOptions>(static options =>
+		{
+			options.DefaultScheme = NorseSchemes.Machine;
+			options.DefaultAuthenticateScheme = NorseSchemes.Machine;
+			options.DefaultChallengeScheme = NorseSchemes.Machine;
+			options.DefaultForbidScheme = NorseSchemes.Machine;
+		});
+	}
+
 	public async ValueTask InitializeAsync()
 	{
 		// TestServer's in-memory handler has no TLS to negotiate -- mirrors CountryLookupE2ETests/
@@ -90,8 +111,7 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 		// mints a real GUID-bearing principal at that same scheme name, so PrincipalSeedingFilter/
 		// PrincipalSeedingInterceptor stamp HttpContext.User for real and PrincipalAccessor.Seed's GUID
 		// backstop (Midgard, already shipped) sees a caller with credentials, never a bare identity.
-		builder.Services.AddAuthentication(NorseSchemes.Machine)
-			.AddScheme<AuthenticationSchemeOptions, TestMachinePrincipalHandler>(NorseSchemes.Machine, null);
+		AddMachineLane(builder.Services);
 		builder.Services.AddNorsePipeline();
 		builder.Services.AddNorseCodeFirstGrpc();
 
@@ -202,12 +222,12 @@ public sealed class SwoopHostFixture : IAsyncLifetime
 }
 
 /// <summary>
-///     The swoop fixture's real, test-only implementation of the machine lane (<see cref="NorseSchemes.Machine" />)
-///     -- succeeds with a genuine minted-GUID principal instead of the production
-///     <c>NorseMachineRejectionHandler</c>'s unconditional 401, so <c>PrincipalAccessor.Seed</c>'s GUID
-///     backstop (Midgard, already shipped) sees a caller with real credentials. This models a machine
-///     caller that has authenticated, not a caller with no lane rule applied to it at all -- spec §2.6:
-///     supply credentials, never weaken the requirement.
+///     The swoop fixture's real, test-only bearer source (<see cref="NorseSchemes.Bearer" />, which Midgard's
+///     <see cref="NorseSchemes.Machine" /> lane authenticates) -- succeeds with a genuine minted-GUID principal carrying
+///     the façade audience a real machine token carries, so <c>PrincipalAccessor.Seed</c>'s GUID backstop (Midgard,
+///     already shipped) sees a caller with real credentials and the lane is Midgard's own stamp. This models a machine
+///     caller that has authenticated, not a caller with no lane rule applied to it at all -- spec §2.6: supply
+///     credentials, never weaken the requirement.
 /// </summary>
 sealed class TestMachinePrincipalHandler(
 	IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -218,9 +238,9 @@ sealed class TestMachinePrincipalHandler(
 	protected override Task<AuthenticateResult> HandleAuthenticateAsync()
 	{
 		ClaimsIdentity identity = new(
-			[new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())],
-			authenticationType: NorseSchemes.Machine);
-		var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), NorseSchemes.Machine);
+			[new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()), new Claim("aud", NorseAudiences.Facade)],
+			authenticationType: NorseSchemes.Bearer);
+		var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), NorseSchemes.Bearer);
 		return Task.FromResult(AuthenticateResult.Success(ticket));
 	}
 }
@@ -663,8 +683,7 @@ public sealed class TriProtocolSwoopTests(SwoopHostFixture fixture)
 			.AddPolicy(NorsePolicies.Machine, NorsePlatformPolicies.Machine);
 		// Same real-credentials fix as InitializeAsync above -- this second host is its own composition
 		// root and needs its own authentication wiring, not a shared instance.
-		builder.Services.AddAuthentication(NorseSchemes.Machine)
-			.AddScheme<AuthenticationSchemeOptions, TestMachinePrincipalHandler>(NorseSchemes.Machine, null);
+		SwoopHostFixture.AddMachineLane(builder.Services);
 		builder.Services.AddNorsePipeline();
 		builder.Services.AddScoped<IRequestHandler<EchoParityCommand, ParityReport>, EchoParityHandler>();
 		builder.Services.AddSingleton<ISenderDispatch, SenderDispatch<EchoParityCommand, ParityReport>>();

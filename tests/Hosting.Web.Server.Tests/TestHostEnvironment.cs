@@ -18,5 +18,7 @@ static class TestHostEnvironment
 		// The stranded-account verification would otherwise run at every Program.cs boot here, against a database most
 		// of these hosts never reach. The one fact that asserts it turns it back on with a host setting.
 		Environment.SetEnvironmentVariable("Identity__Verification__Enabled", "false");
+		// The OpenIddict pruner runs at startup the same way; no fact here asserts it (Himinbjorg's PruningSuite does).
+		Environment.SetEnvironmentVariable("Identity__OpenIddict__Pruning__Enabled", "false");
 	}
 }

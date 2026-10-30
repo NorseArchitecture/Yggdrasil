@@ -4,6 +4,8 @@ using System.Text.Json.Nodes;
 using FluentValidation;
 using Grpc.AspNetCore.Server;
 using Grpc.Net.Client;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Endpoints;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.Http.Metadata;
@@ -14,11 +16,13 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Norse.Abstractions.Components.Authorization;
 using Norse.Abstractions.Contracts;
 using Norse.Abstractions.Web.Server.Mediator;
 using Norse.AuthN.Services;
 using Norse.Identity.EntityFramework;
 using Norse.Infrastructure.ServiceDefaults.AspNet;
+using Norse.Infrastructure.Web.Server.Authentication;
 using ProtoBuf.Meta;
 
 namespace Norse.Hosting.Web.Server.Tests;
@@ -383,6 +387,81 @@ public sealed class CompositionTests(WebApplicationFactory<Program> factory)
 		var exception = Should.Throw<OptionsValidationException>(() => production.Services);
 
 		exception.Failures.ShouldContain(static failure => failure.Contains("Issuer", StringComparison.Ordinal));
+	}
+
+	// Train 4 (2026-10-29 OpenIddict spec §7.1): Midgard declares Norse.Bearer and validates on start that some realm
+	// registered it; Himinbjorg's AddNorseAuthenticationService is that realm, and nothing in Program.cs registers a
+	// second one. The factory's booted host is the start-up proof; the handler's assembly names the registrant.
+	[Fact]
+	async Task The_host_starts_with_norse_bearer_registered()
+	{
+		var schemes = factory.Services.GetRequiredService<IAuthenticationSchemeProvider>();
+
+		var bearer = (await schemes.GetSchemeAsync(NorseSchemes.Bearer)).ShouldNotBeNull();
+
+		bearer.HandlerType.Assembly.GetName().Name.ShouldBe("Norse.Identity.Web.Server");
+		(await schemes.GetAllSchemesAsync()).Count(static scheme => scheme.Name == NorseSchemes.Bearer).ShouldBe(1);
+	}
+
+	// The two Train 4 policies arrive through the generated AddNorsePolicies() Program.cs calls -- never a hand
+	// registration and never the reflection copy Himinbjorg's test host carries. AccountRead admits the identity and
+	// user lanes; RecentAuthentication carries Midgard's freshness requirement and any lane, so it never narrows.
+	[Fact]
+	async Task Recent_authentication_and_account_read_are_registered()
+	{
+		var policies = factory.Services.GetRequiredService<IAuthorizationPolicyProvider>();
+
+		var recent = (await policies.GetPolicyAsync(NorsePolicies.RecentAuthentication)).ShouldNotBeNull();
+		recent.Requirements.OfType<RecentAuthenticationRequirement>().ShouldHaveSingleItem();
+		recent.Requirements.OfType<LaneRequirement>().ShouldBeEmpty();
+
+		var accountRead = (await policies.GetPolicyAsync(AuthNPolicies.AccountRead)).ShouldNotBeNull();
+		accountRead.Requirements.OfType<LaneRequirement>().ShouldHaveSingleItem().Lanes
+			.ShouldBe([NorseLanes.Identity, NorseLanes.User], ignoreOrder: true);
+		accountRead.Requirements.OfType<AudienceRequirement>()
+			.ShouldContain(static requirement => requirement.Audience == NorseAudiences.User);
+	}
+
+	// The probe lane authenticates nothing and the policy admits any lane: a credentialless liveness poll is answered,
+	// and no principal is minted for it (no anonymous cookie).
+	[Fact]
+	async Task A_probe_reaches_its_endpoint_with_no_principal()
+	{
+		using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+
+		using var response = await client.GetAsync(new Uri(HealthEndpoints.Liveness, UriKind.Relative),
+			TestContext.Current.CancellationToken);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		response.Headers.TryGetValues("Set-Cookie", out _).ShouldBeFalse();
+	}
+
+	// The host declares no fallback policy, so nothing stands between the protocol endpoints and a client that has no
+	// principal yet. Each is reached, not just found: OpenIddict itself answers the empty requests (invalid_request; the
+	// authorize endpoint, with no client to redirect to, as plain text), and the deferred sign-in hop's own binding
+	// refuses a request without its key -- never a 401/403 from the authorization middleware, and never a 404.
+	[Theory]
+	[InlineData("GET", "/connect/authorize")]
+	[InlineData("POST", "/connect/token")]
+	[InlineData("POST", "/connect/revoke")]
+	[InlineData("GET", "/_auth/complete")]
+	async Task Authorize_and_revoke_are_mapped(string method, string path)
+	{
+		using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+		{
+			AllowAutoRedirect = false,
+			BaseAddress = new Uri("https://localhost")
+		});
+		using HttpRequestMessage request = new(new HttpMethod(method), path);
+		if (method == "POST")
+			request.Content = new FormUrlEncodedContent([]);
+
+		using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+
+		var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest, body);
+		if (path.StartsWith("/connect/", StringComparison.Ordinal))
+			body.ShouldContain("invalid_request");
 	}
 
 	List<RouteEndpoint> EndpointsAt(string route) =>

@@ -1,14 +1,25 @@
 using System.Buffers.Text;
 using System.Diagnostics.Metrics;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Norse.Abstractions.Components.Authorization;
 using Norse.Abstractions.Contracts;
 using Norse.AuthN.Services;
 using Norse.Hosting.Web.Server.Tests.Authentication;
 using Norse.Identity.EntityFramework;
 using Norse.Primitives;
+using Norse.Reference;
+using OpenIddict.Abstractions;
 
 namespace Norse.Hosting.Web.Server.Tests;
 
@@ -253,6 +264,342 @@ public sealed class CompositionLaneTests(MachineAuthPostgresFixture postgres)
 
 		(await reported.Task.WaitAsync(TimeSpan.FromSeconds(30), Cancellation)).ShouldBe(1);
 	}
+
+	// Train 4 (2026-10-29 OpenIddict spec §7.5, §10.12, amendment r6.2): ReferencePolicies.Public is the one declared
+	// exception to the generated identity-lane default -- it admits the identity and machine lanes, so the REST façade
+	// (Machine + the Norse.Facade audience at the endpoint, Public at the endpoint and again on CountryQuery in the
+	// mediator) serves a machine token, while the gRPC lane never routes to Norse.Machine. Every fact below runs on the
+	// real Program.cs against real minted cookies and tokens.
+
+	// Endpoint and mediator authorization both pass: a refusal at either would answer 403, never the payload.
+	[Fact]
+	async Task A_real_machine_token_reaches_the_rest_country_lookup()
+	{
+		using var host = await WebServerHost.StartAsync(postgres);
+		var token = await MachineAccessTokenAsync(host);
+		using var session = host.CreateWireSession();
+
+		using var response = await FacadeLookupAsync(session, token);
+
+		var body = await response.Content.ReadAsStringAsync(Cancellation);
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, body);
+		var country = (await response.Content.ReadFromJsonAsync<FacadeCountry>(Cancellation)).ShouldNotBeNull();
+		country.Alpha2.ShouldBe("US");
+		country.Alpha3.ShouldBe("USA");
+	}
+
+	// The façade routes straight to Norse.Machine, so a signed-in cookie is never even authenticated there.
+	[Fact]
+	async Task An_identity_cookie_alone_is_refused_by_the_rest_facade()
+	{
+		using var host = await WebServerHost.StartAsync(postgres);
+		using var session = await SignInAsync(host, await SeedAsync(host, "facade-cookie"));
+
+		using var response = await FacadeLookupAsync(session, bearer: null);
+
+		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+	}
+
+	[Fact]
+	async Task A_cookie_grpc_lookup_still_succeeds()
+	{
+		using var host = await WebServerHost.StartAsync(postgres);
+		using var session = await SignInAsync(host, await SeedAsync(host, "grpc-cookie"));
+
+		Ok(await session.Service<IReferenceService>().GetCountry(new() { CodeInput = "US" }, Cancellation)).Alpha2
+			.ShouldBe("US");
+	}
+
+	// A user token reaches the façade's Norse.Machine lane like any bearer, and fails authentication there (final lanes
+	// ruling: the lane admits only its own token kind, Norse.Facade); a valid identity cookie beside it changes nothing,
+	// because the façade never reads the cookie. The answer is the authentication challenge, bare. The same token still
+	// reaches GetAccountStatus (AccountRead admits the user lane): the refusal is the token's kind, not a bad token.
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	async Task A_user_bearer_is_refused_by_the_rest_facade(bool withCookie)
+	{
+		using var host = await WebServerHost.StartAsync(postgres);
+		var email = await SeedAsync(host, "user-bearer");
+		using var signedIn = await SignInAsync(host, email);
+		var token = await UserAccessTokenAsync(host, signedIn);
+		using var bearer = host.CreateBearerSession(token);
+		Ok(await StatusAsync(bearer)).HasPassword.ShouldBeTrue();
+
+		using var response = await FacadeLookupAsync(withCookie ? signedIn : bearer, token);
+
+		await ShouldBeBare401Async(response);
+	}
+
+	// A bearer header on the gRPC lane selects Norse.User, never Norse.Machine (NorseLaneSelector routes gRPC through
+	// the identity-cookie handler), and a machine token fails authentication there: Machine in ReferencePolicies.Public
+	// opens nothing to machine tokens over gRPC.
+	[Fact]
+	async Task A_machine_token_alone_is_refused_by_the_grpc_lookup()
+	{
+		using var host = await WebServerHost.StartAsync(postgres);
+		var token = await MachineAccessTokenAsync(host);
+		using var bearer = host.CreateBearerSession(token);
+
+		Fails(await bearer.Service<IReferenceService>().GetCountry(new() { CodeInput = "US" }, Cancellation)).Category
+			.ShouldBe(ErrorCategory.Unauthorized);
+		await ShouldBeBare401Async(await RawGrpcAsync(host, GetCountryPath, token));
+	}
+
+	// Presented on the gRPC lane, the machine token rides Norse.User and fails authentication there (it carries
+	// Norse.Facade, never Norse.User), before any policy runs: Self, AccountRead, Account and AuthNPolicies.Public all
+	// answer the bare challenge.
+	[Fact]
+	async Task A_machine_token_is_refused_by_self_account_read_account_and_public()
+	{
+		using var host = await WebServerHost.StartAsync(postgres);
+		var token = await MachineAccessTokenAsync(host);
+		using var bearer = host.CreateBearerSession(token);
+
+		Fails(await bearer.Service<IIdentityService>().GetMyPersonalDataAsync(new(), Cancellation)).Category
+			.ShouldBe(ErrorCategory.Unauthorized);
+		Fails(await StatusAsync(bearer)).Category.ShouldBe(ErrorCategory.Unauthorized);
+		Fails(await bearer.Service<IAccountService>().GetExternalLogins(Cancellation)).Category
+			.ShouldBe(ErrorCategory.Unauthorized);
+		Fails(await bearer.Service<ISignInMethodsService>().GetSignInMethods(new() { ReturnUrl = "/" }, Cancellation)).Category
+			.ShouldBe(ErrorCategory.Unauthorized);
+		foreach (var path in new[] { GetMyPersonalDataPath, GetAccountStatusPath, GetExternalLoginsPath, GetSignInMethodsPath })
+			await ShouldBeBare401Async(await RawGrpcAsync(host, path, token));
+	}
+
+	// Final lanes ruling, fact 3: the token's kind is decided at authentication, so a policy that names only the user lane,
+	// with no audience pin behind it, still refuses a machine token. Self is replaced by exactly RequireLane(User) for this
+	// host; the same policy admits a real user token, so the refusal is the machine token's kind, not the policy.
+	[Fact]
+	async Task A_user_lane_only_policy_refuses_a_real_machine_token()
+	{
+		using var host = await WebServerHost.StartAsync(postgres, static builder => builder
+			.ConfigureTestServices(static services => services.PostConfigure<AuthorizationOptions>(static options =>
+				options.AddPolicy(IdentityPolicies.Self, static policy => policy.RequireLane(NorseLanes.User)))));
+		await ShouldBeLaneOnlyAsync(host, IdentityPolicies.Self, NorseLanes.User);
+		var machine = await MachineAccessTokenAsync(host);
+		using var machineBearer = host.CreateBearerSession(machine);
+
+		Fails(await machineBearer.Service<IIdentityService>().GetMyPersonalDataAsync(new(), Cancellation)).Category
+			.ShouldBe(ErrorCategory.Unauthorized);
+		await ShouldBeBare401Async(await RawGrpcAsync(host, GetMyPersonalDataPath, machine));
+
+		var email = await SeedAsync(host, "user-lane-only");
+		using var signedIn = await SignInAsync(host, email);
+		using var userBearer = host.CreateBearerSession(await UserAccessTokenAsync(host, signedIn));
+		Ok(await userBearer.Service<IIdentityService>().GetMyPersonalDataAsync(new(), Cancellation)).Email.ShouldBe(email);
+	}
+
+	// The reverse: the façade's Machine policy is replaced by exactly RequireLane(Machine), dropping its Norse.Facade pin
+	// (ReferencePolicies.Public, on the endpoint and the query, pins no audience either), and a real user token is still
+	// refused, by authentication; a real machine token still reads.
+	[Fact]
+	async Task A_machine_lane_only_policy_refuses_a_real_user_token()
+	{
+		using var host = await WebServerHost.StartAsync(postgres, static builder => builder
+			.ConfigureTestServices(static services => services.PostConfigure<AuthorizationOptions>(static options =>
+				options.AddPolicy(NorsePolicies.Machine, static policy => policy.RequireLane(NorseLanes.Machine)))));
+		await ShouldBeLaneOnlyAsync(host, NorsePolicies.Machine, NorseLanes.Machine);
+		using var signedIn = await SignInAsync(host, await SeedAsync(host, "machine-lane-only"));
+		var user = await UserAccessTokenAsync(host, signedIn);
+		using var session = host.CreateWireSession();
+
+		using (var refused = await FacadeLookupAsync(session, user))
+			await ShouldBeBare401Async(refused);
+
+		using var admitted = await FacadeLookupAsync(session, await MachineAccessTokenAsync(host));
+		admitted.StatusCode.ShouldBe(HttpStatusCode.OK, await admitted.Content.ReadAsStringAsync(Cancellation));
+	}
+
+	// Final lanes ruling, fact 4: a bearer header selects the bearer path, and a wrong-kind token fails there with no
+	// fallback to the valid identity cookie riding the same call; the same cookie alone still passes.
+	[Fact]
+	async Task A_wrong_kind_bearer_with_a_valid_identity_cookie_fails_on_the_bearer_path()
+	{
+		using var host = await WebServerHost.StartAsync(postgres);
+		using var signedIn = await SignInAsync(host, await SeedAsync(host, "wrong-kind-cookie"));
+		var cookie = signedIn.Cookie(IdentityCookie).ShouldNotBeNull();
+		var machine = await MachineAccessTokenAsync(host);
+		using var both = host.CreateBearerSession(machine, (IdentityCookie, cookie));
+
+		Fails(await StatusAsync(both)).Category.ShouldBe(ErrorCategory.Unauthorized);
+		Fails(await both.Service<IReferenceService>().GetCountry(new() { CodeInput = "US" }, Cancellation)).Category
+			.ShouldBe(ErrorCategory.Unauthorized);
+		await ShouldBeBare401Async(await RawGrpcAsync(host, GetAccountStatusPath, machine, cookie));
+
+		using var cookieOnly = host.CreateWireSession((IdentityCookie, cookie));
+		Ok(await StatusAsync(cookieOnly)).HasPassword.ShouldBeTrue();
+	}
+
+	// Final lanes ruling, fact 5: the user bearer's two operations stay open to it (AccountRead and Self admit the user
+	// lane, pinned to Norse.User), and the machine façade read stays green (A_real_machine_token_reaches_the_rest_country_lookup).
+	[Fact]
+	async Task A_user_bearer_still_reads_its_own_personal_data_and_account_status()
+	{
+		using var host = await WebServerHost.StartAsync(postgres);
+		var email = await SeedAsync(host, "user-bearer-reads");
+		using var signedIn = await SignInAsync(host, email);
+		using var bearer = host.CreateBearerSession(await UserAccessTokenAsync(host, signedIn));
+
+		Ok(await bearer.Service<IIdentityService>().GetMyPersonalDataAsync(new(), Cancellation)).Email.ShouldBe(email);
+		Ok(await StatusAsync(bearer)).HasPassword.ShouldBeTrue();
+	}
+
+	const string GetCountryPath = "/grpc.reference.v1.ReferenceService/GetCountry";
+	const string GetMyPersonalDataPath = "/grpc.identity.v1.IdentityService/GetMyPersonalData";
+	const string GetAccountStatusPath = "/grpc.account.v1.AccountService/GetAccountStatus";
+	const string GetExternalLoginsPath = "/grpc.account.v1.AccountService/GetExternalLogins";
+	const string GetSignInMethodsPath = "/grpc.signinmethods.v1.SignInMethodsService/GetSignInMethods";
+
+	/// <summary>
+	///     A raw unary gRPC call to <paramref name="path" /> over HTTP/2 with <c>Authorization: Bearer</c>
+	///     <paramref name="bearer" /> and, if any, the identity cookie: the HTTP answer the typed client decodes away.
+	/// </summary>
+	static async Task<HttpResponseMessage> RawGrpcAsync(WebServerHost host, string path, string bearer, string? cookie = null)
+	{
+		using var client = host.CreateBrowserClient();
+		using HttpRequestMessage request = new(HttpMethod.Post, new Uri(path, UriKind.Relative))
+		{
+			Content = WebServerHost.EmptyGrpcBody()
+		};
+		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
+		if (cookie is not null)
+			request.Headers.Add("Cookie", $"{IdentityCookie}={cookie}");
+		return await client.SendAsync(request, Cancellation);
+	}
+
+	/// <summary>
+	///     The composed authentication-challenge shape (final lanes ruling): HTTP 401, no redirect, no body, and one
+	///     <c>WWW-Authenticate: Bearer</c> carrying at most <c>error="invalid_token"</c>, never a description or a URI.
+	/// </summary>
+	static async Task ShouldBeBare401Async(HttpResponseMessage response)
+	{
+		using (response)
+		{
+			response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+			response.Headers.Location.ShouldBeNull();
+			(await response.Content.ReadAsStringAsync(Cancellation)).ShouldBeEmpty();
+			var challenge = response.Headers.WwwAuthenticate.ShouldHaveSingleItem();
+			challenge.Scheme.ShouldBe("Bearer");
+			challenge.Parameter.ShouldBeOneOf([null, "error=\"invalid_token\""], "at most the bare error, never a description or a URI");
+		}
+	}
+
+	/// <summary>The host's <paramref name="name" /> policy is exactly one lane requirement, <paramref name="lane" />.</summary>
+	static async Task ShouldBeLaneOnlyAsync(WebServerHost host, string name, string lane)
+	{
+		var policy = (await host.Services.GetRequiredService<IAuthorizationPolicyProvider>().GetPolicyAsync(name)).ShouldNotBeNull();
+		policy.Requirements.ShouldHaveSingleItem().ShouldBeOfType<LaneRequirement>().Lanes.ShouldBe([lane]);
+	}
+
+	/// <summary>The REST façade's country lookup for <c>US</c>, as JSON, with <paramref name="bearer" /> if any.</summary>
+	static async Task<HttpResponseMessage> FacadeLookupAsync(WireSession session, string? bearer)
+	{
+		using HttpRequestMessage request = new(HttpMethod.Get, "/api/reference/countries/US");
+		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+		if (bearer is not null)
+			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
+		return await session.SendAsync(request);
+	}
+
+	/// <summary>The façade's JSON country document, camelCase on the wire; only the members these facts read.</summary>
+	sealed record FacadeCountry(string Alpha2, string Alpha3);
+
+	/// <summary>The registered public client's redirect, a loopback URI as a native client's is.</summary>
+	const string NativeRedirect = "http://127.0.0.1/cb";
+
+	/// <summary>
+	///     A user access token for <paramref name="session" />'s signed-in user: a public client is registered, the
+	///     authorize endpoint issues a code to the session's fresh identity cookie, and the token endpoint redeems it with
+	///     the PKCE verifier.
+	/// </summary>
+	static async Task<string> UserAccessTokenAsync(WebServerHost host, WireSession session)
+	{
+		var clientId = $"native-{Guid.NewGuid():N}";
+		using (var scope = host.Services.CreateScope())
+		{
+			OpenIddictApplicationDescriptor descriptor = new()
+			{
+				ClientId = clientId,
+				ClientType = OpenIddictConstants.ClientTypes.Public,
+				ConsentType = OpenIddictConstants.ConsentTypes.Implicit,
+				Permissions =
+				{
+					OpenIddictConstants.Permissions.Endpoints.Authorization,
+					OpenIddictConstants.Permissions.Endpoints.Token,
+					OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
+					OpenIddictConstants.Permissions.ResponseTypes.Code
+				},
+				Requirements = { OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange }
+			};
+			descriptor.RedirectUris.Add(new Uri(NativeRedirect));
+			await scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>().CreateAsync(descriptor, Cancellation);
+		}
+
+		var verifier = Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
+		var challenge = Base64Url.EncodeToString(SHA256.HashData(Encoding.ASCII.GetBytes(verifier)));
+		var query = QueryString.Create([
+			new KeyValuePair<string, string?>(OpenIddictConstants.Parameters.ClientId, clientId),
+			new(OpenIddictConstants.Parameters.ResponseType, OpenIddictConstants.ResponseTypes.Code),
+			new(OpenIddictConstants.Parameters.RedirectUri, NativeRedirect),
+			new(OpenIddictConstants.Parameters.Scope, OpenIddictConstants.Scopes.OpenId),
+			new(OpenIddictConstants.Parameters.State, "state"),
+			new(OpenIddictConstants.Parameters.CodeChallenge, challenge),
+			new(OpenIddictConstants.Parameters.CodeChallengeMethod, OpenIddictConstants.CodeChallengeMethods.Sha256)
+		]);
+		using var authorize = await session.GetAsync("/connect/authorize" + query);
+		var location = authorize.Headers.Location?.OriginalString;
+		authorize.StatusCode.ShouldBe(HttpStatusCode.Redirect, location);
+		location.ShouldNotBeNull().ShouldStartWith($"{NativeRedirect}?");
+		var code = QueryHelpers.ParseQuery(new Uri(location).Query)[OpenIddictConstants.Parameters.Code].ToString();
+
+		using var redeemed = await session.PostFormAsync("/connect/token", [
+			new(OpenIddictConstants.Parameters.GrantType, OpenIddictConstants.GrantTypes.AuthorizationCode),
+			new(OpenIddictConstants.Parameters.Code, code),
+			new(OpenIddictConstants.Parameters.RedirectUri, NativeRedirect),
+			new(OpenIddictConstants.Parameters.ClientId, clientId),
+			new(OpenIddictConstants.Parameters.CodeVerifier, verifier)
+		]);
+		return await AccessTokenAsync(redeemed);
+	}
+
+	/// <summary>A machine access token: a confidential client is registered and granted client credentials.</summary>
+	static async Task<string> MachineAccessTokenAsync(WebServerHost host)
+	{
+		var clientId = $"machine-{Guid.NewGuid():N}";
+		const string Secret = "machine-secret";
+		using (var scope = host.Services.CreateScope())
+			await scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>().CreateAsync(new OpenIddictApplicationDescriptor
+			{
+				ClientId = clientId,
+				ClientSecret = Secret,
+				ClientType = OpenIddictConstants.ClientTypes.Confidential,
+				Permissions =
+				{
+					OpenIddictConstants.Permissions.Endpoints.Token,
+					OpenIddictConstants.Permissions.GrantTypes.ClientCredentials
+				}
+			}, Cancellation);
+
+		using var session = host.CreateWireSession();
+		using var response = await session.PostFormAsync("/connect/token", [
+			new(OpenIddictConstants.Parameters.GrantType, OpenIddictConstants.GrantTypes.ClientCredentials),
+			new(OpenIddictConstants.Parameters.ClientId, clientId),
+			new(OpenIddictConstants.Parameters.ClientSecret, Secret)
+		]);
+		return await AccessTokenAsync(response);
+	}
+
+	static async Task<string> AccessTokenAsync(HttpResponseMessage response)
+	{
+		var body = await response.Content.ReadAsStringAsync(Cancellation);
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, body);
+		var token = (await response.Content.ReadFromJsonAsync<TokenResponse>(Cancellation)).ShouldNotBeNull();
+		return token.AccessToken;
+	}
+
+	/// <summary>The token response's access token, snake_case on the wire.</summary>
+	sealed record TokenResponse([property: JsonPropertyName("access_token")] string AccessToken);
 
 	/// <summary>The stored stamp and the session's identity cookie, read just before a step.</summary>
 	readonly record struct Snapshot(string Stamp, string Cookie);

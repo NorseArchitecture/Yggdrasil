@@ -42,7 +42,7 @@ sealed class WireSession : IDisposable
 	readonly HttpClient _pages;
 	readonly CallInvoker _invoker;
 
-	internal WireSession(WebApplicationFactory<Program> factory, CookieContainer jar, WireLane lane)
+	internal WireSession(WebApplicationFactory<Program> factory, CookieContainer jar, WireLane lane, string? bearer = null)
 	{
 		_jar = jar;
 		_pages = factory.CreateDefaultClient(Origin, new CookieContainerHandler(jar));
@@ -55,7 +55,7 @@ sealed class WireSession : IDisposable
 			};
 #pragma warning restore CA2000
 			_transport = client;
-			_invoker = new GrpcWebCallInvoker(client).Intercept(new OutcomeClientInterceptor());
+			_invoker = Authorized(new GrpcWebCallInvoker(client), bearer).Intercept(new OutcomeClientInterceptor());
 		}
 		else
 		{
@@ -64,9 +64,22 @@ sealed class WireSession : IDisposable
 				HttpHandler = new CookieContainerHandler(jar) { InnerHandler = factory.Server.CreateHandler() }
 			});
 			_transport = channel;
-			_invoker = channel.Intercept(new OutcomeClientInterceptor());
+			_invoker = Authorized(channel.CreateCallInvoker(), bearer).Intercept(new OutcomeClientInterceptor());
 		}
 	}
+
+	/// <summary>
+	///     <paramref name="invoker" /> sending <c>Authorization: Bearer</c> <paramref name="bearer" /> on every call, as a
+	///     native or machine client does, or unchanged when there is none.
+	/// </summary>
+	static CallInvoker Authorized(CallInvoker invoker, string? bearer) =>
+		bearer is null ?
+			invoker :
+			invoker.Intercept(metadata =>
+			{
+				metadata.Add("Authorization", $"Bearer {bearer}");
+				return metadata;
+			});
 
 	/// <summary>A code-first gRPC client for <typeparamref name="TService" /> over this session's jar.</summary>
 	internal TService Service<TService>() where TService : class =>
@@ -76,6 +89,20 @@ sealed class WireSession : IDisposable
 	/// <param name="path">The root-relative path.</param>
 	internal async Task<HttpResponseMessage> GetAsync(string path) =>
 		await _pages.GetAsync(new Uri(path, UriKind.Relative), TestContext.Current.CancellationToken);
+
+	/// <summary>Sends <paramref name="request" /> carrying this session's cookies; redirects are not followed.</summary>
+	/// <param name="request">The request, root-relative.</param>
+	internal Task<HttpResponseMessage> SendAsync(HttpRequestMessage request) =>
+		_pages.SendAsync(request, TestContext.Current.CancellationToken);
+
+	/// <summary>A form POST carrying this session's cookies; redirects are not followed.</summary>
+	/// <param name="path">The root-relative path.</param>
+	/// <param name="form">The form's fields.</param>
+	internal async Task<HttpResponseMessage> PostFormAsync(string path, IEnumerable<KeyValuePair<string, string>> form)
+	{
+		using FormUrlEncodedContent content = new(form);
+		return await _pages.PostAsync(new Uri(path, UriKind.Relative), content, TestContext.Current.CancellationToken);
+	}
 
 	/// <summary>The value of the cookie named <paramref name="name" />, or <see langword="null" /> when the jar has none.</summary>
 	/// <param name="name">The cookie name.</param>

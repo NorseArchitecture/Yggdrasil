@@ -30,5 +30,7 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+		<!-- Pull the CPM version of OpenIddict's EF stores (Himinbjorg floats 8.*-*) -->
+		<PackageReference Include="OpenIddict.EntityFrameworkCore" />
 	</ItemGroup>
 </Project>
